@@ -11,7 +11,6 @@ now = datetime.datetime.now()
 def main():
     new_offset = None
     today = now.day
-    hour = now.hour
 
     while True:
         greet_bot.get_updates(new_offset)
@@ -24,15 +23,15 @@ def main():
             last_chat_id = last_update['message']['chat']['id']
             last_chat_name = last_update['message']['chat']['first_name']
 
-            if last_chat_text.lower() in greetings and today == now.day and 6 <= hour < 12:
+            if last_chat_text.lower() in greetings and today == now.day and 6 <= now.hour < 12:
                 greet_bot.send_message(last_chat_id, 'Доброе утро, {}'.format(last_chat_name))
                 today += 1
 
-            elif last_chat_text.lower() in greetings and today == now.day and 12 <= hour < 17:
+            elif last_chat_text.lower() in greetings and today == now.day and 12 <= now.hour < 17:
                 greet_bot.send_message(last_chat_id, 'Добрый день, {}'.format(last_chat_name))
                 today += 1
 
-            elif last_chat_text.lower() in greetings and today == now.day and 17 <= hour < 23:
+            elif last_chat_text.lower() in greetings and today == now.day and 17 <= now.hour < 23:
                 greet_bot.send_message(last_chat_id, 'Добрый вечер, {}'.format(last_chat_name))
                 today += 1
 
@@ -44,15 +43,15 @@ def main():
                     message = "Sorry! It seems like '" + str(url) + "' doesn't provide an RSS news feed.. Have you " \
                                                                     "tried another URL from that provider? "
                     greet_bot.send_message(last_chat_id, message)
-                    return
 
-                args_count = 4
+                else:
+                    args_count = 4
 
-                entries = FeedHandler.parse_feed(url, args_count)
-                for entry in entries:
-                    message = "[" + url[1] + "] <a href='" + \
-                              entry.link + "'>" + entry.title + "</a>"
-                    print(message)
+                    entries = FeedHandler.parse_feed(url, args_count)
+                    for entry in entries:
+                        message = "[" + url[1] + "] <a href='" + \
+                                  entry.link + "'>" + entry.title + "</a>"
+                        print(message)
 
             new_offset = last_update_id + 1
 
