@@ -18,7 +18,7 @@ class FeedHandler:
             return feed.entries[:4]
 
     @staticmethod
-    def is_available(url):
+    def is_parsable(url):
         """
         Checks whether the given url provides a news feed. Return True if news are available, else False
         """
