@@ -13,10 +13,10 @@ now = datetime.now()
 
 @dp.message_handler(commands=['start', 'help'])
 async def send_welcome(message: types.Message):
-    await message.reply("Hi!\nI'm EchoBot!\nPowered by aiogram.")
+    await message.reply("Салам брат или сестра!\nСледовательно, ты с Компетиторс, раз знаешь обо мне!\nРад знакомству!")
 
 
-@dp.message_handler(commands=['здравствуй', 'привет', 'ку', 'здорово'])
+@dp.message_handler(commands=['здравствуй', 'привет', 'ку', 'здорово', 'hi', 'hello'])
 async def send_hi(message: types.Message):
     if 6 <= now.hour < 12:
         await message.reply('Добрый утро, {}'.format(message.from_user.first_name))
