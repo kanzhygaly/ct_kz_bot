@@ -1,5 +1,7 @@
+import re
 from bs4 import BeautifulSoup
 import requests
+import datetime
 
 url = 'http://comptrain.co/individuals/home'
 headers = {'User-Agent': 'Mozilla/5.0'}
@@ -13,6 +15,15 @@ header = post.find(class_='header-container')
 
 date = header.find('h1').get_text()
 print(date)
+
+# Remove anything other than digits
+num = re.sub(r'\D', "", date)
+date_wod = datetime.datetime.strptime(num, '%m%d%y')
+print(date_wod.date())
+now = datetime.datetime.now()
+if date_wod.date().__eq__(now.date()):
+    print('dates are identical')
+
 
 content = post.find(class_='vc_row-fluid').find_all(class_='wpb_column')
 

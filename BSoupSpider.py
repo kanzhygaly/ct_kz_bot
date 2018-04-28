@@ -12,15 +12,14 @@ class BSoupParser:
         soup = BeautifulSoup(page.text, 'html.parser')
         post = soup.find('div', class_='single-post')
 
-        self.header = post.find(class_='header-container')
+        self.wod_date = post.find(class_='header-container').find('h1').get_text()
+
         self.content = post.find(class_='vc_row-fluid').find_all(class_='wpb_column')
 
-    #@staticmethod
-    def getWodDate(self):
-        date = self.header.find('h1').get_text()
-        return date
+    def get_wod_date(self):
+        return self.wod_date
 
-    def getRegionalWOD(self):
+    def get_regional_wod(self):
         reg_part = self.content[0].find(class_='wpb_wrapper')
         reg_title = reg_part.find('h3').get_text()
         print(reg_title)
@@ -31,7 +30,7 @@ class BSoupParser:
 
         return reg_part.get_text()
 
-    def getOpenWOD(self):
+    def get_open_wod(self):
         open_part = self.content[1].find(class_='wpb_wrapper')
         open_title = open_part.find('h3').get_text()
         print(open_title)

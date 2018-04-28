@@ -1,50 +1,46 @@
-import datetime
+import re
+import datetime.datetime
 from BSoupSpider import BSoupParser
-from BotHandler import BotHandler
 
-greet_bot = BotHandler('552105148:AAH4hH232QZy7aOJ8IJyaXvc_L2Gq9t1Eh8')
-greetings = ('здравствуй', 'привет', 'ку', 'здорово')
-wod = ('что там сегодня', 'тренировка', 'треня', 'wod')
-now = datetime.datetime.now()
+from aiogram import Bot, types
+from aiogram.dispatcher import Dispatcher
+from aiogram.utils import executor
+
+bot = Bot(token='552105148:AAH4hH232QZy7aOJ8IJyaXvc_L2Gq9t1Eh8')
+dp = Dispatcher(bot)
+now = datetime.now()
 
 
-def main():
-    new_offset = None
-    today = now.day
+@dp.message_handler(commands=['start', 'help'])
+async def send_welcome(message: types.Message):
+    await message.reply("Hi!\nI'm EchoBot!\nPowered by aiogram.")
 
-    while True:
-        greet_bot.get_updates(new_offset)
 
-        last_update = greet_bot.get_last_update()
+@dp.message_handler(commands=['здравствуй', 'привет', 'ку', 'здорово'])
+async def send_hi(message: types.Message):
+    if 6 <= now.hour < 12:
+        await message.reply('Добрый утро, {}'.format(message.from_user.first_name))
 
-        if last_update is not None:
-            last_update_id = last_update['update_id']
-            last_chat_text = last_update['message']['text']
-            last_chat_id = last_update['message']['chat']['id']
-            last_chat_name = last_update['message']['chat']['first_name']
+    elif 12 <= now.hour < 17:
+        await message.reply('Добрый день, {}'.format(message.from_user.first_name))
 
-            if last_chat_text.lower() in greetings and today == now.day and 6 <= now.hour < 12:
-                greet_bot.send_message(last_chat_id, 'Доброе утро, {}'.format(last_chat_name))
-                today += 1
+    elif 17 <= now.hour < 23:
+        await message.reply('Добрый вечер, {}'.format(message.from_user.first_name))
 
-            elif last_chat_text.lower() in greetings and today == now.day and 12 <= now.hour < 17:
-                greet_bot.send_message(last_chat_id, 'Добрый день, {}'.format(last_chat_name))
-                today += 1
 
-            elif last_chat_text.lower() in greetings and today == now.day and 17 <= now.hour < 23:
-                greet_bot.send_message(last_chat_id, 'Добрый вечер, {}'.format(last_chat_name))
-                today += 1
+@dp.message_handler(commands=['чтс', 'что там сегодня?', 'тренировка', 'треня', 'wod'])
+async def send_wod(message: types.Message):
+    parser = BSoupParser()
 
-            elif last_chat_text.lower() in wod:
-                parser = BSoupParser()
-                greet_bot.send_message(last_chat_id, parser.getWodDate()
-                                       + parser.getRegionalWOD() + parser.getOpenWOD())
+    # Remove anything other than digits
+    num = re.sub(r'\D', "", parser.get_wod_date())
+    wod_date = datetime.strptime(num, '%m%d%y')
 
-            new_offset = last_update_id + 1
+    if wod_date.date().__eq__(now.date()):
+        await message.reply(parser.get_wod_date() + parser.get_regional_wod() + parser.get_open_wod())
+    else:
+        await message.reply("Комплекс еще не вышел.\nСорян, брат!!!")
 
 
 if __name__ == '__main__':
-    try:
-        main()
-    except KeyboardInterrupt:
-        exit()
+        executor.start_polling(dp)
