@@ -37,8 +37,8 @@ def main():
 
             elif last_chat_text.lower() in wod:
                 parser = BSoupParser()
-                greet_bot.send_message(last_chat_id, parser.getWodDate() + '<br>'
-                                       + parser.getRegionalWOD() + '<br>' + parser.getOpenWOD())
+                greet_bot.send_message(last_chat_id, parser.getWodDate()
+                                       + parser.getRegionalWOD() + parser.getOpenWOD())
 
             new_offset = last_update_id + 1
 
