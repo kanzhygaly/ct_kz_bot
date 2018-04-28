@@ -1,5 +1,5 @@
 import re
-import datetime.datetime
+from datetime import datetime
 from BSoupSpider import BSoupParser
 
 from aiogram import Bot, types
