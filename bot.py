@@ -1,6 +1,6 @@
 import datetime
+from BSoupSpider import BSoupParser
 from BotHandler import BotHandler
-from FeedHandler import FeedHandler
 
 greet_bot = BotHandler('552105148:AAH4hH232QZy7aOJ8IJyaXvc_L2Gq9t1Eh8')
 greetings = ('здравствуй', 'привет', 'ку', 'здорово')
@@ -36,22 +36,9 @@ def main():
                 today += 1
 
             elif last_chat_text.lower() in wod:
-                url = 'http://comptrain.co/individuals/home/'
-
-                # Check if argument matches url format
-                if not FeedHandler.is_parsable(url):
-                    message = "Sorry! It seems like '" + str(url) + "' doesn't provide an RSS news feed.. Have you " \
-                                                                    "tried another URL from that provider? "
-                    greet_bot.send_message(last_chat_id, message)
-
-                else:
-                    args_count = 4
-
-                    entries = FeedHandler.parse_feed(url, args_count)
-                    for entry in entries:
-                        message = "[" + url[1] + "] <a href='" + \
-                                  entry.link + "'>" + entry.title + "</a>"
-                        print(message)
+                parser = BSoupParser()
+                greet_bot.send_message(last_chat_id, parser.getWodDate() + '<br>'
+                                       + parser.getRegionalWOD() + '<br>' + parser.getOpenWOD())
 
             new_offset = last_update_id + 1
 
