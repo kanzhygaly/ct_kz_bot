@@ -25,19 +25,24 @@ if date_wod.date().__eq__(now.date()):
     print('dates are identical')
 
 
-content = post.find(class_='vc_row-fluid').find_all(class_='wpb_column')
+content = post.find_all(class_='vc_col-sm-6')
 
 reg_part = content[0].find(class_='wpb_wrapper')
 
-reg_title = reg_part.find('h3').get_text()
-print(reg_title)
-# regional = reg_part.find(class_='wpb_wrapper').find('div').get_text()
+reg_title = reg_part.find('h3')
+
+if reg_title is not None:
+    print(reg_title.get_text())
+
 for p in reg_part.find_all('p'):
     print(p.get_text())
 
 open_part = content[1].find(class_='wpb_wrapper')
 
-open_title = open_part.find('h3').get_text()
-print(open_title)
+open_title = open_part.find('h3')
+
+if open_title is not None:
+    print(open_title.get_text())
+
 for p in open_part.find_all('p'):
     print(p.get_text())

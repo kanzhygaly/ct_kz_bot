@@ -14,7 +14,7 @@ class BSoupParser:
 
         self.wod_date = post.find(class_='header-container').find('h1').get_text()
 
-        self.content = post.find(class_='vc_row-fluid').find_all(class_='wpb_column')
+        self.content = post.find_all(class_='vc_col-sm-6')
 
     def get_wod_date(self):
         return self.wod_date
