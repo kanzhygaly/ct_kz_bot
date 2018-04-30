@@ -17,7 +17,7 @@ async def send_welcome(message: types.Message):
     await bot.send_message(message.chat.id,
                            "CompTrainKZ BOT:\n\n"
                            "/wod - комплекс дня\n\n"
-                           "/help - справочник")
+                           "/help - справочник\n\n")
 
 
 @dp.message_handler(commands=['wod'])
@@ -63,7 +63,9 @@ async def send_hi(message: types.Message):
             await message.reply("Комплекс еще не вышел.\nСорян, брат!!!")
 
     else:
-        send_welcome(message)
+        await message.reply("CompTrainKZ BOT:\n\n"
+                            "/wod - комплекс дня\n\n"
+                            "/help - справочник\n\n")
 
 
 if __name__ == '__main__':
