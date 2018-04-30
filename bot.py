@@ -42,12 +42,9 @@ async def send_wod(message: types.Message):
 
 @dp.message_handler()
 async def send_hi(message: types.Message):
-    print(message.get_args())
-    args = ''
-    for arg in message.get_args():
-        args += arg
+    print(message)
 
-    if args.lower() in greetings:
+    if message.text in greetings:
         if 6 <= now.hour < 12:
             await message.reply('Доброе утро, {}'.format(message.from_user.first_name))
 
@@ -57,7 +54,7 @@ async def send_hi(message: types.Message):
         elif 17 <= now.hour < 23:
             await message.reply('Добрый вечер, {}'.format(message.from_user.first_name))
 
-    elif args.lower() in wod:
+    elif message.text in wod:
         await message.reply(get_wod())
 
     else:
