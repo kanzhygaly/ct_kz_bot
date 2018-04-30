@@ -10,18 +10,12 @@ dp = Dispatcher(bot)
 now = datetime.now()
 greetings = ['здравствуй', 'привет', 'ку', 'здорово', 'hi', 'hello']
 wod = ['чтс', 'что там сегодня?', 'тренировка', 'треня', 'wod', 'workout']
+start_msg = "CompTrainKZ BOT:\n\n" \
+            "/wod - комплекс дня\n\n" \
+            "/help - справочник"
 
 
-@dp.message_handler(commands=['start', 'help'])
-async def send_welcome(message: types.Message):
-    await bot.send_message(message.chat.id,
-                           "CompTrainKZ BOT:\n\n"
-                           "/wod - комплекс дня\n\n"
-                           "/help - справочник\n\n")
-
-
-@dp.message_handler(commands=['wod'])
-async def send_wod(message: types.Message):
+def get_wod():
     parser = BSoupParser()
 
     # Remove anything other than digits
@@ -31,14 +25,29 @@ async def send_wod(message: types.Message):
     print(now)
 
     if wod_date.date().__eq__(now.date()):
-        await message.reply(parser.get_wod_date() + parser.get_regional_wod() + parser.get_open_wod())
+        return parser.get_wod_date() + parser.get_regional_wod() + parser.get_open_wod()
     else:
-        await message.reply("Комплекс еще не вышел.\nСорян, брат!!!")
+        return "Комплекс еще не вышел.\nСорян ((("
+
+
+@dp.message_handler(commands=['start', 'help'])
+async def send_welcome(message: types.Message):
+    await bot.send_message(message.chat.id, start_msg)
+
+
+@dp.message_handler(commands=['wod'])
+async def send_wod(message: types.Message):
+    await message.reply(get_wod())
 
 
 @dp.message_handler()
 async def send_hi(message: types.Message):
-    if message.get_args() in greetings:
+    print(message.get_args())
+    args = ''
+    for arg in message.get_args():
+        args += arg
+
+    if args.lower() in greetings:
         if 6 <= now.hour < 12:
             await message.reply('Доброе утро, {}'.format(message.from_user.first_name))
 
@@ -48,24 +57,11 @@ async def send_hi(message: types.Message):
         elif 17 <= now.hour < 23:
             await message.reply('Добрый вечер, {}'.format(message.from_user.first_name))
 
-    elif message.get_args() in wod:
-        parser = BSoupParser()
-
-        # Remove anything other than digits
-        num = re.sub(r'\D', "", parser.get_wod_date())
-        wod_date = datetime.strptime(num, '%m%d%y')
-        print(wod_date)
-        print(now)
-
-        if wod_date.date().__eq__(now.date()):
-            await message.reply(parser.get_wod_date() + parser.get_regional_wod() + parser.get_open_wod())
-        else:
-            await message.reply("Комплекс еще не вышел.\nСорян, брат!!!")
+    elif args.lower() in wod:
+        await message.reply(get_wod())
 
     else:
-        await message.reply("CompTrainKZ BOT:\n\n"
-                            "/wod - комплекс дня\n\n"
-                            "/help - справочник\n\n")
+        await message.reply(start_msg)
 
 
 if __name__ == '__main__':
