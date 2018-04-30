@@ -12,7 +12,16 @@ greetings = ['здравствуй', 'привет', 'ку', 'здорово', '
 wod = ['чтс', 'что там сегодня?', 'тренировка', 'треня', 'wod', 'workout']
 
 
-async def wod(message: types.Message):
+@dp.message_handler(commands=['start', 'help'])
+async def send_welcome(message: types.Message):
+    await bot.send_message(message.chat.id,
+                           "CompTrainKZ BOT:\n\n"
+                           "/wod - комплекс дня\n\n"
+                           "/help - справочник")
+
+
+@dp.message_handler(commands=['wod'])
+async def send_wod(message: types.Message):
     parser = BSoupParser()
 
     # Remove anything other than digits
@@ -25,18 +34,6 @@ async def wod(message: types.Message):
         await message.reply(parser.get_wod_date() + parser.get_regional_wod() + parser.get_open_wod())
     else:
         await message.reply("Комплекс еще не вышел.\nСорян, брат!!!")
-
-
-@dp.message_handler(commands=['start', 'help'])
-async def send_welcome(message: types.Message):
-    await message.reply("CompTrainKZ BOT:\n"
-                        "/wod - комплекс дня\n"
-                        "/help - справочник")
-
-
-@dp.message_handler(commands=['wod'])
-async def send_wod(message: types.Message):
-    wod(message)
 
 
 @dp.message_handler()
@@ -52,11 +49,11 @@ async def send_hi(message: types.Message):
             await message.reply('Добрый вечер, {}'.format(message.from_user.first_name))
 
     elif message.get_args() in wod:
-        wod(message)
+        send_wod(message)
 
     else:
         send_welcome(message)
 
 
 if __name__ == '__main__':
-        executor.start_polling(dp)
+    executor.start_polling(dp)
