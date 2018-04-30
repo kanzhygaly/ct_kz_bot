@@ -49,7 +49,18 @@ async def send_hi(message: types.Message):
             await message.reply('Добрый вечер, {}'.format(message.from_user.first_name))
 
     elif message.get_args() in wod:
-        send_wod(message)
+        parser = BSoupParser()
+
+        # Remove anything other than digits
+        num = re.sub(r'\D', "", parser.get_wod_date())
+        wod_date = datetime.strptime(num, '%m%d%y')
+        print(wod_date)
+        print(now)
+
+        if wod_date.date().__eq__(now.date()):
+            await message.reply(parser.get_wod_date() + parser.get_regional_wod() + parser.get_open_wod())
+        else:
+            await message.reply("Комплекс еще не вышел.\nСорян, брат!!!")
 
     else:
         send_welcome(message)
