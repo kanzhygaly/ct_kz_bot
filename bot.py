@@ -64,7 +64,7 @@ async def send_hi(message: types.Message):
         await message.reply(start_msg)
 
 
-@scheduler.scheduled_job('cron', day_of_week='mon-sat', hour=8)
+@scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=8)
 def scheduled_job():
     print('This job runs everyday at 8am.')
     print(now)
