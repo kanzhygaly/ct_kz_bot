@@ -1,12 +1,17 @@
 import re
 from datetime import datetime
-from BSoupSpider import BSoupParser
+
 from aiogram import Bot, types
 from aiogram.dispatcher import Dispatcher
 from aiogram.utils import executor
 
+from BSoupSpider import BSoupParser
+
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
 bot = Bot(token='552105148:AAH4hH232QZy7aOJ8IJyaXvc_L2Gq9t1Eh8')
 dp = Dispatcher(bot)
+scheduler = AsyncIOScheduler()
 now = datetime.now()
 greetings = ['здравствуй', 'привет', 'ку', 'здорово', 'hi', 'hello']
 wod = ['чтс', 'что там сегодня?', 'тренировка', 'треня', 'wod', 'workout']
@@ -21,8 +26,6 @@ def get_wod():
     # Remove anything other than digits
     num = re.sub(r'\D', "", parser.get_wod_date())
     wod_date = datetime.strptime(num, '%m%d%y')
-    print(wod_date)
-    print(now)
 
     if wod_date.date().__eq__(now.date()):
         return parser.get_wod_date() + "\n\n" + parser.get_regional_wod() + "\n" + parser.get_open_wod()
@@ -61,5 +64,13 @@ async def send_hi(message: types.Message):
         await message.reply(start_msg)
 
 
+@scheduler.scheduled_job('cron', day_of_week='mon-sat', hour=8)
+def scheduled_job():
+    print('This job runs everyday at 8am.')
+    print(now)
+
+
 if __name__ == '__main__':
+    scheduler.start()
+
     executor.start_polling(dp)
