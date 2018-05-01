@@ -24,10 +24,10 @@ class BSoupParser:
 
         reg_part = self.content[0].find(class_='wpb_wrapper')
         title = reg_part.find('h3').get_text()
-        result += title
+        result += title + '\n'
 
         for p in reg_part.find_all('p'):
-            result += p.get_text() + "\n"
+            result += p.get_text() + "\n\n"
 
         # return reg_part.get_text()
         return result
@@ -37,10 +37,10 @@ class BSoupParser:
 
         open_part = self.content[1].find(class_='wpb_wrapper')
         title = open_part.find('h3').get_text()
-        result += title
+        result += title + '\n'
 
         for p in open_part.find_all('p'):
-            result += p.get_text() + "\n"
+            result += p.get_text() + "\n\n"
 
         # return reg_part.get_text()
         return result
