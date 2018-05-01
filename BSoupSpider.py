@@ -27,7 +27,7 @@ class BSoupParser:
         result += title
 
         for p in reg_part.find_all('p'):
-            result += p.get_text()
+            result += p.get_text() + "\n"
 
         # return reg_part.get_text()
         return result
@@ -40,7 +40,7 @@ class BSoupParser:
         result += title
 
         for p in open_part.find_all('p'):
-            result += p.get_text()
+            result += p.get_text() + "\n"
 
         # return reg_part.get_text()
         return result

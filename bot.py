@@ -25,7 +25,7 @@ def get_wod():
     print(now)
 
     if wod_date.date().__eq__(now.date()):
-        return parser.get_wod_date() + parser.get_regional_wod() + parser.get_open_wod()
+        return parser.get_wod_date() + "\n" + parser.get_regional_wod() + "\n" + parser.get_open_wod()
     else:
         return "Комплекс еще не вышел.\nСорян ((("
 
