@@ -20,22 +20,27 @@ class BSoupParser:
         return self.wod_date
 
     def get_regional_wod(self):
+        result = ''
+
         reg_part = self.content[0].find(class_='wpb_wrapper')
-        reg_title = reg_part.find('h3').get_text()
-        print(reg_title)
+        title = reg_part.find('h3').get_text()
+        result += title
 
-        #regional = reg_part.find(class_='wpb_wrapper').find('div').get_text()
         for p in reg_part.find_all('p'):
-            print(p.get_text())
+            result += p.get_text()
 
-        return reg_part.get_text()
+        # return reg_part.get_text()
+        return result
 
     def get_open_wod(self):
+        result = ''
+
         open_part = self.content[1].find(class_='wpb_wrapper')
-        open_title = open_part.find('h3').get_text()
-        print(open_title)
+        title = open_part.find('h3').get_text()
+        result += title
 
         for p in open_part.find_all('p'):
-            print(p.get_text())
+            result += p.get_text()
 
-        return open_part.get_text()
+        # return reg_part.get_text()
+        return result
