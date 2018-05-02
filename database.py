@@ -17,8 +17,17 @@ class Database:
 
         self.cursor.execute("CREATE TABLE IF NOT EXISTS subscribers (id serial PRIMARY KEY, user_id BIGINT);")
 
-        self.cursor.execute("CREATE TABLE IF NOT EXISTS wod (id serial PRIMARY KEY, wod_date date, title VARCHAR(150),"
-                            "description text, result VARCHAR(150), user_id BIGINT);")
+        self.cursor.execute("CREATE TABLE IF NOT EXISTS wod (id serial PRIMARY KEY, wod_day date, title VARCHAR(150),"
+                            "description text);")
+
+        self.cursor.execute("CREATE TABLE IF NOT EXISTS wod_result (id serial PRIMARY KEY, wod_id INTEGER,"
+                            "user_id BIGINT, result VARCHAR(200), sys_date datetime);")
+
+        self.cursor.execute("CREATE TABLE IF NOT EXISTS benchmark (id serial PRIMARY KEY, title VARCHAR(150),"
+                            "description text, result_type VARCHAR(50));")
+
+        self.cursor.execute("CREATE TABLE IF NOT EXISTS benchmark_result (id serial PRIMARY KEY, benchmark_id INTEGER,"
+                            "wod_day date, user_id BIGINT, result VARCHAR(200), sys_date datetime);")
 
         self.connection.commit()
 
