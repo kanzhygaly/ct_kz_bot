@@ -12,7 +12,6 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 bot = Bot(token='552105148:AAH4hH232QZy7aOJ8IJyaXvc_L2Gq9t1Eh8')
 dp = Dispatcher(bot)
 scheduler = AsyncIOScheduler()
-now = datetime.now()
 greetings = ['здравствуй', 'привет', 'ку', 'здорово', 'hi', 'hello']
 wod = ['чтс', 'что там сегодня?', 'тренировка', 'треня', 'wod', 'workout']
 start_msg = "CompTrainKZ BOT:\n\n" \
@@ -27,6 +26,7 @@ def get_wod():
     num = re.sub(r'\D', "", parser.get_wod_date())
     wod_date = datetime.strptime(num, '%m%d%y')
     print(wod_date)
+    now = datetime.now()
     print(now)
 
     if wod_date.date().__eq__(now.date()):
@@ -50,6 +50,8 @@ async def send_hi(message: types.Message):
     msg = str(message.text).lower()
 
     if msg in greetings:
+        now = datetime.now()
+
         if 6 <= now.hour < 12:
             await message.reply('Доброе утро, {}'.format(message.from_user.first_name))
 
@@ -69,7 +71,6 @@ async def send_hi(message: types.Message):
 @scheduler.scheduled_job('cron', day_of_week='mon-sun', hour='3-4')
 def scheduled_job():
     print('This job runs everyday at 8am.')
-    print(now)
 
 
 if __name__ == '__main__':
