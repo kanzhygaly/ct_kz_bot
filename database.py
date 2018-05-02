@@ -28,19 +28,19 @@ class Database:
         self.connection.commit()
 
     def is_user_exist(self, user_id):
-        self.cursor.execute("SELECT * FROM users WHERE user_id=%d", user_id)
+        self.cursor.execute("SELECT * FROM users WHERE user_id=%d", (user_id,))
         return bool(self.cursor.fetchone())
 
     def add_subscriber(self, user_id):
-        self.cursor.execute("INSERT INTO subscribers (user_id) VALUES (%d)", user_id)
+        self.cursor.execute("INSERT INTO subscribers (user_id) VALUES (%d)", (user_id,))
         self.connection.commit()
 
     def is_subscriber(self, user_id):
-        self.cursor.execute("SELECT * FROM subscribers WHERE user_id=%d", user_id)
+        self.cursor.execute("SELECT * FROM subscribers WHERE user_id=%d", (user_id,))
         return bool(self.cursor.fetchone())
 
     def unsubscribe(self, user_id):
-        self.cursor.execute("DELETE FROM subscribers WHERE user_id=%d", user_id)
+        self.cursor.execute("DELETE FROM subscribers WHERE user_id=%d", (user_id,))
 
     def get_all_subscribers(self):
         self.cursor.execute("SELECT * FROM subscribers")
