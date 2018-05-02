@@ -1,22 +1,23 @@
+import os
 import re
 from datetime import datetime
 
 from aiogram import Bot, types
 from aiogram.dispatcher import Dispatcher
 from aiogram.utils import executor
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from BSoupSpider import BSoupParser
 
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-
-bot = Bot(token='552105148:AAH4hH232QZy7aOJ8IJyaXvc_L2Gq9t1Eh8')
+bot = Bot(token=os.environ['API_TOKEN'])
 dp = Dispatcher(bot)
 scheduler = AsyncIOScheduler()
 greetings = ['здравствуй', 'привет', 'ку', 'здорово', 'hi', 'hello']
 wod = ['чтс', 'что там сегодня?', 'тренировка', 'треня', 'wod', 'workout']
 start_msg = "CompTrainKZ BOT:\n\n" \
             "/wod - комплекс дня\n\n" \
-            "/help - справочник"
+            "/help - справочник\n\n" \
+            "/subscribe - подписаться на ежедневную рассылку WOD"
 
 
 def get_wod():
@@ -37,6 +38,7 @@ def get_wod():
 
 @dp.message_handler(commands=['start', 'help'])
 async def send_welcome(message: types.Message):
+    print(message)
     await bot.send_message(message.chat.id, start_msg)
 
 
@@ -68,7 +70,7 @@ async def send_hi(message: types.Message):
         await message.reply(start_msg)
 
 
-@scheduler.scheduled_job('cron', day_of_week='mon-sun', hour='3-4')
+@scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=2)
 def scheduled_job():
     print('This job runs everyday at 8am.')
 

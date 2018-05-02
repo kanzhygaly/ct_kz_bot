@@ -1,7 +1,8 @@
-import re
-from bs4 import BeautifulSoup
-import requests
 import datetime
+import re
+
+import requests
+from bs4 import BeautifulSoup
 
 url = 'http://comptrain.co/individuals/home'
 headers = {'User-Agent': 'Mozilla/5.0'}
