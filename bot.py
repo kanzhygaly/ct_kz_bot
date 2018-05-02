@@ -14,8 +14,10 @@ bot = Bot(token=os.environ['API_TOKEN'])
 dp = Dispatcher(bot)
 scheduler = AsyncIOScheduler()
 db = Database()
+
 greetings = ['здравствуй', 'привет', 'ку', 'здорово', 'hi', 'hello']
 wod_requests = ['чтс', 'что там сегодня?', 'тренировка', 'треня', 'wod', 'workout']
+
 info_msg = "CompTrainKZ BOT:\n\n" \
             "/wod - комплекс дня\n\n" \
             "/help - справочник\n\n"
