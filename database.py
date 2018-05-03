@@ -20,11 +20,17 @@ class Database:
         self.cursor.execute("CREATE TABLE IF NOT EXISTS wod (id serial PRIMARY KEY, wod_day date, title VARCHAR(150),"
                             "description text);")
 
+        self.cursor.execute("CREATE TABLE IF NOT EXISTS wod_ru (wod_id INTEGER not null, title VARCHAR(150),"
+                            "description text);")
+
         self.cursor.execute("CREATE TABLE IF NOT EXISTS wod_result (id serial PRIMARY KEY, wod_id INTEGER,"
                             "user_id BIGINT, result VARCHAR(200), sys_date TIMESTAMP);")
 
         self.cursor.execute("CREATE TABLE IF NOT EXISTS benchmark (id serial PRIMARY KEY, title VARCHAR(150),"
                             "description text, result_type VARCHAR(50));")
+
+        self.cursor.execute("CREATE TABLE IF NOT EXISTS benchmark_ru (benchmark_id INTEGER not null,"
+                            "title VARCHAR(150), description text);")
 
         self.cursor.execute("CREATE TABLE IF NOT EXISTS benchmark_result (id serial PRIMARY KEY, benchmark_id INTEGER,"
                             "wod_day date, user_id BIGINT, result VARCHAR(200), sys_date TIMESTAMP);")
@@ -53,4 +59,4 @@ class Database:
 
     def get_all_subscribers(self):
         self.cursor.execute("SELECT * FROM subscribers")
-        return list(set([column[2] for column in self.cursor]))
+        return list(set([column[1] for column in self.cursor]))
