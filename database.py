@@ -60,3 +60,51 @@ class Database:
     def get_all_subscribers(self):
         self.cursor.execute("SELECT * FROM subscribers")
         return list(set([column[1] for column in self.cursor]))
+
+    def get_wods(self, wod_day):
+        self.cursor.execute("SELECT * FROM wod WHERE wod_day=%s", (wod_day,))
+
+        wod, list_res = {}, {}
+        i = 0
+
+        for column in self.cursor:
+            wod['id'] = column[0]
+            wod['title'] = column[2]
+            wod['description'] = column[3]
+
+            list_res[i] = wod
+            wod = {}
+            i += 1
+
+        return list_res
+
+    def add_wod(self, wod_day, title, description):
+        self.cursor.execute("INSERT INTO wod (wod_day, title, description) VALUES (%s, %s, %s) RETURNING id",
+                            (wod_day, title, description))
+        wod_id = self.cursor.fetchone()[0]
+        self.connection.commit()
+        return wod_id
+
+    def get_wod_results(self, wod_id):
+        self.cursor.execute("SELECT * FROM wod_result WHERE wod_id=%s", (wod_id,))
+
+        wod_result, list_res = {}, {}
+        i = 0
+
+        for column in self.cursor:
+            wod_result['id'] = column[0]
+            wod_result['wod_id'] = column[1]
+            wod_result['user_id'] = column[2]
+            wod_result['result'] = column[3]
+            wod_result['sys_date'] = column[4]
+
+            list_res[i] = wod_result
+            wod_result = {}
+            i += 1
+
+        return list_res
+
+    def add_wod_result(self, wod_id, user_id, result, sys_date):
+        self.cursor.execute("INSERT INTO wod_result (wod_id, user_id, result, sys_date) VALUES (%s, %s, %s, %s)",
+                            (wod_id, user_id, result, sys_date))
+        self.connection.commit()
