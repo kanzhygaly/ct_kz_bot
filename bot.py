@@ -153,8 +153,8 @@ async def echo(message: types.Message):
         await message.reply(info_msg + sub)
 
 
-@scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=2)
-def scheduled_job():
+@scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=5)
+async def scheduled_job():
     print('This job runs everyday at 8am.')
     subscribers = db.get_all_subscribers()
 
@@ -162,7 +162,11 @@ def scheduled_job():
 
     print(subscribers)
     for user_id in subscribers:
-        bot.send_message(user_id, wod)
+        if wod_id is not None:
+            with dp.current_state(chat=user_id, user=user_id) as state:
+                await state.update_data(wod_id=wod_id)
+
+        await bot.send_message(user_id, wod)
 
 
 async def shutdown(dispatcher: Dispatcher):
