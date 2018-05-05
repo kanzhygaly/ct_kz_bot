@@ -35,9 +35,9 @@ async def get_wod():
 
     result = await wod.get_wods(now.date())
     if result:
-        wod_id = result[0]['id']
-        title = result[0]['title']
-        description = result[0]['description']
+        wod_id = result[0].id
+        title = result[0].title
+        description = result[0].description
 
         return title + "\n\n" + description + "\n\n" + msg, wod_id
 
@@ -94,13 +94,13 @@ async def unsubscribe(message: types.Message):
 @dp.message_handler(commands=['wod'])
 @dp.message_handler(func=lambda message: message.text and message.text.lower() in wod_requests)
 async def send_wod(message: types.Message):
-    wod, wod_id = get_wod()
+    msg, wod_id = await get_wod()
 
     if wod_id is not None:
         with dp.current_state(chat=message.chat.id, user=message.from_user.id) as state:
             await state.update_data(wod_id=wod_id)
 
-    await bot.send_message(message.chat.id, wod)
+    await bot.send_message(message.chat.id, msg)
 
 
 @dp.message_handler(commands=['wod_results'])
@@ -113,9 +113,9 @@ async def wod_results(message: types.Message):
 
     results = await wod_result.get_wod_results(wod_id)
 
-    for wod_result in results:
-        title = wod_result.sys_date + ' от ' + wod_result.user_id
-        msg += title + '\n' + wod_result.result + '\n\n'
+    for res in results:
+        title = res.sys_date + ' от ' + res.user_id
+        msg += title + '\n' + res.result + '\n\n'
 
     await bot.send_message(message.chat.id, msg)
 
@@ -162,14 +162,14 @@ async def scheduled_job():
     print('This job runs everyday at 8am.')
     subscribers = await subscriber.get_all_subscribers()
 
-    wod, wod_id = get_wod()
+    msg, wod_id = await get_wod()
 
     for sub in subscribers:
         if wod_id is not None:
             with dp.current_state(chat=sub.user_id, user=sub.user_id) as state:
                 await state.update_data(wod_id=wod_id)
 
-        await bot.send_message(sub.user_id, wod)
+        await bot.send_message(sub.user_id, msg)
 
 
 async def startup(dispatcher: Dispatcher):
