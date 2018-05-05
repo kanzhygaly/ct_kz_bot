@@ -1,4 +1,4 @@
-import asyncpg_simpleorm as orm
+from asyncpg_simpleorm import Column
 
 from db.async_db import Entity
 
@@ -7,10 +7,10 @@ class User(Entity):
     __tablename__ = 'users'
     return_records = False
 
-    user_id = orm.Column(orm.BigInteger())
-    name = orm.Column(orm.String(100))
-    surname = orm.Column(orm.String(100))
-    lang = orm.Column(orm.String(10))
+    user_id = Column()
+    name = Column()
+    surname = Column()
+    lang = Column()
 
 
 async def add_user(user_id, name, surname, lang):

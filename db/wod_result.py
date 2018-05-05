@@ -1,4 +1,4 @@
-import asyncpg_simpleorm as orm
+from asyncpg_simpleorm import Column
 
 from db.async_db import Entity
 
@@ -7,10 +7,10 @@ class WodResult(Entity):
     __tablename__ = 'wod_result'
     return_records = False
 
-    wod_id = orm.Column(orm.Integer())
-    user_id = orm.Column(orm.BigInteger())
-    result = orm.Column(orm.String(200))
-    sys_date = orm.Column(orm.Timestamp())
+    wod_id = Column()
+    user_id = Column()
+    result = Column()
+    sys_date = Column()
 
 
 async def get_wod_results(wod_id):

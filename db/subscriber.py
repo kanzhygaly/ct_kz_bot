@@ -1,4 +1,4 @@
-import asyncpg_simpleorm as orm
+from asyncpg_simpleorm import Column
 
 from db.async_db import Entity
 
@@ -7,7 +7,7 @@ class Subscriber(Entity):
     __tablename__ = 'subscribers'
     return_records = False
 
-    user_id = orm.Column(orm.BigInteger())
+    user_id = Column()
 
 
 async def add_subscriber(user_id):

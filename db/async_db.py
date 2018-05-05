@@ -1,12 +1,12 @@
 import os
 
-import asyncpg_simpleorm as orm
+from asyncpg_simpleorm import PoolManager, Column, AsyncModel
 
 from db import db_utils
 
 credentials = db_utils.database_url_parse(os.environ['DATABASE_URL'])
 
-manager = orm.PoolManager(
+manager = PoolManager(
     user=credentials['user'],
     password=credentials['password'],
     host=credentials['host'],
@@ -15,8 +15,8 @@ manager = orm.PoolManager(
 )
 
 
-class Entity(orm.AsyncModel, connection=manager):
-    id = orm.Column(type=orm.Serial(), primary_key=True)
+class Entity(AsyncModel, connection=manager):
+    id = Column(primary_key=True)
 
 
 async def drop_all_tables(connection) -> None:
