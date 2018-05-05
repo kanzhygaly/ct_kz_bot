@@ -1,5 +1,5 @@
+asyncpg_simpleorm
 psycopg2-binary
-pytz==2018.4
 apscheduler
 requests
 aiogram
