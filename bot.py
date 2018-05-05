@@ -23,7 +23,8 @@ wod_requests = ['чтс', 'что там сегодня?', 'тренировка
 
 info_msg = "CompTrainKZ BOT:\n\n" \
            "/help - справочник\n\n" \
-           "/wod - комплекс дня\n\n"
+           "/wod - комплекс дня\n\n" \
+           "/find - найти комплекс\n\n"
 
 
 async def get_wod():
@@ -101,6 +102,25 @@ async def send_wod(message: types.Message):
             await state.update_data(wod_id=wod_id)
 
     await bot.send_message(message.chat.id, msg)
+
+
+@dp.message_handler(commands=['find'])
+async def find_wod(message: types.Message):
+    if message.get_args():
+        num = re.sub(r'\D', "", message.get_args()[0])
+        wod_date = datetime.strptime(num, '%d%m%y')
+
+        result = await wod.get_wods(wod_date)
+        if result:
+            msg = "/wod_results"
+
+            with dp.current_state(chat=message.chat.id, user=message.from_user.id) as state:
+                await state.update_data(wod_id=result[0].id)
+
+            title = result[0].title
+            description = result[0].description
+
+            await bot.send_message(message.chat.id, title + "\n\n" + description + "\n\n" + msg)
 
 
 @dp.message_handler(commands=['wod_results'])
