@@ -173,7 +173,7 @@ async def scheduled_job():
 
 
 async def startup(dispatcher: Dispatcher):
-    async with db.AsyncDB.connection() as connection:
+    async with db.User.connection() as connection:
         await db.create_all_tables(connection)
 
 
