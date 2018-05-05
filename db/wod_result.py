@@ -5,7 +5,6 @@ from db.async_db import Entity
 
 class WodResult(Entity):
     __tablename__ = 'wod_result'
-    return_records = False
 
     wod_id = Column()
     user_id = Column()
@@ -14,7 +13,7 @@ class WodResult(Entity):
 
 
 async def get_wod_results(wod_id):
-    return await WodResult.get(wod_id=wod_id)
+    return await WodResult.get(records=False, wod_id=wod_id)
 
 
 async def add_wod_result(wod_id, user_id, result, sys_date):
