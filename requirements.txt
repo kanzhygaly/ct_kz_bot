@@ -1,5 +1,4 @@
 asyncpg_simpleorm
-psycopg2-binary
 apscheduler
 requests
 aiogram
