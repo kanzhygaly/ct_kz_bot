@@ -17,5 +17,6 @@ async def get_wods(wod_day):
 
 async def add_wod(wod_day, title, description):
     entity = WOD(wod_day=wod_day, title=title, description=description)
+    print(entity)
     await entity.save()
     return entity.id
