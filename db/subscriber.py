@@ -5,7 +5,6 @@ from db.async_db import Entity
 
 class Subscriber(Entity):
     __tablename__ = 'subscribers'
-    _return_records: False
 
     user_id = Column()
 
@@ -25,4 +24,4 @@ async def unsubscribe(user_id):
 
 
 async def get_all_subscribers():
-    return await Subscriber.get()
+    return await Subscriber.get(records=False)
