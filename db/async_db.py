@@ -1,4 +1,5 @@
 import os
+import uuid
 
 from asyncpg_simpleorm import PoolManager, Column, AsyncModel
 
@@ -16,7 +17,7 @@ manager = PoolManager(
 
 
 class Entity(AsyncModel, connection=manager):
-    id = Column()
+    id = Column(default=uuid.uuid4, primary_key=True)
 
 
 async def drop_all_tables(connection) -> None:
@@ -34,27 +35,27 @@ async def drop_all_tables(connection) -> None:
 
 async def create_all_tables(connection) -> None:
     await connection.execute('''
-            CREATE TABLE IF NOT EXISTS users (id serial PRIMARY KEY, user_id BIGINT,
+            CREATE TABLE IF NOT EXISTS users (id uuid PRIMARY KEY, user_id BIGINT,
             name VARCHAR(100), surname VARCHAR(100), lang VARCHAR(10));
 
-            CREATE TABLE IF NOT EXISTS subscribers (id serial PRIMARY KEY, user_id BIGINT);
+            CREATE TABLE IF NOT EXISTS subscribers (id uuid PRIMARY KEY, user_id BIGINT);
 
-            CREATE TABLE IF NOT EXISTS wod (id serial PRIMARY KEY, wod_day date, title VARCHAR(150),
+            CREATE TABLE IF NOT EXISTS wod (id uuid PRIMARY KEY, wod_day date, title VARCHAR(150),
             description text);
 
-            CREATE TABLE IF NOT EXISTS wod_ru (wod_id INTEGER not null, title VARCHAR(150),
+            CREATE TABLE IF NOT EXISTS wod_ru (wod_id uuid not null, title VARCHAR(150),
             description text);
 
-            CREATE TABLE IF NOT EXISTS wod_result (id serial PRIMARY KEY, wod_id INTEGER,
+            CREATE TABLE IF NOT EXISTS wod_result (id uuid PRIMARY KEY, wod_id uuid not null,
             user_id BIGINT, result VARCHAR(200), sys_date TIMESTAMP);
 
-            CREATE TABLE IF NOT EXISTS benchmark (id serial PRIMARY KEY, title VARCHAR(150),
+            CREATE TABLE IF NOT EXISTS benchmark (id uuid PRIMARY KEY, title VARCHAR(150),
             description text, result_type VARCHAR(50));
 
-            CREATE TABLE IF NOT EXISTS benchmark_ru (benchmark_id INTEGER not null,
+            CREATE TABLE IF NOT EXISTS benchmark_ru (benchmark_id uuid not null,
             title VARCHAR(150), description text);
 
-            CREATE TABLE IF NOT EXISTS benchmark_result (id serial PRIMARY KEY, benchmark_id INTEGER,
+            CREATE TABLE IF NOT EXISTS benchmark_result (id uuid PRIMARY KEY, benchmark_id uuid not null,
             wod_day date, user_id BIGINT, result VARCHAR(200), sys_date TIMESTAMP);
         ''')
 

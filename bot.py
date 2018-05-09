@@ -195,6 +195,7 @@ async def scheduled_job():
 async def startup(dispatcher: Dispatcher):
     print('Startup CompTrainKZ Bot...')
     async with async_db.Entity.connection() as connection:
+        await async_db.drop_all_tables(connection)
         await async_db.create_all_tables(connection)
 
 

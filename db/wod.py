@@ -5,6 +5,7 @@ from db.async_db import Entity
 
 class WOD(Entity):
     __tablename__ = 'wod'
+    _return_records: False
 
     wod_day = Column()
     title = Column()
@@ -12,11 +13,10 @@ class WOD(Entity):
 
 
 async def get_wods(wod_day):
-    return await WOD.get(records=False, wod_day=wod_day)
+    return await WOD.get(wod_day=wod_day)
 
 
 async def add_wod(wod_day, title, description):
     entity = WOD(wod_day=wod_day, title=title, description=description)
-    print(entity)
     await entity.save()
     return entity.id

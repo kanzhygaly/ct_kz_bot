@@ -5,6 +5,7 @@ from db.async_db import Entity
 
 class User(Entity):
     __tablename__ = 'users'
+    _return_records: False
 
     user_id = Column()
     name = Column()
