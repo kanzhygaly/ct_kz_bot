@@ -51,9 +51,12 @@ async def get_wod():
 
     if wod_date.date().__eq__(now.date()):
         title = parser.get_wod_date()
-        description = parser.get_regional_wod() + "\n" + parser.get_open_wod()
+        regional = parser.get_regional_wod()
+        description = regional + "\n" + parser.get_open_wod()
 
-        wod_id = await wod.add_wod(wod_date.date(), title, description)
+        wod_id = None
+        if ''.join(regional.split()) == "2018REGIONALSATHLETESRest":
+            wod_id = await wod.add_wod(wod_date.date(), title, description)
 
         return title + "\n\n" + description + "\n\n" + msg, wod_id
     else:
@@ -195,7 +198,7 @@ async def scheduled_job():
 async def startup(dispatcher: Dispatcher):
     print('Startup CompTrainKZ Bot...')
     async with async_db.Entity.connection() as connection:
-        # await async_db.drop_all_tables(connection)
+        await async_db.drop_all_tables(connection)
         await async_db.create_all_tables(connection)
 
 

@@ -10,6 +10,7 @@ class User(Entity):
     name = Column()
     surname = Column()
     lang = Column()
+    admin = Column()
 
 
 async def add_user(user_id, name, surname, lang):
@@ -19,3 +20,7 @@ async def add_user(user_id, name, surname, lang):
 
 async def is_user_exist(user_id):
     return bool(await User.get_one(user_id=user_id))
+
+
+async def is_admin(user_id):
+    return bool(await User.get_one(user_id=user_id, admin=True))

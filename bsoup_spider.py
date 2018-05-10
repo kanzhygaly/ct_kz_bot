@@ -30,7 +30,6 @@ class BSoupParser:
         for p in reg_part.find_all('p'):
             result += p.get_text() + "\n\n"
 
-        # return reg_part.get_text()
         return result
 
     def get_open_wod(self):
@@ -43,5 +42,4 @@ class BSoupParser:
         for p in open_part.find_all('p'):
             result += p.get_text() + "\n\n"
 
-        # return reg_part.get_text()
         return result

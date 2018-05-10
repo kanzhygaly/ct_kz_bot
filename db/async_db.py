@@ -36,7 +36,7 @@ async def drop_all_tables(connection) -> None:
 async def create_all_tables(connection) -> None:
     await connection.execute('''
             CREATE TABLE IF NOT EXISTS users (id uuid PRIMARY KEY, user_id BIGINT,
-            name VARCHAR(100), surname VARCHAR(100), lang VARCHAR(10));
+            name VARCHAR(100), surname VARCHAR(100), lang VARCHAR(10), admin BOOL DEFAULT false);
 
             CREATE TABLE IF NOT EXISTS subscribers (id uuid PRIMARY KEY, user_id BIGINT);
 
