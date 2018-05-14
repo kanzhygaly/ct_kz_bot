@@ -26,11 +26,13 @@ info_msg = "CompTrainKZ BOT:\n\n" \
            "/wod - комплекс дня\n\n" \
            "/find - найти комплекс\n\n"
 
+# States
+WOD = 'wod'
+ADD_WOD_RESULT = 'add_wod_result'
+SHOW_RESULTS = 'Show results'
+
 
 async def get_wod():
-    msg = "/wod_results\n\n" \
-          "/add_wod_result"
-
     now = datetime.now()
     print(now)
 
@@ -42,7 +44,7 @@ async def get_wod():
 
         return title + "\n\n" + description + "\n\n" + msg, wod_id
 
-    parser = BSoupParser()
+    parser = BSoupParser(url=os.environ['WEB_URL'])
 
     # Remove anything other than digits
     num = re.sub(r'\D', "", parser.get_wod_date())
@@ -58,7 +60,7 @@ async def get_wod():
         if ''.join(regional.split()) == "2018REGIONALSATHLETESRest":
             wod_id = await wod.add_wod(wod_date.date(), title, description)
 
-        return title + "\n\n" + description + "\n\n" + msg, wod_id
+        return title + "\n\n" + description + "\n\n", wod_id
     else:
         return "Комплекс еще не вышел.\nСорян :(", None
 
@@ -103,8 +105,64 @@ async def send_wod(message: types.Message):
     if wod_id is not None:
         with dp.current_state(chat=message.chat.id, user=message.from_user.id) as state:
             await state.update_data(wod_id=wod_id)
+            await  state.set_state(WOD)
 
-    await bot.send_message(message.chat.id, msg)
+    # Configure ReplyKeyboardMarkup
+    reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+    reply_markup.add("Add result", SHOW_RESULTS)
+    reply_markup.add("Hide")
+
+    await bot.send_message(message.chat.id, msg, reply_markup=reply_markup)
+
+
+@dp.message_handler(state=WOD, func=lambda message: message.text == "Hide")
+async def hide_keyboard(message: types.Message):
+    state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
+    # reset
+    await state.reset_state(with_data=True)
+    await bot.send_message(message.chat.id, '', reply_markup=types.ReplyKeyboardRemove())
+
+
+@dp.message_handler(state=WOD, func=lambda message: message.text == "Add result")
+async def hide_keyboard(message: types.Message):
+    state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
+    await state.set_state(ADD_WOD_RESULT)
+
+    await bot.send_message(message.chat.id, 'Please enter your score', reply_markup=types.ReplyKeyboardRemove())
+
+
+@dp.message_handler(state=ADD_WOD_RESULT)
+async def add_wod_result(message: types.Message):
+    state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
+    data = await state.get_data()
+
+    wod_id = data['wod_id']
+    await wod_result.add_wod_result(wod_id, message.from_user.id, message.text, datetime.now().timestamp())
+
+    await bot.send_message(message.chat.id, 'Ваш результат успешно добавлен!')
+
+    # Finish conversation
+    # WARNING! This method will destroy all data in storage for current user!
+    await state.finish()
+
+
+@dp.message_handler(state=WOD, func=lambda message: message.text == SHOW_RESULTS)
+async def hide_keyboard(message: types.Message):
+    state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
+    data = await state.get_data()
+
+    wod_id = data['wod_id']
+
+    msg = ''
+    for res in await wod_result.get_wod_results(wod_id):
+        title = res.sys_date + ' от ' + res.user_id
+        msg += title + '\n' + res.result + '\n\n'
+
+    await bot.send_message(message.chat.id, msg, reply_markup=types.ReplyKeyboardRemove())
+
+    # Finish conversation
+    # WARNING! This method will destroy all data in storage for current user!
+    await state.finish()
 
 
 @dp.message_handler(commands=['find'])
@@ -124,34 +182,6 @@ async def find_wod(message: types.Message):
             description = result[0].description
 
             await bot.send_message(message.chat.id, title + "\n\n" + description + "\n\n" + msg)
-
-
-@dp.message_handler(commands=['wod_results'])
-async def wod_results(message: types.Message):
-    state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
-    data = await state.get_data()
-
-    wod_id = data['wod_id']
-    msg = ''
-
-    results = await wod_result.get_wod_results(wod_id)
-
-    for res in results:
-        title = res.sys_date + ' от ' + res.user_id
-        msg += title + '\n' + res.result + '\n\n'
-
-    await bot.send_message(message.chat.id, msg)
-
-
-@dp.message_handler(commands=['add_wod_result'])
-async def add_wod_result(message: types.Message):
-    state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
-    data = await state.get_data()
-
-    wod_id = data['wod_id']
-    await wod_result.add_wod_result(wod_id, message.from_user.id, message.text, datetime.now().timestamp())
-
-    await bot.send_message(message.chat.id, 'Ваш результат успешно добавлен')
 
 
 @dp.message_handler()

@@ -1,14 +1,12 @@
-import os
-
 import requests
 from bs4 import BeautifulSoup
 
 
 class BSoupParser:
 
-    def __init__(self):
+    def __init__(self, url):
         headers = {'User-Agent': 'Mozilla/5.0'}
-        page = requests.get(os.environ['WEB_URL'], headers=headers)
+        page = requests.get(url, headers=headers)
 
         soup = BeautifulSoup(page.text, 'html.parser')
         post = soup.find('div', class_='single-post')
