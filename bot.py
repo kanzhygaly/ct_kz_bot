@@ -42,7 +42,7 @@ async def get_wod():
         title = result[0].title
         description = result[0].description
 
-        return title + "\n\n" + description + "\n\n" + msg, wod_id
+        return title + "\n\n" + description, wod_id
 
     parser = BSoupParser(url=os.environ['WEB_URL'])
 
