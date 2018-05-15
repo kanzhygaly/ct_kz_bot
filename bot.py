@@ -226,7 +226,7 @@ async def scheduled_job():
         await bot.send_message(sub.user_id, msg)
 
 
-async def startup():
+async def startup(dispatcher: Dispatcher):
     print('Startup CompTrainKZ Bot...')
     async with async_db.Entity.connection() as connection:
         # await async_db.drop_all_tables(connection)
