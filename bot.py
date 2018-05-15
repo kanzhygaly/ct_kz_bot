@@ -29,7 +29,10 @@ info_msg = "CompTrainKZ BOT:\n\n" \
 # States
 WOD = 'wod'
 ADD_WOD_RESULT = 'add_wod_result'
+# Buttons
+ADD_RESULT = 'Add result'
 SHOW_RESULTS = 'Show results'
+CANCEL = "Cancel"
 
 
 async def get_wod():
@@ -109,13 +112,13 @@ async def send_wod(message: types.Message):
 
     # Configure ReplyKeyboardMarkup
     reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
-    reply_markup.add("Add result", SHOW_RESULTS)
-    reply_markup.add("Hide")
+    reply_markup.add(ADD_RESULT, SHOW_RESULTS)
+    reply_markup.add(CANCEL)
 
     await bot.send_message(message.chat.id, msg, reply_markup=reply_markup)
 
 
-@dp.message_handler(state=WOD, func=lambda message: message.text == "Hide")
+@dp.message_handler(state=WOD, func=lambda message: message.text == CANCEL)
 async def hide_keyboard(message: types.Message):
     state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
     # reset
@@ -123,12 +126,12 @@ async def hide_keyboard(message: types.Message):
     await bot.send_message(message.chat.id, '', reply_markup=types.ReplyKeyboardRemove())
 
 
-@dp.message_handler(state=WOD, func=lambda message: message.text == "Add result")
+@dp.message_handler(state=WOD, func=lambda message: message.text == ADD_RESULT)
 async def hide_keyboard(message: types.Message):
     state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
     await state.set_state(ADD_WOD_RESULT)
 
-    await bot.send_message(message.chat.id, 'Please enter your score', reply_markup=types.ReplyKeyboardRemove())
+    await bot.send_message(message.chat.id, 'Пожалуйста введите ваш результат', reply_markup=types.ReplyKeyboardRemove())
 
 
 @dp.message_handler(state=ADD_WOD_RESULT)
@@ -173,15 +176,13 @@ async def find_wod(message: types.Message):
 
         result = await wod.get_wods(wod_date)
         if result:
-            msg = "/wod_results"
-
             with dp.current_state(chat=message.chat.id, user=message.from_user.id) as state:
                 await state.update_data(wod_id=result[0].id)
 
             title = result[0].title
             description = result[0].description
 
-            await bot.send_message(message.chat.id, title + "\n\n" + description + "\n\n" + msg)
+            await bot.send_message(message.chat.id, title + "\n\n" + description)
 
 
 @dp.message_handler()
@@ -225,7 +226,7 @@ async def scheduled_job():
         await bot.send_message(sub.user_id, msg)
 
 
-async def startup(dispatcher: Dispatcher):
+async def startup():
     print('Startup CompTrainKZ Bot...')
     async with async_db.Entity.connection() as connection:
         # await async_db.drop_all_tables(connection)
