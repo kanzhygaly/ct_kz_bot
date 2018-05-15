@@ -37,7 +37,7 @@ CANCEL = "Cancel"
 
 async def get_wod():
     now = datetime.now()
-    print(now)
+    print(now.date())
 
     result = await wod.get_wods(now.date())
     if result:
@@ -52,16 +52,14 @@ async def get_wod():
     # Remove anything other than digits
     num = re.sub(r'\D', "", parser.get_wod_date())
     wod_date = datetime.strptime(num, '%m%d%y')
-    print(wod_date)
+    print(wod_date.date())
 
     if wod_date.date().__eq__(now.date()):
         title = parser.get_wod_date()
         regional = parser.get_regional_wod()
         description = regional + "\n" + parser.get_open_wod()
 
-        wod_id = None
-        if ''.join(regional.split()) == "2018REGIONALSATHLETESRest":
-            wod_id = await wod.add_wod(wod_date.date(), title, description)
+        wod_id = await wod.add_wod(wod_date.date(), title, description)
 
         return title + "\n\n" + description + "\n\n", wod_id
     else:
