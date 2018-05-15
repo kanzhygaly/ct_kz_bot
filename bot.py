@@ -138,7 +138,7 @@ async def add_wod_result(message: types.Message):
     data = await state.get_data()
 
     wod_id = data['wod_id']
-    await wod_result.add_wod_result(wod_id, message.from_user.id, message.text, datetime.now().timestamp())
+    await wod_result.add_wod_result(wod_id, message.from_user.id, message.text, datetime.now())
 
     await bot.send_message(message.chat.id, 'Ваш результат успешно добавлен!')
 
