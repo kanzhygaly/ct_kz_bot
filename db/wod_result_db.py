@@ -22,7 +22,7 @@ async def add_wod_result(wod_id, user_id, result, sys_date):
 
 
 async def get_wod_result(wod_id, user_id):
-    return await WodResult.get(record=False, wod_id=wod_id, user_id=user_id)[0]
+    return await WodResult.get(records=False, wod_id=wod_id, user_id=user_id)[0]
 
 
 async def get_one(_id):
