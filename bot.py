@@ -166,7 +166,7 @@ async def request_result_for_edit(message: types.Message):
     msg = 'Пожалуйста введите ваш результат'
 
     wod_result_id = data['wod_result_id']
-    wod_result = await wod_result_db.get_wod_result(id=wod_result_id)
+    wod_result = await wod_result_db.get_one(id=wod_result_id)
     if wod_result:
         msg = 'Ваш текущий результат:\n'
         msg += wod_result.result + '\n\n'
