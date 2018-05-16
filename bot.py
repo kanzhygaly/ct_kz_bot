@@ -108,7 +108,7 @@ async def send_wod(message: types.Message):
     res_button = ADD_RESULT
 
     if wod_id is not None:
-        result = await wod_result_db.get_wod_result(wod_id=wod_id, user_id=user_id)
+        result = await wod_result_db.get_user_wod_result(wod_id=wod_id, user_id=user_id)
         if result:
             res_button = EDIT_RESULT
 
@@ -116,7 +116,7 @@ async def send_wod(message: types.Message):
             await state.update_data(wod_id=wod_id)
             await state.set_state(WOD)
             if result:
-                await state.update_data(wod_result_id=result.id)
+                await state.update_data(wod_result_id=result[0].id)
 
     # Configure ReplyKeyboardMarkup
     reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
