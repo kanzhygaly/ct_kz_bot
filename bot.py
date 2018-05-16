@@ -181,7 +181,7 @@ async def edit_wod_result(message: types.Message):
     data = await state.get_data()
 
     wod_result_id = data['wod_result_id']
-    wod_result = await wod_result_db.get_wod_result(id=wod_result_id)
+    wod_result = await wod_result_db.get_one(id=wod_result_id)
     if wod_result:
         wod_result.sys_date = datetime.now()
         wod_result.result = message.text

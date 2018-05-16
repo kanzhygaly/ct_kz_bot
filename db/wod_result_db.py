@@ -25,5 +25,5 @@ async def get_wod_result(wod_id, user_id):
     return await WodResult.get_one(record=False, wod_id=wod_id, user_id=user_id)
 
 
-async def get_wod_result(id):
-    return await WodResult.get_one(record=False, id=id)
+async def get_one(_id):
+    return await WodResult.get_one(record=False, id=_id)
