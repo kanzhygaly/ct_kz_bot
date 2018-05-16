@@ -156,7 +156,8 @@ async def hide_keyboard(message: types.Message):
 
     msg = ''
     for res in await wod_result.get_wod_results(wod_id):
-        title = res.sys_date + ' от ' + res.user_id
+        u = user.get_user(res.user_id)
+        title = res.sys_date.strftime("%Y-%m-%d %H:%M:%S") + ' от ' + u.name + ' ' + u.surname
         msg += title + '\n' + res.result + '\n\n'
 
     await bot.send_message(message.chat.id, msg, reply_markup=types.ReplyKeyboardRemove())

@@ -24,3 +24,7 @@ async def is_user_exist(user_id):
 
 async def is_admin(user_id):
     return bool(await User.get_one(user_id=user_id, admin=True))
+
+
+async def get_user(user_id):
+    return await User.get_one(user_id=user_id)
