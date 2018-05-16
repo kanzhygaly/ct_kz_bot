@@ -212,11 +212,12 @@ async def echo(message: types.Message):
 
 @scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=2)
 async def scheduled_job():
-    print('This job runs everyday at 8am.')
+    print('This job runs everyday at 8am')
     subscribers = await subscriber_db.get_all_subscribers()
 
     msg, wod_id = await get_wod()
 
+    print('Sending WOD to ' + len(subscribers) + ' subscribers')
     for sub in subscribers:
         if wod_id is not None:
             with dp.current_state(chat=sub.user_id, user=sub.user_id) as state:
