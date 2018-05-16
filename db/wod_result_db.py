@@ -19,3 +19,11 @@ async def get_wod_results(wod_id):
 async def add_wod_result(wod_id, user_id, result, sys_date):
     entity = WodResult(wod_id=wod_id, user_id=user_id, result=result, sys_date=sys_date)
     await entity.save()
+
+
+async def get_wod_result(wod_id, user_id):
+    return await WodResult.get_one(record=False, wod_id=wod_id, user_id=user_id)
+
+
+async def get_wod_result(id):
+    return await WodResult.get_one(record=False, id=id)

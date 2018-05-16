@@ -29,8 +29,10 @@ info_msg = "CompTrainKZ BOT:\n\n" \
 # States
 WOD = 'wod'
 ADD_WOD_RESULT = 'add_wod_result'
+EDIT_WOD_RESULT = 'edit_wod_result'
 # Buttons
 ADD_RESULT = 'Add result'
+EDIT_RESULT = 'Edit result'
 SHOW_RESULTS = 'Show results'
 CANCEL = "Cancel"
 
@@ -103,14 +105,22 @@ async def unsubscribe(message: types.Message):
 async def send_wod(message: types.Message):
     msg, wod_id = await get_wod()
 
+    res_button = ADD_RESULT
+
     if wod_id is not None:
+        wod_result = await wod_result_db.get_wod_result(wod_id=wod_id, user_id=message.from_user.id)
+        if wod_result:
+            res_button = EDIT_RESULT
+
         with dp.current_state(chat=message.chat.id, user=message.from_user.id) as state:
             await state.update_data(wod_id=wod_id)
-            await  state.set_state(WOD)
+            await state.set_state(WOD)
+            if wod_result:
+                await state.update_data(wod_result_id=wod_result.id)
 
     # Configure ReplyKeyboardMarkup
     reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
-    reply_markup.add(ADD_RESULT, SHOW_RESULTS)
+    reply_markup.add(res_button, SHOW_RESULTS)
     reply_markup.add(CANCEL)
 
     await bot.send_message(message.chat.id, msg, reply_markup=reply_markup)
@@ -125,7 +135,7 @@ async def hide_keyboard(message: types.Message):
 
 
 @dp.message_handler(state=WOD, func=lambda message: message.text == ADD_RESULT)
-async def hide_keyboard(message: types.Message):
+async def request_result_for_add(message: types.Message):
     state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
     await state.set_state(ADD_WOD_RESULT)
 
@@ -147,8 +157,45 @@ async def add_wod_result(message: types.Message):
     await state.finish()
 
 
+@dp.message_handler(state=WOD, func=lambda message: message.text == EDIT_RESULT)
+async def request_result_for_edit(message: types.Message):
+    state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
+    await state.set_state(EDIT_WOD_RESULT)
+    data = await state.get_data()
+
+    msg = 'Пожалуйста введите ваш результат'
+
+    wod_result_id = data['wod_result_id']
+    wod_result = await wod_result_db.get_wod_result(id=wod_result_id)
+    if wod_result:
+        msg = 'Ваш текущий результат:\n'
+        msg += wod_result.result + '\n\n'
+        msg += 'Пожалуйста введите ваш новый результат'
+
+    await bot.send_message(message.chat.id, msg, reply_markup=types.ReplyKeyboardRemove())
+
+
+@dp.message_handler(state=EDIT_WOD_RESULT)
+async def edit_wod_result(message: types.Message):
+    state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
+    data = await state.get_data()
+
+    wod_result_id = data['wod_result_id']
+    wod_result = await wod_result_db.get_wod_result(id=wod_result_id)
+    if wod_result:
+        wod_result.sys_date = datetime.now()
+        wod_result.result = message.text
+        await wod_result.save()
+
+    await bot.send_message(message.chat.id, 'Ваш результат успешно бновлен!')
+
+    # Finish conversation
+    # WARNING! This method will destroy all data in storage for current user!
+    await state.finish()
+
+
 @dp.message_handler(state=WOD, func=lambda message: message.text == SHOW_RESULTS)
-async def hide_keyboard(message: types.Message):
+async def show_wod_results(message: types.Message):
     state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
     data = await state.get_data()
 
@@ -157,7 +204,7 @@ async def hide_keyboard(message: types.Message):
     msg = ''
     for res in await wod_result_db.get_wod_results(wod_id):
         u = await user_db.get_user(res.user_id)
-        title = res.sys_date.strftime("%H:%M:%S %Y-%m-%d") + ' от ' + u.name + ' ' + u.surname
+        title = u.name + ' ' + u.surname + ', ' + res.sys_date.strftime("%H:%M:%S %Y-%m-%d")
         msg += title + '\n' + res.result + '\n\n'
 
     await bot.send_message(message.chat.id, msg, reply_markup=types.ReplyKeyboardRemove())
