@@ -104,19 +104,19 @@ async def unsubscribe(message: types.Message):
 @dp.message_handler(func=lambda message: message.text and message.text.lower() in wod_requests)
 async def send_wod(message: types.Message):
     msg, wod_id = await get_wod()
-
+    user_id = message.from_user.id
     res_button = ADD_RESULT
 
     if wod_id is not None:
-        wod_result = await wod_result_db.get_wod_result(wod_id=wod_id, user_id=message.from_user.id)
-        if wod_result:
+        result = await wod_result_db.get_wod_result(wod_id=wod_id, user_id=user_id)
+        if result:
             res_button = EDIT_RESULT
 
-        with dp.current_state(chat=message.chat.id, user=message.from_user.id) as state:
+        with dp.current_state(chat=message.chat.id, user=user_id) as state:
             await state.update_data(wod_id=wod_id)
             await state.set_state(WOD)
-            if wod_result:
-                await state.update_data(wod_result_id=wod_result.id)
+            if result:
+                await state.update_data(wod_result_id=result.id)
 
     # Configure ReplyKeyboardMarkup
     reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
