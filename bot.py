@@ -9,7 +9,7 @@ from aiogram.utils import executor
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from bsoup_spider import BSoupParser
-from db import user, subscriber, wod, wod_result, async_db
+from db import user_db, subscriber_db, wod_db, wod_result_db, async_db
 
 bot = Bot(token=os.environ['API_TOKEN'])
 
@@ -39,7 +39,7 @@ async def get_wod():
     now = datetime.now()
     print(now.date())
 
-    result = await wod.get_wods(now.date())
+    result = await wod_db.get_wods(now.date())
     if result:
         wod_id = result[0].id
         title = result[0].title
@@ -59,7 +59,7 @@ async def get_wod():
         regional = parser.get_regional_wod()
         description = regional + "\n" + parser.get_open_wod()
 
-        wod_id = await wod.add_wod(wod_date.date(), title, description)
+        wod_id = await wod_db.add_wod(wod_date.date(), title, description)
 
         return title + "\n\n" + description + "\n\n", wod_id
     else:
@@ -68,9 +68,9 @@ async def get_wod():
 
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
-    if not await user.is_user_exist(message.from_user.id):
-        await user.add_user(message.from_user.id, message.from_user.first_name, message.from_user.last_name,
-                            message.from_user.language_code)
+    if not await user_db.is_user_exist(message.from_user.id):
+        await user_db.add_user(message.from_user.id, message.from_user.first_name, message.from_user.last_name,
+                               message.from_user.language_code)
 
     await bot.send_message(message.chat.id, info_msg + "/subscribe - подписаться на ежедневную рассылку WOD")
 
@@ -78,7 +78,7 @@ async def start(message: types.Message):
 @dp.message_handler(commands=['help'])
 async def send_info(message: types.Message):
     sub = "/subscribe - подписаться на ежедневную рассылку WOD"
-    if await subscriber.is_subscriber(message.from_user.id):
+    if await subscriber_db.is_subscriber(message.from_user.id):
         sub = "/unsubscribe - отписаться от ежедневной рассылки WOD"
 
     await bot.send_message(message.chat.id, info_msg + sub)
@@ -86,14 +86,14 @@ async def send_info(message: types.Message):
 
 @dp.message_handler(commands=['subscribe'])
 async def subscribe(message: types.Message):
-    await subscriber.add_subscriber(message.from_user.id)
+    await subscriber_db.add_subscriber(message.from_user.id)
 
     await bot.send_message(message.chat.id, 'Вы подписались на ежедневную рассылку WOD')
 
 
 @dp.message_handler(commands=['unsubscribe'])
 async def unsubscribe(message: types.Message):
-    await subscriber.unsubscribe(message.from_user.id)
+    await subscriber_db.unsubscribe(message.from_user.id)
 
     await bot.send_message(message.chat.id, 'Вы отписались от ежедневной рассылки WOD')
 
@@ -138,7 +138,7 @@ async def add_wod_result(message: types.Message):
     data = await state.get_data()
 
     wod_id = data['wod_id']
-    await wod_result.add_wod_result(wod_id, message.from_user.id, message.text, datetime.now())
+    await wod_result_db.add_wod_result(wod_id, message.from_user.id, message.text, datetime.now())
 
     await bot.send_message(message.chat.id, 'Ваш результат успешно добавлен!')
 
@@ -155,8 +155,8 @@ async def hide_keyboard(message: types.Message):
     wod_id = data['wod_id']
 
     msg = ''
-    for res in await wod_result.get_wod_results(wod_id):
-        u = user.get_user(res.user_id)
+    for res in await wod_result_db.get_wod_results(wod_id):
+        u = await user_db.get_user(res.user_id)
         title = res.sys_date.strftime("%Y-%m-%d %H:%M:%S") + ' от ' + u.name + ' ' + u.surname
         msg += title + '\n' + res.result + '\n\n'
 
@@ -173,7 +173,7 @@ async def find_wod(message: types.Message):
         num = re.sub(r'\D', "", message.get_args()[0])
         wod_date = datetime.strptime(num, '%d%m%y')
 
-        result = await wod.get_wods(wod_date)
+        result = await wod_db.get_wods(wod_date)
         if result:
             with dp.current_state(chat=message.chat.id, user=message.from_user.id) as state:
                 await state.update_data(wod_id=result[0].id)
@@ -204,7 +204,7 @@ async def echo(message: types.Message):
     else:
         # send info
         sub = "/subscribe - подписаться на ежедневную рассылку WOD"
-        if await subscriber.is_subscriber(message.from_user.id):
+        if await subscriber_db.is_subscriber(message.from_user.id):
             sub = "/unsubscribe - отписаться от ежедневной рассылки WOD"
 
         await message.reply(info_msg + sub)
@@ -213,7 +213,7 @@ async def echo(message: types.Message):
 @scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=2)
 async def scheduled_job():
     print('This job runs everyday at 8am.')
-    subscribers = await subscriber.get_all_subscribers()
+    subscribers = await subscriber_db.get_all_subscribers()
 
     msg, wod_id = await get_wod()
 
