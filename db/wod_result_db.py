@@ -25,11 +25,10 @@ async def get_user_wod_result(wod_id, user_id):
     async with WodResult.connection() as conn:
         async with conn.transaction():
             stmt = select(WodResult)
-            where_str = 'SELECT * FROM wod_result WHERE wod_id = $1 AND user_id = $2'
+            where_str = 'wod_result.wod_id = $1 AND wod_result.user_id = $2'
             args = (wod_id, user_id)
             stmt.set_statement('where', f'WHERE {where_str}', args)
             print(stmt.query_string())
-            print(stmt.query_args())
             res = await conn.fetchrow(*stmt)
             return WodResult.from_record(res)
 
