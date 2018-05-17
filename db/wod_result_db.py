@@ -32,5 +32,5 @@ async def get_user_wod_result(wod_id, user_id):
             return None if res is None else WodResult.from_record(res)
 
 
-async def get_one(wod_result_id):
-    return await WodResult.get_one(record=False, _id=wod_result_id)
+async def get_wod_result(wod_result_id):
+    return await WodResult.get_one(record=False, id=wod_result_id)

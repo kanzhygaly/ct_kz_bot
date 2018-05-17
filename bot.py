@@ -44,7 +44,7 @@ async def get_wod():
 
     result = await wod_db.get_wods(now.date())
     if result:
-        wod_id = result[0]._id
+        wod_id = result[0].id
         title = result[0].title
         description = result[0].description
 
@@ -116,7 +116,7 @@ async def send_wod(message: types.Message):
         wod_result = await wod_result_db.get_user_wod_result(wod_id=wod_id, user_id=user_id)
         if wod_result:
             res_button = EDIT_RESULT
-            await state.update_data(wod_result_id=wod_result._id)
+            await state.update_data(wod_result_id=wod_result.id)
 
     # Configure ReplyKeyboardMarkup
     reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
@@ -166,7 +166,7 @@ async def request_result_for_edit(message: types.Message):
     msg = 'Пожалуйста введите ваш результат'
 
     wod_result_id = data['wod_result_id']
-    wod_result = await wod_result_db.get_one(_id=wod_result_id)
+    wod_result = await wod_result_db.get_wod_result(wod_result_id=wod_result_id)
     if wod_result:
         msg = 'Ваш текущий результат:\n'
         msg += wod_result.result + '\n\n'
@@ -181,7 +181,7 @@ async def edit_wod_result(message: types.Message):
     data = await state.get_data()
 
     wod_result_id = data['wod_result_id']
-    wod_result = await wod_result_db.get_one(_id=wod_result_id)
+    wod_result = await wod_result_db.get_wod_result(wod_result_id=wod_result_id)
     if wod_result:
         wod_result.sys_date = datetime.now()
         wod_result.result = message.text
@@ -233,7 +233,7 @@ async def find_wod(message: types.Message):
 
     wods = await wod_db.get_wods(search_date)
     if wods:
-        wod_id = wods[0]._id
+        wod_id = wods[0].id
         title = wods[0].title
         description = wods[0].description
         user_id = message.from_user.id
@@ -246,7 +246,7 @@ async def find_wod(message: types.Message):
         wod_result = await wod_result_db.get_user_wod_result(wod_id=wod_id, user_id=user_id)
         if wod_result:
             res_button = EDIT_RESULT
-            await state.update_data(wod_result_id=wod_result._id)
+            await state.update_data(wod_result_id=wod_result.id)
 
         # Configure ReplyKeyboardMarkup
         reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
