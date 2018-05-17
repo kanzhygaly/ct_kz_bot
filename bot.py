@@ -166,7 +166,7 @@ async def request_result_for_edit(message: types.Message):
     msg = 'Пожалуйста введите ваш результат'
 
     wod_result_id = data['wod_result_id']
-    wod_result = await wod_result_db.get_one(id=wod_result_id)
+    wod_result = await wod_result_db.get_one(_id=wod_result_id)
     if wod_result:
         msg = 'Ваш текущий результат:\n'
         msg += wod_result.result + '\n\n'
@@ -181,7 +181,7 @@ async def edit_wod_result(message: types.Message):
     data = await state.get_data()
 
     wod_result_id = data['wod_result_id']
-    wod_result = await wod_result_db.get_one(id=wod_result_id)
+    wod_result = await wod_result_db.get_one(_id=wod_result_id)
     if wod_result:
         wod_result.sys_date = datetime.now()
         wod_result.result = message.text
