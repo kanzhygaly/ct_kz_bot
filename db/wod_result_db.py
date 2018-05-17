@@ -33,5 +33,4 @@ async def get_user_wod_result(wod_id, user_id):
 
 
 async def get_one(wod_result_id):
-    res = await WodResult.get_one(id=wod_result_id)
-    return WodResult.from_record(res)
+    return await WodResult.get_one(record=False, _id=wod_result_id)
