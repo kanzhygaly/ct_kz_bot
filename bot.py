@@ -204,7 +204,7 @@ async def show_wod_results(message: types.Message):
     msg = ''
     for res in await wod_result_db.get_wod_results(wod_id):
         u = await user_db.get_user(res.user_id)
-        title = u.name + ' ' + u.surname + ', ' + res.sys_date.strftime("%H:%M:%S %Y-%m-%d")
+        title = u.name + ' ' + u.surname + ', ' + res.sys_date.strftime("%H:%M:%S %d %B %Y")
         msg += title + '\n' + res.result + '\n\n'
 
     await bot.send_message(message.chat.id, msg, reply_markup=types.ReplyKeyboardRemove())
