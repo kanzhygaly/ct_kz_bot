@@ -30,6 +30,7 @@ info_msg = "CompTrainKZ BOT:\n\n" \
 WOD = 'wod'
 ADD_WOD_RESULT = 'add_wod_result'
 EDIT_WOD_RESULT = 'edit_wod_result'
+FIND_WOD = 'find_wod'
 # Buttons
 ADD_RESULT = 'Add result'
 EDIT_RESULT = 'Edit result'
@@ -63,7 +64,7 @@ async def get_wod():
 
         wod_id = await wod_db.add_wod(wod_date.date(), title, description)
 
-        return title + "\n\n" + description + "\n\n", wod_id
+        return title + "\n\n" + description, wod_id
     else:
         return "Комплекс еще не вышел.\nСорян :(", None
 
@@ -108,15 +109,14 @@ async def send_wod(message: types.Message):
     res_button = ADD_RESULT
 
     if wod_id is not None:
-        result = await wod_result_db.get_user_wod_result(wod_id=wod_id, user_id=user_id)
-        if result:
-            res_button = EDIT_RESULT
+        state = dp.current_state(chat=message.chat.id, user=user_id)
+        await state.update_data(wod_id=wod_id)
+        await state.set_state(WOD)
 
-        with dp.current_state(chat=message.chat.id, user=user_id) as state:
-            await state.update_data(wod_id=wod_id)
-            await state.set_state(WOD)
-            if result:
-                await state.update_data(wod_result_id=result.id)
+        wod_result = await wod_result_db.get_user_wod_result(wod_id=wod_id, user_id=user_id)
+        if wod_result:
+            res_button = EDIT_RESULT
+            await state.update_data(wod_result_id=wod_result.id)
 
     # Configure ReplyKeyboardMarkup
     reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
@@ -187,7 +187,7 @@ async def edit_wod_result(message: types.Message):
         wod_result.result = message.text
         await wod_result.save()
 
-    await bot.send_message(message.chat.id, 'Ваш результат успешно бновлен!')
+    await bot.send_message(message.chat.id, 'Ваш результат успешно обновлен!')
 
     # Finish conversation
     # WARNING! This method will destroy all data in storage for current user!
@@ -215,20 +215,45 @@ async def show_wod_results(message: types.Message):
 
 
 @dp.message_handler(commands=['find'])
+async def find(message: types.Message):
+    state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
+    await state.set_state(FIND_WOD)
+
+    await bot.send_message(message.chat.id, 'Пожалуйста введите дату в формате день-месяц-год'
+                                            '\nПример: 17-05-2018')
+
+
+@dp.message_handler(state=FIND_WOD)
 async def find_wod(message: types.Message):
-    if message.get_args():
-        num = re.sub(r'\D', "", message.get_args()[0])
-        wod_date = datetime.strptime(num, '%d%m%y')
+    try:
+        search_date = datetime.strptime(message.text, '%d-%m-%Y')
+    except ValueError:
+        return await bot.send_message(message.chat.id, 'Пожалуйста введите дату в формате день-месяц-год'
+                                                       '\nПример: 17-05-2018')
 
-        result = await wod_db.get_wods(wod_date)
-        if result:
-            with dp.current_state(chat=message.chat.id, user=message.from_user.id) as state:
-                await state.update_data(wod_id=result[0].id)
+    wods = await wod_db.get_wods(search_date)
+    if wods:
+        wod_id = wods[0].id
+        title = wods[0].title
+        description = wods[0].description
+        user_id = message.from_user.id
+        res_button = ADD_RESULT
 
-            title = result[0].title
-            description = result[0].description
+        state = dp.current_state(chat=message.chat.id, user=user_id)
+        await state.update_data(wod_id=wod_id)
+        await state.set_state(WOD)
 
-            await bot.send_message(message.chat.id, title + "\n\n" + description)
+        wod_result = await wod_result_db.get_user_wod_result(wod_id=wod_id, user_id=user_id)
+        if wod_result:
+            res_button = EDIT_RESULT
+            await state.update_data(wod_result_id=wod_result.id)
+
+        # Configure ReplyKeyboardMarkup
+        reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+        reply_markup.add(res_button, SHOW_RESULTS)
+        reply_markup.add(CANCEL)
+
+        await bot.send_message(message.chat.id, title + "\n\n" + description, reply_markup=reply_markup)
 
 
 @dp.message_handler()
@@ -264,7 +289,7 @@ async def scheduled_job():
 
     msg, wod_id = await get_wod()
 
-    print('Sending WOD to {} subscribers'.format(len(subscribers)))
+    print(f'Sending WOD to {len(subscribers)} subscribers')
     for sub in subscribers:
         if wod_id is not None:
             with dp.current_state(chat=sub.user_id, user=sub.user_id) as state:
