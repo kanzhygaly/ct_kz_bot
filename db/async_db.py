@@ -17,7 +17,7 @@ manager = PoolManager(
 
 
 class Entity(AsyncModel, connection=manager):
-    id = Column(default=uuid.uuid4, primary_key=True)
+    id = Column(key='id', default=uuid.uuid4, primary_key=True)
 
 
 async def drop_all_tables(connection) -> None:
