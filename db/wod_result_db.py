@@ -23,15 +23,13 @@ async def add_wod_result(wod_id, user_id, result, sys_date):
 
 async def get_user_wod_result(wod_id, user_id):
     async with WodResult.connection() as conn:
-        stmt = select(WodResult)
-        # print(stmt.query_string())
-        stmt.where(wod_id=wod_id, user_id=user_id)
-        print(stmt.query_string())
-        print(stmt)
-
-    for result in await WodResult.get(records=False, wod_id=wod_id):
-        if result.user_id == user_id:
-            return result
+        async with conn.transaction():
+            stmt = select(WodResult)
+            where_str = 'SELECT wod_result.wod_id, wod_result.user_id, wod_result.result, wod_result.sys_date,' \
+                        'wod_result.id FROM wod_result WHERE wod_result.wod_id = $1 AND wod_result.user_id = $2'
+            args = (wod_id, user_id)
+            stmt.set_statement('where', f'WHERE {where_str}', args)
+            return await conn.fetchrow(*stmt)
 
 
 async def get_one(_id):
