@@ -29,7 +29,6 @@ async def get_user_wod_result(wod_id, user_id):
             args = (wod_id, user_id)
             stmt.set_statement('where', f'WHERE {where_str}', args)
             res = await conn.fetchrow(*stmt)
-            print(res)
             return None if res is None else WodResult.from_record(res)
 
 

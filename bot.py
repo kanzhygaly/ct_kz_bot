@@ -116,7 +116,7 @@ async def send_wod(message: types.Message):
             await state.update_data(wod_id=wod_id)
             await state.set_state(WOD)
             if result:
-                await state.update_data(wod_result_id=result[0].id)
+                await state.update_data(wod_result_id=result.id)
 
     # Configure ReplyKeyboardMarkup
     reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
