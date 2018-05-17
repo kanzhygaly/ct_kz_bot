@@ -264,7 +264,7 @@ async def scheduled_job():
 
     msg, wod_id = await get_wod()
 
-    print('Sending WOD to ' + len(subscribers) + ' subscribers')
+    print('Sending WOD to {} subscribers'.format(len(subscribers)))
     for sub in subscribers:
         if wod_id is not None:
             with dp.current_state(chat=sub.user_id, user=sub.user_id) as state:

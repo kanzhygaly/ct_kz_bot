@@ -1,4 +1,4 @@
-from asyncpg_simpleorm import Column
+from asyncpg_simpleorm import Column, select
 
 from db.async_db import Entity
 
@@ -22,7 +22,16 @@ async def add_wod_result(wod_id, user_id, result, sys_date):
 
 
 async def get_user_wod_result(wod_id, user_id):
-    return await WodResult.get(records=False, wod_id=wod_id, user_id=user_id)
+    async with WodResult.connection() as conn:
+        stmt = select(WodResult)
+        print(stmt.query_string())
+        stmt.where(wod_id=wod_id, user_id=user_id)
+        print(stmt.query_string())
+        # return await conn.
+
+    for result in await WodResult.get(record=False, wod_id=wod_id):
+        if result.user_id == user_id:
+            return result
 
 
 async def get_one(_id):
