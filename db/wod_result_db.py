@@ -22,7 +22,6 @@ async def add_wod_result(wod_id, user_id, result, sys_date):
 
 
 async def get_user_wod_result(wod_id, user_id):
-    WodResult._parse_records(False)
     async with WodResult.connection() as conn:
         async with conn.transaction():
             stmt = select(WodResult)
@@ -32,7 +31,7 @@ async def get_user_wod_result(wod_id, user_id):
             print(stmt.query_string())
             res = await conn.fetchrow(*stmt)
             print(res)
-            return WodResult.from_record(res)
+            return res
 
 
 async def get_one(_id):
