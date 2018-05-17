@@ -25,11 +25,12 @@ async def get_user_wod_result(wod_id, user_id):
     async with WodResult.connection() as conn:
         async with conn.transaction():
             stmt = select(WodResult)
-            where_str = 'SELECT wod_result.wod_id, wod_result.user_id, wod_result.result, wod_result.sys_date,' \
-                        'wod_result.id FROM wod_result WHERE wod_result.wod_id = $1 AND wod_result.user_id = $2'
+            where_str = '''SELECT wod_result.wod_id, wod_result.user_id, wod_result.result, wod_result.sys_date, 
+                        wod_result.id FROM wod_result WHERE wod_result.wod_id = $1 AND wod_result.user_id = $2'''
             args = (wod_id, user_id)
             stmt.set_statement('where', f'WHERE {where_str}', args)
-            return await conn.fetchrow(*stmt)
+            res = await conn.fetchrow(*stmt)
+            return WodResult.from_record(res)
 
 
 async def get_one(_id):
