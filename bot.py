@@ -2,6 +2,7 @@ import os
 import re
 from datetime import datetime
 
+import pytz
 import requests
 from aiogram import Bot, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
@@ -12,7 +13,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 import utils
 from bsoup_spider import BSoupParser
-from db import user_db, subscriber_db, wod_db, wod_result_db, async_db
+from db import user_db, subscriber_db, wod_db, wod_result_db, async_db, location_db
 
 bot = Bot(token=os.environ['API_TOKEN'])
 
@@ -28,7 +29,7 @@ info_msg = "CompTrainKZ BOT:\n\n" \
            "/help - справочник\n\n" \
            "/wod - комплекс дня\n\n" \
            "/find - найти комплекс\n\n" \
-           "/timezone - установить часовой пояс\n\n"
+           "/timezone - установить часовой пояс\n\n\n"
 
 # States
 WOD = 'wod'
@@ -287,15 +288,24 @@ async def set_timezone(message: types.Message):
 
 @dp.message_handler(state=SET_TIMEZONE, content_types=types.ContentType.LOCATION)
 async def set_location(message: types.Message):
-    state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
+    user_id = message.from_user.id
+    latitude = message.location.latitude
+    longitude = message.location.longitude
+    state = dp.current_state(chat=message.chat.id, user=user_id)
 
-    print("Location of %s: %f / %f", message.from_user.first_name,
-          message.location.latitude, message.location.longitude)
+    timezone_id = await utils.get_timezone_id(latitude=message.location.latitude,
+                                              longitude=message.location.longitude)
 
-    timezone_id = await utils.get_timezone_id(latitude=message.location.latitude, longitude=message.location.longitude)
-    print(timezone_id)
+    now = datetime.now(pytz.timezone(timezone_id))
 
-    await bot.send_message(message.chat.id, 'Ваш часовой пояс установлен как ')
+    print("%s: location(%f / %f), timezone(%s), now(%f)", message.from_user.first_name,
+          latitude, longitude, timezone_id, now)
+
+    location_db.merge(user_id=user_id, latitude=latitude, longitude=longitude,
+                      locale=message.from_user.language_code, timezone=timezone_id)
+
+    await bot.send_message(message.chat.id, 'Ваш часовой пояс установлен как ' + timezone_id,
+                           reply_markup=types.ReplyKeyboardRemove())
 
     # Finish conversation, destroy all data in storage for current user
     await state.finish()
@@ -346,7 +356,7 @@ async def scheduled_job():
 async def startup(dispatcher: Dispatcher):
     print('Startup CompTrainKZ Bot...')
     async with async_db.Entity.connection() as connection:
-        await async_db.drop_all_tables(connection)
+        # await async_db.drop_all_tables(connection)
         await async_db.create_all_tables(connection)
 
 
