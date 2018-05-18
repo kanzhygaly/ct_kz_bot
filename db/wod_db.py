@@ -1,3 +1,5 @@
+import uuid
+
 from asyncpg_simpleorm import Column
 
 from db.async_db import Entity
@@ -6,6 +8,7 @@ from db.async_db import Entity
 class WOD(Entity):
     __tablename__ = 'wod'
 
+    id = Column(default=uuid.uuid4, primary_key=True)
     wod_day = Column()
     title = Column()
     description = Column()

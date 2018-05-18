@@ -2,6 +2,7 @@ import os
 import re
 from datetime import datetime
 
+import requests
 from aiogram import Bot, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import Dispatcher
@@ -9,6 +10,7 @@ from aiogram.types import ParseMode
 from aiogram.utils import executor
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
+import utils
 from bsoup_spider import BSoupParser
 from db import user_db, subscriber_db, wod_db, wod_result_db, async_db
 
@@ -26,7 +28,7 @@ info_msg = "CompTrainKZ BOT:\n\n" \
            "/help - справочник\n\n" \
            "/wod - комплекс дня\n\n" \
            "/find - найти комплекс\n\n" \
-           "/timezone - установить свой часовой пояс\n\n"
+           "/timezone - установить часовой пояс\n\n"
 
 # States
 WOD = 'wod'
@@ -35,11 +37,10 @@ EDIT_WOD_RESULT = 'edit_wod_result'
 FIND_WOD = 'find_wod'
 SET_TIMEZONE = 'set_timezone'
 # Buttons
-ADD_RESULT = 'Add result'
-EDIT_RESULT = 'Edit result'
-SHOW_RESULTS = 'Show results'
-LOCATION = 'Location'
-CANCEL = "Cancel"
+ADD_RESULT = 'Добавить'
+EDIT_RESULT = 'Изменить'
+SHOW_RESULTS = 'Результаты'
+CANCEL = "Отмена"
 
 
 async def get_wod():
@@ -233,17 +234,17 @@ async def find(message: types.Message):
     state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
     await state.set_state(FIND_WOD)
 
-    await bot.send_message(message.chat.id, 'Пожалуйста введите дату в формате *день-месяц-год*'
-                                            '\n\n_Пример: 17-05-2018_', parse_mode=ParseMode.MARKDOWN)
+    await bot.send_message(message.chat.id, 'Пожалуйста введите дату в формате *ДеньМесяцГод*'
+                                            '\n\n_Пример: 170518_', parse_mode=ParseMode.MARKDOWN)
 
 
 @dp.message_handler(state=FIND_WOD)
 async def find_wod(message: types.Message):
     try:
-        search_date = datetime.strptime(message.text, '%d-%m-%Y')
+        search_date = datetime.strptime(message.text, '%d%m%y')
     except ValueError:
-        return await bot.send_message(message.chat.id, 'Пожалуйста введите дату в формате *день-месяц-год*'
-                                                       '\n\n_Пример: 17-05-2018_', parse_mode=ParseMode.MARKDOWN)
+        return await bot.send_message(message.chat.id, 'Пожалуйста введите дату в формате *ДеньМесяцГод*'
+                                                       '\n\n_Пример: 170518_', parse_mode=ParseMode.MARKDOWN)
 
     wods = await wod_db.get_wods(search_date)
     if wods:
@@ -275,7 +276,7 @@ async def set_timezone(message: types.Message):
     state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
     await state.set_state(SET_TIMEZONE)
 
-    loc_btn = types.KeyboardButton(text=LOCATION, request_location=True)
+    loc_btn = types.KeyboardButton(text="Локация", request_location=True)
     reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
     reply_markup.insert(loc_btn)
     reply_markup.add(CANCEL)
@@ -284,11 +285,15 @@ async def set_timezone(message: types.Message):
                                             "правильный часовой пояс", reply_markup=reply_markup)
 
 
-@dp.message_handler(state=SET_TIMEZONE, func=lambda message: message.text == LOCATION)
+@dp.message_handler(state=SET_TIMEZONE, content_types=types.ContentType.LOCATION)
 async def set_location(message: types.Message):
     state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
 
-    print(message.text)
+    print("Location of %s: %f / %f", message.from_user.first_name,
+          message.location.latitude, message.location.longitude)
+
+    timezone_id = await utils.get_timezone_id(latitude=message.location.latitude, longitude=message.location.longitude)
+    print(timezone_id)
 
     await bot.send_message(message.chat.id, 'Ваш часовой пояс установлен как ')
 
@@ -341,7 +346,7 @@ async def scheduled_job():
 async def startup(dispatcher: Dispatcher):
     print('Startup CompTrainKZ Bot...')
     async with async_db.Entity.connection() as connection:
-        # await async_db.drop_all_tables(connection)
+        await async_db.drop_all_tables(connection)
         await async_db.create_all_tables(connection)
 
 

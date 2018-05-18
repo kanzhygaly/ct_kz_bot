@@ -1,7 +1,6 @@
 import os
-import uuid
 
-from asyncpg_simpleorm import PoolManager, Column, AsyncModel
+from asyncpg_simpleorm import PoolManager, AsyncModel
 
 from db import db_utils
 
@@ -17,7 +16,9 @@ manager = PoolManager(
 
 
 class Entity(AsyncModel, connection=manager):
-    id = Column(default=uuid.uuid4, primary_key=True)
+    """
+    Base Entity Class with ID column
+    """
 
 
 async def drop_all_tables(connection) -> None:
@@ -30,6 +31,7 @@ async def drop_all_tables(connection) -> None:
             DROP TABLE IF EXISTS wod;
             DROP TABLE IF EXISTS subscribers;
             DROP TABLE IF EXISTS users;
+            DROP TABLE IF EXISTS location;
         ''')
 
 
@@ -41,21 +43,24 @@ async def create_all_tables(connection) -> None:
             CREATE TABLE IF NOT EXISTS subscribers (id uuid PRIMARY KEY, user_id BIGINT);
 
             CREATE TABLE IF NOT EXISTS wod (id uuid PRIMARY KEY, wod_day date, title VARCHAR(150),
-            description text);
+            description TEXT);
 
-            CREATE TABLE IF NOT EXISTS wod_ru (wod_id uuid not null, title VARCHAR(150),
-            description text);
+            CREATE TABLE IF NOT EXISTS wod_ru (wod_id uuid PRIMARY KEY, title VARCHAR(150),
+            description TEXT);
 
             CREATE TABLE IF NOT EXISTS wod_result (id uuid PRIMARY KEY, wod_id uuid not null,
-            user_id BIGINT, result VARCHAR(200), sys_date TIMESTAMP);
+            user_id BIGINT, result TEXT, sys_date TIMESTAMP);
 
             CREATE TABLE IF NOT EXISTS benchmark (id uuid PRIMARY KEY, title VARCHAR(150),
-            description text, result_type VARCHAR(50));
+            description TEXT, result_type VARCHAR(50));
 
-            CREATE TABLE IF NOT EXISTS benchmark_ru (benchmark_id uuid not null,
-            title VARCHAR(150), description text);
+            CREATE TABLE IF NOT EXISTS benchmark_ru (benchmark_id uuid  PRIMARY KEY,
+            title VARCHAR(150), description TEXT);
 
             CREATE TABLE IF NOT EXISTS benchmark_result (id uuid PRIMARY KEY, benchmark_id uuid not null,
             wod_day date, user_id BIGINT, result VARCHAR(200), sys_date TIMESTAMP);
+            
+            CREATE TABLE IF NOT EXISTS location (user_id BIGINT PRIMARY KEY, longitude FLOAT,
+            latitude FLOAT, locale VARCHAR(10), tz VARCHAR(200));
         ''')
 

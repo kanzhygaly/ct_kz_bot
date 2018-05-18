@@ -1,3 +1,5 @@
+import uuid
+
 from asyncpg_simpleorm import Column, select
 
 from db.async_db import Entity
@@ -6,6 +8,7 @@ from db.async_db import Entity
 class WodResult(Entity):
     __tablename__ = 'wod_result'
 
+    id = Column(default=uuid.uuid4, primary_key=True)
     wod_id = Column()
     user_id = Column()
     result = Column()

@@ -1,3 +1,5 @@
+import uuid
+
 from asyncpg_simpleorm import Column
 
 from db.async_db import Entity
@@ -6,6 +8,7 @@ from db.async_db import Entity
 class Subscriber(Entity):
     __tablename__ = 'subscribers'
 
+    id = Column(default=uuid.uuid4, primary_key=True)
     user_id = Column()
 
 
