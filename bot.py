@@ -220,8 +220,13 @@ async def show_wod_results(message: types.Message):
     msg = ''
     for res in await wod_result_db.get_wod_results(wod_id):
         u = await user_db.get_user(res.user_id)
+
         location = await location_db.get_location(res.user_id)
-        dt = res.sys_date.astimezone(pytz.timezone(location.tz))
+        if location:
+            dt = res.sys_date.astimezone(pytz.timezone(location.tz))
+        else:
+            dt = res.sys_date
+
         title = '_' + u.name + ' ' + u.surname + ', ' + dt.strftime("%H:%M:%S %d %B %Y") + '_'
         msg += title + '\n' + res.result + '\n\n'
 
