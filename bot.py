@@ -220,7 +220,9 @@ async def show_wod_results(message: types.Message):
     msg = ''
     for res in await wod_result_db.get_wod_results(wod_id):
         u = await user_db.get_user(res.user_id)
-        title = '_' + u.name + ' ' + u.surname + ', ' + res.sys_date.strftime("%H:%M:%S %d %B %Y") + '_'
+        location = await location_db.get_location(res.user_id)
+        dt = res.sys_date.astimezone(pytz.timezone(location.tz))
+        title = '_' + u.name + ' ' + u.surname + ', ' + dt.strftime("%H:%M:%S %d %B %Y") + '_'
         msg += title + '\n' + res.result + '\n\n'
 
     await bot.send_message(message.chat.id, msg, reply_markup=types.ReplyKeyboardRemove(),
@@ -297,12 +299,10 @@ async def set_location(message: types.Message):
                                               longitude=message.location.longitude)
 
     now = datetime.now(pytz.timezone(timezone_id))
+    print(message.from_user.first_name, latitude, longitude, timezone_id, now)
 
-    print("%s: location(%f / %f), timezone(%s), now(%f)", message.from_user.first_name,
-          latitude, longitude, timezone_id, now)
-
-    location_db.merge(user_id=user_id, latitude=latitude, longitude=longitude,
-                      locale=message.from_user.language_code, timezone=timezone_id)
+    await location_db.merge(user_id=user_id, latitude=latitude, longitude=longitude,
+                            locale=message.from_user.language_code, timezone=timezone_id)
 
     await bot.send_message(message.chat.id, 'Ваш часовой пояс установлен как ' + timezone_id,
                            reply_markup=types.ReplyKeyboardRemove())
