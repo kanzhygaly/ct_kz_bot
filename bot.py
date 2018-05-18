@@ -5,6 +5,7 @@ from datetime import datetime
 from aiogram import Bot, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import Dispatcher
+from aiogram.types import ParseMode
 from aiogram.utils import executor
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
@@ -24,17 +25,20 @@ wod_requests = ['чтс', 'что там сегодня?', 'тренировка
 info_msg = "CompTrainKZ BOT:\n\n" \
            "/help - справочник\n\n" \
            "/wod - комплекс дня\n\n" \
-           "/find - найти комплекс\n\n"
+           "/find - найти комплекс\n\n" \
+           "/timezone - установить свой часовой пояс\n\n"
 
 # States
 WOD = 'wod'
 ADD_WOD_RESULT = 'add_wod_result'
 EDIT_WOD_RESULT = 'edit_wod_result'
 FIND_WOD = 'find_wod'
+SET_TIMEZONE = 'set_timezone'
 # Buttons
 ADD_RESULT = 'Add result'
 EDIT_RESULT = 'Edit result'
 SHOW_RESULTS = 'Show results'
+LOCATION = 'Location'
 CANCEL = "Cancel"
 
 
@@ -71,11 +75,17 @@ async def get_wod():
 
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
-    if not await user_db.is_user_exist(message.from_user.id):
-        await user_db.add_user(message.from_user.id, message.from_user.first_name, message.from_user.last_name,
+    user_id = message.from_user.id
+
+    if not await user_db.is_user_exist(user_id):
+        await user_db.add_user(user_id, message.from_user.first_name, message.from_user.last_name,
                                message.from_user.language_code)
 
-    await bot.send_message(message.chat.id, info_msg + "/subscribe - подписаться на ежедневную рассылку WOD")
+    sub = "/subscribe - подписаться на ежедневную рассылку WOD"
+    if await subscriber_db.is_subscriber(user_id):
+        sub = "/unsubscribe - отписаться от ежедневной рассылки WOD"
+
+    await bot.send_message(message.chat.id, info_msg + sub)
 
 
 @dp.message_handler(commands=['help'])
@@ -126,12 +136,12 @@ async def send_wod(message: types.Message):
     await bot.send_message(message.chat.id, msg, reply_markup=reply_markup)
 
 
-@dp.message_handler(state=WOD, func=lambda message: message.text == CANCEL)
+@dp.message_handler(state='*', func=lambda message: message.text.lower() == CANCEL.lower())
 async def hide_keyboard(message: types.Message):
     state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
     # reset
     await state.reset_state(with_data=True)
-    await bot.send_message(message.chat.id, '', reply_markup=types.ReplyKeyboardRemove())
+    await bot.send_message(message.chat.id, info_msg, reply_markup=types.ReplyKeyboardRemove())
 
 
 @dp.message_handler(state=WOD, func=lambda message: message.text == ADD_RESULT)
@@ -139,7 +149,10 @@ async def request_result_for_add(message: types.Message):
     state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
     await state.set_state(ADD_WOD_RESULT)
 
-    await bot.send_message(message.chat.id, 'Пожалуйста введите ваш результат', reply_markup=types.ReplyKeyboardRemove())
+    reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+    reply_markup.add(CANCEL)
+
+    await bot.send_message(message.chat.id, 'Пожалуйста введите ваш результат', reply_markup=reply_markup)
 
 
 @dp.message_handler(state=ADD_WOD_RESULT)
@@ -152,8 +165,7 @@ async def add_wod_result(message: types.Message):
 
     await bot.send_message(message.chat.id, 'Ваш результат успешно добавлен!')
 
-    # Finish conversation
-    # WARNING! This method will destroy all data in storage for current user!
+    # Finish conversation, destroy all data in storage for current user
     await state.finish()
 
 
@@ -168,11 +180,14 @@ async def request_result_for_edit(message: types.Message):
     wod_result_id = data['wod_result_id']
     wod_result = await wod_result_db.get_wod_result(wod_result_id=wod_result_id)
     if wod_result:
-        msg = 'Ваш текущий результат:\n'
-        msg += wod_result.result + '\n\n'
-        msg += 'Пожалуйста введите ваш новый результат'
+        msg = 'Ваш текущий результат:\n\n_'\
+              + wod_result.result +\
+              '_\n\nПожалуйста введите ваш новый результат'
 
-    await bot.send_message(message.chat.id, msg, reply_markup=types.ReplyKeyboardRemove())
+    reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+    reply_markup.add(CANCEL)
+
+    await bot.send_message(message.chat.id, msg, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
 
 
 @dp.message_handler(state=EDIT_WOD_RESULT)
@@ -189,8 +204,7 @@ async def edit_wod_result(message: types.Message):
 
     await bot.send_message(message.chat.id, 'Ваш результат успешно обновлен!')
 
-    # Finish conversation
-    # WARNING! This method will destroy all data in storage for current user!
+    # Finish conversation, destroy all data in storage for current user
     await state.finish()
 
 
@@ -204,13 +218,13 @@ async def show_wod_results(message: types.Message):
     msg = ''
     for res in await wod_result_db.get_wod_results(wod_id):
         u = await user_db.get_user(res.user_id)
-        title = u.name + ' ' + u.surname + ', ' + res.sys_date.strftime("%H:%M:%S %d %B %Y")
+        title = '_' + u.name + ' ' + u.surname + ', ' + res.sys_date.strftime("%H:%M:%S %d %B %Y") + '_'
         msg += title + '\n' + res.result + '\n\n'
 
-    await bot.send_message(message.chat.id, msg, reply_markup=types.ReplyKeyboardRemove())
+    await bot.send_message(message.chat.id, msg, reply_markup=types.ReplyKeyboardRemove(),
+                           parse_mode=ParseMode.MARKDOWN)
 
-    # Finish conversation
-    # WARNING! This method will destroy all data in storage for current user!
+    # Finish conversation, destroy all data in storage for current user
     await state.finish()
 
 
@@ -219,8 +233,8 @@ async def find(message: types.Message):
     state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
     await state.set_state(FIND_WOD)
 
-    await bot.send_message(message.chat.id, 'Пожалуйста введите дату в формате день-месяц-год'
-                                            '\nПример: 17-05-2018')
+    await bot.send_message(message.chat.id, 'Пожалуйста введите дату в формате *день-месяц-год*'
+                                            '\n\n_Пример: 17-05-2018_', parse_mode=ParseMode.MARKDOWN)
 
 
 @dp.message_handler(state=FIND_WOD)
@@ -228,8 +242,8 @@ async def find_wod(message: types.Message):
     try:
         search_date = datetime.strptime(message.text, '%d-%m-%Y')
     except ValueError:
-        return await bot.send_message(message.chat.id, 'Пожалуйста введите дату в формате день-месяц-год'
-                                                       '\nПример: 17-05-2018')
+        return await bot.send_message(message.chat.id, 'Пожалуйста введите дату в формате *день-месяц-год*'
+                                                       '\n\n_Пример: 17-05-2018_', parse_mode=ParseMode.MARKDOWN)
 
     wods = await wod_db.get_wods(search_date)
     if wods:
@@ -256,9 +270,35 @@ async def find_wod(message: types.Message):
         await bot.send_message(message.chat.id, title + "\n\n" + description, reply_markup=reply_markup)
 
 
+@dp.message_handler(commands=['timezone'])
+async def set_timezone(message: types.Message):
+    state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
+    await state.set_state(SET_TIMEZONE)
+
+    loc_btn = types.KeyboardButton(text=LOCATION, request_location=True)
+    reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+    reply_markup.insert(loc_btn)
+    reply_markup.add(CANCEL)
+
+    await bot.send_message(message.chat.id, "Нам нужна ваша геолокация для того, чтобы установить "
+                                            "правильный часовой пояс", reply_markup=reply_markup)
+
+
+@dp.message_handler(state=SET_TIMEZONE, func=lambda message: message.text == LOCATION)
+async def set_location(message: types.Message):
+    state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
+
+    print(message.text)
+
+    await bot.send_message(message.chat.id, 'Ваш часовой пояс установлен как ')
+
+    # Finish conversation, destroy all data in storage for current user
+    await state.finish()
+
+
 @dp.message_handler()
 async def echo(message: types.Message):
-    msg = str(message.text).lower()
+    msg = message.text.lower()
 
     if msg in greetings:
         # send hi
