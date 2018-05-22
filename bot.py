@@ -3,7 +3,6 @@ import re
 from datetime import datetime
 
 import pytz
-import requests
 from aiogram import Bot, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import Dispatcher
@@ -165,7 +164,8 @@ async def add_wod_result(message: types.Message):
     wod_id = data['wod_id']
     await wod_result_db.add_wod_result(wod_id, message.from_user.id, message.text, datetime.now())
 
-    await bot.send_message(message.chat.id, 'Ваш результат успешно добавлен!')
+    await bot.send_message(message.chat.id, 'Ваш результат успешно добавлен!',
+                           reply_markup=types.ReplyKeyboardRemove())
 
     # Finish conversation, destroy all data in storage for current user
     await state.finish()
@@ -204,7 +204,8 @@ async def edit_wod_result(message: types.Message):
         wod_result.result = message.text
         await wod_result.save()
 
-    await bot.send_message(message.chat.id, 'Ваш результат успешно обновлен!')
+    await bot.send_message(message.chat.id, 'Ваш результат успешно обновлен!',
+                           reply_markup=types.ReplyKeyboardRemove())
 
     # Finish conversation, destroy all data in storage for current user
     await state.finish()
