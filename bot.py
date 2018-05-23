@@ -285,6 +285,7 @@ async def show_wod_results(message: types.Message):
 
     wod_id = data['wod_id']
     wod_results = await wod_result_db.get_wod_results(wod_id)
+    print(wod_results)
 
     if wod_results:
         msg = ''
