@@ -3,7 +3,6 @@ import re
 from datetime import datetime
 
 import pytz
-import requests
 from aiogram import Bot, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import Dispatcher

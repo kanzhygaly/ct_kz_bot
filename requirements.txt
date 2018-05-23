@@ -1,3 +1,4 @@
+pytz
 asyncpg_simpleorm
 apscheduler
 requests
