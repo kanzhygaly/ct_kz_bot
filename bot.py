@@ -78,13 +78,10 @@ async def get_wod():
 
 @dp.message_handler(commands=['test'])
 async def test(message: types.Message):
-    keyboard = [
-        [types.InlineKeyboardButton("Option 1", callback_data='1'),
-         types.InlineKeyboardButton("Option 2", callback_data='2')],
-        [types.InlineKeyboardButton("Option 3", callback_data=CANCEL)]
-    ]
-
-    reply_markup = types.InlineKeyboardMarkup(keyboard)
+    reply_markup = types.InlineKeyboardMarkup()
+    reply_markup.add(types.InlineKeyboardButton("Option 1", callback_data='1'),
+                     types.InlineKeyboardButton("Option 2", callback_data='2'))
+    reply_markup.add(types.InlineKeyboardButton("Option 3", callback_data=CANCEL))
 
     await bot.send_message(message.chat.id, info_msg, reply_markup=reply_markup)
 
@@ -341,7 +338,7 @@ async def set_location(message: types.Message):
 
 @dp.message_handler()
 async def echo(message: types.Message):
-    msg = "".join(re.findall("[a-zA-Z]+", message.text.lower()))
+    msg = "".join(re.findall("[a-zA-Zа-яА-Я]+", message.text.lower()))
 
     if msg in greetings:
         # send hi

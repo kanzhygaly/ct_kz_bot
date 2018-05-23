@@ -1,4 +1,5 @@
 import codecs
+import re
 
 from bs4 import BeautifulSoup
 
@@ -21,3 +22,9 @@ for section in sections:
     for line in section.splitlines():
         if line:
             print(line + '[]')
+
+
+msg = "".join(re.findall("[a-zA-Zа-яА-Я]+", 'Арау 123'))
+print(msg)
+msg = "".join(re.findall("[a-zA-Zа-яА-Я]+", 'Hi 222'))
+print(msg)
