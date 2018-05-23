@@ -126,7 +126,7 @@ async def show_results_callback(callback_query: types.CallbackQuery):
         for res in wod_results:
             u = await user_db.get_user(res.user_id)
 
-            location = await location_db.get_location(res.user_id)
+            location = await location_db.get_location(callback_query.from_user.id)
             dt = res.sys_date.astimezone(pytz.timezone(location.tz)) if location else res.sys_date
 
             title = '_' + u.name + ' ' + u.surname + ', ' + dt.strftime("%H:%M:%S %d %B %Y") + '_'
@@ -285,14 +285,13 @@ async def show_wod_results(message: types.Message):
 
     wod_id = data['wod_id']
     wod_results = await wod_result_db.get_wod_results(wod_id)
-    print(wod_results)
 
     if wod_results:
         msg = ''
         for res in wod_results:
             u = await user_db.get_user(res.user_id)
 
-            location = await location_db.get_location(res.user_id)
+            location = await location_db.get_location(message.from_user.id)
             dt = res.sys_date.astimezone(pytz.timezone(location.tz)) if location else res.sys_date
 
             title = '_' + u.name + ' ' + u.surname + ', ' + dt.strftime("%H:%M:%S %d %B %Y") + '_'

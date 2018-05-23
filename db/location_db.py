@@ -19,5 +19,9 @@ async def merge(user_id, longitude, latitude, locale, timezone):
 
 
 async def get_location(user_id):
-    return await Location.get_one(record=False, user_id=user_id)
+    try:
+        return await Location.get_one(record=False, user_id=user_id)
+    except TypeError:
+        return None
+
 
