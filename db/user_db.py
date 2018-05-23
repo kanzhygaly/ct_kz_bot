@@ -31,3 +31,7 @@ async def is_admin(user_id):
 
 async def get_user(user_id):
     return await User.get_one(record=False, user_id=user_id)
+
+
+async def get_all_users():
+    return await User.get(records=False)

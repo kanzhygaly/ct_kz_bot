@@ -64,3 +64,6 @@ async def create_all_tables(connection) -> None:
             latitude FLOAT, locale VARCHAR(10), tz VARCHAR(200));
         ''')
 
+
+async def drop_table(connection, table_name) -> None:
+    await connection.execute('''DROP TABLE IF EXISTS $1''', table_name)

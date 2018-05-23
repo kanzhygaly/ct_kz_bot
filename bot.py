@@ -25,7 +25,7 @@ greetings = ['здравствуй', 'привет', 'ку', 'здорово', '
              'доброе утро', 'добрый вечер', 'салем']
 salem = ['салам', 'слм', 'саламалейкум', 'ассаламуагалейкум', 'ассалямуагалейкум',
          'ассаламуалейкум', 'мирвам', 'миртебе']
-wod_requests = ['чтс', 'чтотамсегодня', 'тренировка', 'треня', 'wod', 'workout']
+wod_requests = ['чтс', 'что там сегодня', 'тренировка', 'треня', 'wod', 'workout']
 
 info_msg = "CompTrainKZ BOT:\n\n" \
            "/help - справочник\n\n" \
@@ -76,24 +76,69 @@ async def get_wod():
         return "Комплекс еще не вышел.\nСорян :(", None
 
 
+@dp.message_handler(commands=['sys_all_users'])
+async def test(message: types.Message):
+    if not await user_db.is_admin(message.from_user.id):
+        # send info
+        sub = "/subscribe - подписаться на ежедневную рассылку WOD"
+        if await subscriber_db.is_subscriber(message.from_user.id):
+            sub = "/unsubscribe - отписаться от ежедневной рассылки WOD"
+
+        return await message.reply(info_msg + sub)
+
+    users = await user_db.get_all_users()
+    msg = ''
+    counter = 1
+    for u in users:
+        msg += counter + '. ' + u.name + ' ' + u.surname + '\n'
+        counter += 1
+
+    await bot.send_message(message.chat.id, msg, parse_mode=ParseMode.MARKDOWN)
+
+
 @dp.message_handler(commands=['test'])
 async def test(message: types.Message):
+    msg, wod_id = await get_wod()
+    user_id = message.from_user.id
+
+    if wod_id is not None:
+        state = dp.current_state(chat=message.chat.id, user=user_id)
+        await state.update_data(wod_id=wod_id)
+        await state.set_state(WOD)
+
+    # Configure InlineKeyboardMarkup
     reply_markup = types.InlineKeyboardMarkup()
-    reply_markup.add(types.InlineKeyboardButton("Option 1", callback_data='1'),
-                     types.InlineKeyboardButton("Option 2", callback_data='2'))
-    reply_markup.add(types.InlineKeyboardButton("Option 3", callback_data=CANCEL))
+    reply_markup.add(types.InlineKeyboardButton(SHOW_RESULTS, callback_data=SHOW_RESULTS))
 
-    await bot.send_message(message.chat.id, info_msg, reply_markup=reply_markup)
+    await bot.send_message(message.chat.id, msg, reply_markup=reply_markup)
 
 
-@dp.callback_query_handler(func=lambda callback_query: "1")
-async def some_callback_handler(callback_query: types.CallbackQuery):
-    await bot.send_message(callback_query.message.chat.id, "TEST")
+@dp.callback_query_handler(func=lambda callback_query: callback_query.data == SHOW_RESULTS)
+async def show_results_callback(callback_query: types.CallbackQuery):
+    state = dp.current_state(chat=callback_query.message.chat.id, user=callback_query.from_user.id)
+    data = await state.get_data()
 
+    wod_id = data['wod_id']
+    wod_results = await wod_result_db.get_wod_results(wod_id)
 
-@dp.callback_query_handler(func=lambda callback_query: "2")
-async def some_callback_handler2(callback_query: types.CallbackQuery):
-    callback_query.edit_message_text(text="Selected option: {}".format(callback_query.data))
+    if wod_results:
+        msg = ''
+        for res in wod_results:
+            u = await user_db.get_user(res.user_id)
+
+            location = await location_db.get_location(res.user_id)
+            dt = res.sys_date.astimezone(pytz.timezone(location.tz)) if location else res.sys_date
+
+            title = '_' + u.name + ' ' + u.surname + ', ' + dt.strftime("%H:%M:%S %d %B %Y") + '_'
+            msg += title + '\n' + res.result + '\n\n'
+
+        await bot.send_message(callback_query.message.chat.id, msg, reply_markup=types.ReplyKeyboardRemove(),
+                               parse_mode=ParseMode.MARKDOWN)
+        # Finish conversation, destroy all data in storage for current user
+        await state.finish()
+    else:
+        return await bot.send_message(callback_query.message.chat.id, 'Результатов пока нет.\n'
+                                                                      'Станьте первым кто внесет свой результат!')
 
 
 @dp.message_handler(commands=['start'])
@@ -135,7 +180,7 @@ async def unsubscribe(message: types.Message):
 
 
 @dp.message_handler(commands=['wod'])
-@dp.message_handler(func=lambda message: message.text and message.text.lower() in wod_requests)
+@dp.message_handler(func=lambda message: message.text.lower() in wod_requests)
 async def send_wod(message: types.Message):
     msg, wod_id = await get_wod()
     user_id = message.from_user.id
@@ -204,8 +249,8 @@ async def request_result_for_edit(message: types.Message):
     wod_result_id = data['wod_result_id']
     wod_result = await wod_result_db.get_wod_result(wod_result_id=wod_result_id)
     if wod_result:
-        msg = 'Ваш текущий результат:\n\n_'\
-              + wod_result.result +\
+        msg = 'Ваш текущий результат:\n\n_' \
+              + wod_result.result + \
               '_\n\nПожалуйста введите ваш новый результат'
 
     reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
@@ -239,22 +284,26 @@ async def show_wod_results(message: types.Message):
     data = await state.get_data()
 
     wod_id = data['wod_id']
+    wod_results = await wod_result_db.get_wod_results(wod_id)
 
-    msg = ''
-    for res in await wod_result_db.get_wod_results(wod_id):
-        u = await user_db.get_user(res.user_id)
+    if wod_results:
+        msg = ''
+        for res in wod_results:
+            u = await user_db.get_user(res.user_id)
 
-        location = await location_db.get_location(res.user_id)
-        dt = res.sys_date.astimezone(pytz.timezone(location.tz)) if location else res.sys_date
+            location = await location_db.get_location(res.user_id)
+            dt = res.sys_date.astimezone(pytz.timezone(location.tz)) if location else res.sys_date
 
-        title = '_' + u.name + ' ' + u.surname + ', ' + dt.strftime("%H:%M:%S %d %B %Y") + '_'
-        msg += title + '\n' + res.result + '\n\n'
+            title = '_' + u.name + ' ' + u.surname + ', ' + dt.strftime("%H:%M:%S %d %B %Y") + '_'
+            msg += title + '\n' + res.result + '\n\n'
 
-    await bot.send_message(message.chat.id, msg, reply_markup=types.ReplyKeyboardRemove(),
-                           parse_mode=ParseMode.MARKDOWN)
-
-    # Finish conversation, destroy all data in storage for current user
-    await state.finish()
+        await bot.send_message(message.chat.id, msg, reply_markup=types.ReplyKeyboardRemove(),
+                               parse_mode=ParseMode.MARKDOWN)
+        # Finish conversation, destroy all data in storage for current user
+        await state.finish()
+    else:
+        return await bot.send_message(message.chat.id, 'Результатов пока нет.\n'
+                                                       'Станьте первым кто внесет свой результат!')
 
 
 @dp.message_handler(commands=['find'])
@@ -273,6 +322,8 @@ async def find_wod(message: types.Message):
     except ValueError:
         return await bot.send_message(message.chat.id, 'Пожалуйста введите дату в формате *ДеньМесяцГод*'
                                                        '\n\n_Пример: 170518_', parse_mode=ParseMode.MARKDOWN)
+
+    time_between = datetime.now() - search_date
 
     wods = await wod_db.get_wods(search_date)
     if wods:
@@ -293,7 +344,11 @@ async def find_wod(message: types.Message):
 
         # Configure ReplyKeyboardMarkup
         reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
-        reply_markup.add(res_button, SHOW_RESULTS)
+        if time_between.days > 7 and res_button == EDIT_RESULT:
+            # if wod result older than week, then disable edit
+            reply_markup.add(SHOW_RESULTS)
+        else:
+            reply_markup.add(res_button, SHOW_RESULTS)
         reply_markup.add(CANCEL)
 
         await bot.send_message(message.chat.id, title + "\n\n" + description, reply_markup=reply_markup)
