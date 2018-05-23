@@ -67,3 +67,7 @@ async def create_all_tables(connection) -> None:
 
 async def drop_table(connection, table_name) -> None:
     await connection.execute('''DROP TABLE IF EXISTS $1''', table_name)
+
+
+async def set_admin(connection, user_id) -> None:
+    await connection.execute('''UPDATE users SET admin=true WHERE user_id = $1''', user_id)

@@ -78,7 +78,6 @@ async def get_wod():
 
 @dp.message_handler(commands=['sys_all_users'])
 async def sys_all_users(message: types.Message):
-    print(message.from_user.id)
     if not await user_db.is_admin(message.from_user.id):
         print(message.from_user.id)
         # send info
@@ -133,8 +132,7 @@ async def show_results_callback(callback_query: types.CallbackQuery):
             title = '_' + u.name + ' ' + u.surname + ', ' + dt.strftime("%H:%M:%S %d %B %Y") + '_'
             msg += title + '\n' + res.result + '\n\n'
 
-        await bot.send_message(callback_query.message.chat.id, msg, reply_markup=types.ReplyKeyboardRemove(),
-                               parse_mode=ParseMode.MARKDOWN)
+        await bot.send_message(callback_query.message.chat.id, msg, parse_mode=ParseMode.MARKDOWN)
         # Finish conversation, destroy all data in storage for current user
         await state.finish()
     else:
@@ -452,6 +450,7 @@ async def startup(dispatcher: Dispatcher):
     print('Startup CompTrainKZ Bot...')
     async with async_db.Entity.connection() as connection:
         # await async_db.drop_all_tables(connection)
+        await async_db.set_admin(connection, 586216727)
         await async_db.create_all_tables(connection)
 
 
