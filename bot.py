@@ -25,7 +25,7 @@ greetings = ['здравствуй', 'привет', 'ку', 'здорово', '
              'доброе утро', 'добрый вечер', 'салем']
 salem = ['салам', 'слм', 'саламалейкум', 'ассаламуагалейкум', 'ассалямуагалейкум',
          'ассаламуалейкум', 'мирвам', 'миртебе']
-wod_requests = ['чтс', 'что там сегодня?', 'тренировка', 'треня', 'wod', 'workout']
+wod_requests = ['чтс', 'чтотамсегодня', 'тренировка', 'треня', 'wod', 'workout']
 
 info_msg = "CompTrainKZ BOT:\n\n" \
            "/help - справочник\n\n" \
@@ -78,19 +78,23 @@ async def get_wod():
 
 @dp.message_handler(commands=['test'])
 async def test(message: types.Message):
-    reply_markup = types.InlineKeyboardMarkup()
-    reply_markup.add("btn 1", "btn 2")
-    reply_markup.add(CANCEL)
+    keyboard = [
+        [types.InlineKeyboardButton("Option 1", callback_data='1'),
+         types.InlineKeyboardButton("Option 2", callback_data='2')],
+        [types.InlineKeyboardButton("Option 3", callback_data=CANCEL)]
+    ]
+
+    reply_markup = types.InlineKeyboardMarkup(keyboard)
 
     await bot.send_message(message.chat.id, info_msg, reply_markup=reply_markup)
 
 
-@dp.callback_query_handler(func=lambda callback_query: "btn 1")
+@dp.callback_query_handler(func=lambda callback_query: "1")
 async def some_callback_handler(callback_query: types.CallbackQuery):
     await bot.send_message(callback_query.message.chat.id, "TEST")
 
 
-@dp.callback_query_handler(func=lambda callback_query: "btn 2")
+@dp.callback_query_handler(func=lambda callback_query: "2")
 async def some_callback_handler2(callback_query: types.CallbackQuery):
     callback_query.edit_message_text(text="Selected option: {}".format(callback_query.data))
 
@@ -337,7 +341,7 @@ async def set_location(message: types.Message):
 
 @dp.message_handler()
 async def echo(message: types.Message):
-    msg = message.text.lower()
+    msg = "".join(re.findall("[a-zA-Z]+", message.text.lower()))
 
     if msg in greetings:
         # send hi
@@ -356,7 +360,7 @@ async def echo(message: types.Message):
         else:
             await message.reply('Привет, {}!'.format(message.from_user.first_name))
 
-    elif "".join(re.findall("[a-zA-Z]+", msg)) in salem:
+    elif msg in salem:
         await message.reply('Уа-Алейкум Ас-Салям, {}!'.format(message.from_user.first_name))
 
     elif msg == 'арау':
