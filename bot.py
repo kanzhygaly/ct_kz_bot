@@ -113,7 +113,7 @@ async def test(message: types.Message):
     await bot.send_message(message.chat.id, msg, reply_markup=reply_markup)
 
 
-@dp.callback_query_handler(func=lambda callback_query: callback_query.data == SHOW_RESULTS)
+@dp.callback_query_handler(func=lambda callback_query: SHOW_RESULTS)
 async def show_results_callback(callback_query: types.CallbackQuery):
     state = dp.current_state(chat=callback_query.message.chat.id, user=callback_query.from_user.id)
     data = await state.get_data()
