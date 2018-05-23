@@ -91,7 +91,7 @@ async def sys_all_users(message: types.Message):
     msg = ''
     counter = 1
     for u in users:
-        msg += f'{counter}. ' + u.name + ' ' + u.surname + '\n'
+        msg += f'{counter}. {u.name} {u.surname}\n'
         counter += 1
 
     await bot.send_message(message.chat.id, msg, parse_mode=ParseMode.MARKDOWN)
