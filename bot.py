@@ -79,6 +79,7 @@ async def get_wod():
 @dp.message_handler(commands=['sys_all_users'])
 async def test(message: types.Message):
     if not await user_db.is_admin(message.from_user.id):
+        print(message.from_user.id)
         # send info
         sub = "/subscribe - подписаться на ежедневную рассылку WOD"
         if await subscriber_db.is_subscriber(message.from_user.id):
@@ -113,8 +114,12 @@ async def test(message: types.Message):
     await bot.send_message(message.chat.id, msg, reply_markup=reply_markup)
 
 
-@dp.callback_query_handler(func=lambda callback_query: SHOW_RESULTS)
+# @dp.callback_query_handler(func=lambda callback_query: SHOW_RESULTS)
+@dp.callback_query_handler()
 async def show_results_callback(callback_query: types.CallbackQuery):
+    print(callback_query)
+    print(callback_query.data)
+
     state = dp.current_state(chat=callback_query.message.chat.id, user=callback_query.from_user.id)
     data = await state.get_data()
 
@@ -344,7 +349,7 @@ async def find_wod(message: types.Message):
 
         # Configure ReplyKeyboardMarkup
         reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
-        if time_between.days > 7 and res_button == EDIT_RESULT:
+        if time_between.days > 30 and res_button == EDIT_RESULT:
             # if wod result older than week, then disable edit
             reply_markup.add(SHOW_RESULTS)
         else:
