@@ -383,6 +383,10 @@ async def set_location(message: types.Message):
     timezone_id = await utils.get_timezone_id(latitude=message.location.latitude,
                                               longitude=message.location.longitude)
 
+    if not timezone_id:
+        return await bot.send_message(message.chat.id, 'Убедитесь в том что Геолокация включена и у Телеграм '
+                                                       'есть права на ее использование и попробуйте снова')
+
     now = datetime.now(pytz.timezone(timezone_id))
     print(message.from_user.first_name, latitude, longitude, timezone_id, now)
 
