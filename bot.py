@@ -91,7 +91,7 @@ async def sys_all_users(message: types.Message):
     msg = ''
     counter = 1
     for u in users:
-        msg += counter + '. ' + u.name + ' ' + u.surname + '\n'
+        msg += f'{counter}. ' + u.name + ' ' + u.surname + '\n'
         counter += 1
 
     await bot.send_message(message.chat.id, msg, parse_mode=ParseMode.MARKDOWN)
@@ -450,7 +450,6 @@ async def startup(dispatcher: Dispatcher):
     print('Startup CompTrainKZ Bot...')
     async with async_db.Entity.connection() as connection:
         # await async_db.drop_all_tables(connection)
-        await async_db.set_admin(connection, 586216727)
         await async_db.create_all_tables(connection)
 
 
