@@ -22,7 +22,8 @@ dp = Dispatcher(bot, storage=storage)
 
 scheduler = AsyncIOScheduler()
 
-greetings = ['здравствуй', 'привет', 'ку', 'здорово', 'hi', 'hello']
+greetings = ['здравствуй', 'привет', 'ку', 'здорово', 'hi', 'hello', 'дд', 'добрый день',
+             'доброе утро', 'добрый вечер', 'салам', 'салем', 'слм']
 wod_requests = ['чтс', 'что там сегодня?', 'тренировка', 'треня', 'wod', 'workout']
 
 info_msg = "CompTrainKZ BOT:\n\n" \
@@ -46,7 +47,6 @@ CANCEL = "Отмена"
 
 async def get_wod():
     now = datetime.now()
-    print(now.date())
 
     result = await wod_db.get_wods(now.date())
     if result:
@@ -165,7 +165,8 @@ async def add_wod_result(message: types.Message):
     wod_id = data['wod_id']
     await wod_result_db.add_wod_result(wod_id, message.from_user.id, message.text, datetime.now())
 
-    await bot.send_message(message.chat.id, 'Ваш результат успешно добавлен!')
+    await bot.send_message(message.chat.id, 'Ваш результат успешно добавлен!',
+                           reply_markup=types.ReplyKeyboardRemove())
 
     # Finish conversation, destroy all data in storage for current user
     await state.finish()
@@ -204,7 +205,8 @@ async def edit_wod_result(message: types.Message):
         wod_result.result = message.text
         await wod_result.save()
 
-    await bot.send_message(message.chat.id, 'Ваш результат успешно обновлен!')
+    await bot.send_message(message.chat.id, 'Ваш результат успешно обновлен!',
+                           reply_markup=types.ReplyKeyboardRemove())
 
     # Finish conversation, destroy all data in storage for current user
     await state.finish()
@@ -222,10 +224,7 @@ async def show_wod_results(message: types.Message):
         u = await user_db.get_user(res.user_id)
 
         location = await location_db.get_location(res.user_id)
-        if location:
-            dt = res.sys_date.astimezone(pytz.timezone(location.tz))
-        else:
-            dt = res.sys_date
+        dt = res.sys_date.astimezone(pytz.timezone(location.tz)) if location else res.sys_date
 
         title = '_' + u.name + ' ' + u.surname + ', ' + dt.strftime("%H:%M:%S %d %B %Y") + '_'
         msg += title + '\n' + res.result + '\n\n'
@@ -289,7 +288,7 @@ async def set_timezone(message: types.Message):
     reply_markup.insert(loc_btn)
     reply_markup.add(CANCEL)
 
-    await bot.send_message(message.chat.id, "Нам нужна ваша геолокация для того, чтобы установить "
+    await bot.send_message(message.chat.id, "Мне нужна ваша геолокация для того, чтобы установить "
                                             "правильный часовой пояс", reply_markup=reply_markup)
 
 
@@ -322,16 +321,23 @@ async def echo(message: types.Message):
 
     if msg in greetings:
         # send hi
-        now = datetime.now()
+        location = await location_db.get_location(message.from_user.id)
+        now = datetime.now(pytz.timezone(location.tz)) if location else datetime.now()
 
         if 6 <= now.hour < 12:
-            await message.reply('Доброе утро, {}'.format(message.from_user.first_name))
+            await message.reply('Доброе утро, {}!'.format(message.from_user.first_name))
 
         elif 12 <= now.hour < 17:
-            await message.reply('Добрый день, {}'.format(message.from_user.first_name))
+            await message.reply('Добрый день, {}!'.format(message.from_user.first_name))
 
         elif 17 <= now.hour < 23:
-            await message.reply('Добрый вечер, {}'.format(message.from_user.first_name))
+            await message.reply('Добрый вечер, {}!'.format(message.from_user.first_name))
+
+        else:
+            await message.reply('Салам, {}!'.format(message.from_user.first_name))
+
+    elif msg == 'салам алейкум':
+        await message.reply('Алейкум Салам, {}!'.format(message.from_user.first_name))
 
     else:
         # send info

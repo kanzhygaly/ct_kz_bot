@@ -30,8 +30,8 @@ async def drop_all_tables(connection) -> None:
             DROP TABLE IF EXISTS wod_ru;
             DROP TABLE IF EXISTS wod;
             DROP TABLE IF EXISTS subscribers;
-            DROP TABLE IF EXISTS users;
             DROP TABLE IF EXISTS location;
+            DROP TABLE IF EXISTS users;
         ''')
 
 
@@ -58,7 +58,7 @@ async def create_all_tables(connection) -> None:
             title VARCHAR(150), description TEXT);
 
             CREATE TABLE IF NOT EXISTS benchmark_result (id uuid PRIMARY KEY, benchmark_id uuid not null,
-            wod_day date, user_id BIGINT, result VARCHAR(200), sys_date TIMESTAMP);
+            wod_day date, user_id BIGINT, result VARCHAR(200), sys_date TIMESTAMP, link VARCHAR(100));
             
             CREATE TABLE IF NOT EXISTS location (user_id BIGINT PRIMARY KEY, longitude FLOAT,
             latitude FLOAT, locale VARCHAR(10), tz VARCHAR(200));

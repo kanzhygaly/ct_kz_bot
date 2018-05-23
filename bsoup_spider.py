@@ -25,7 +25,9 @@ class BSoupParser:
         title = reg_part.find('h3').get_text()
         result += title + '\n'
 
-        for p in reg_part.find_all('p'):
+        sections = reg_part.find_all('p')
+
+        for p in sections:
             result += p.get_text() + "\n\n"
 
         return result
@@ -37,7 +39,9 @@ class BSoupParser:
         title = open_part.find('h3').get_text()
         result += title + '\n'
 
-        for p in open_part.find_all('p'):
+        sections = open_part.find_all('p')
+
+        for p in sections:
             result += p.get_text() + "\n\n"
 
-        return result
+        return result, sections
