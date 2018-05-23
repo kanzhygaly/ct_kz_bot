@@ -77,7 +77,8 @@ async def get_wod():
 
 
 @dp.message_handler(commands=['sys_all_users'])
-async def test(message: types.Message):
+async def sys_all_users(message: types.Message):
+    print(message.from_user.id)
     if not await user_db.is_admin(message.from_user.id):
         print(message.from_user.id)
         # send info
@@ -105,7 +106,6 @@ async def test(message: types.Message):
     if wod_id is not None:
         state = dp.current_state(chat=message.chat.id, user=user_id)
         await state.update_data(wod_id=wod_id)
-        await state.set_state(WOD)
 
     # Configure InlineKeyboardMarkup
     reply_markup = types.InlineKeyboardMarkup()
@@ -114,12 +114,8 @@ async def test(message: types.Message):
     await bot.send_message(message.chat.id, msg, reply_markup=reply_markup)
 
 
-# @dp.callback_query_handler(func=lambda callback_query: SHOW_RESULTS)
-@dp.callback_query_handler()
+@dp.callback_query_handler(func=lambda callback_query: callback_query.data == SHOW_RESULTS)
 async def show_results_callback(callback_query: types.CallbackQuery):
-    print(callback_query)
-    print(callback_query.data)
-
     state = dp.current_state(chat=callback_query.message.chat.id, user=callback_query.from_user.id)
     data = await state.get_data()
 

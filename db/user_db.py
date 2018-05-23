@@ -1,6 +1,6 @@
 import uuid
 
-from asyncpg_simpleorm import Column
+from asyncpg_simpleorm import Column, select
 
 from db.async_db import Entity
 
@@ -26,7 +26,14 @@ async def is_user_exist(user_id):
 
 
 async def is_admin(user_id):
-    return bool(await User.get_one(user_id=user_id, admin=True))
+    async with User.connection() as conn:
+        async with conn.transaction():
+            stmt = select(User)
+            where_str = 'user.user_id = $1 AND user.admin = $2'
+            args = (user_id, True)
+            stmt.set_statement('where', f'WHERE {where_str}', args)
+            res = await conn.fetchrow(*stmt)
+            return False if res is None else bool(User.from_record(res))
 
 
 async def get_user(user_id):
