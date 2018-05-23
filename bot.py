@@ -22,7 +22,9 @@ dp = Dispatcher(bot, storage=storage)
 scheduler = AsyncIOScheduler()
 
 greetings = ['здравствуй', 'привет', 'ку', 'здорово', 'hi', 'hello', 'дд', 'добрый день',
-             'доброе утро', 'добрый вечер', 'салам', 'салем', 'слм']
+             'доброе утро', 'добрый вечер', 'салем']
+salem = ['салам', 'слм', 'саламалейкум', 'ассаламуагалейкум', 'ассалямуагалейкум',
+         'ассаламуалейкум', 'мирвам', 'миртебе']
 wod_requests = ['чтс', 'что там сегодня?', 'тренировка', 'треня', 'wod', 'workout']
 
 info_msg = "CompTrainKZ BOT:\n\n" \
@@ -72,6 +74,25 @@ async def get_wod():
         return title + "\n\n" + description, wod_id
     else:
         return "Комплекс еще не вышел.\nСорян :(", None
+
+
+@dp.message_handler(commands=['test'])
+async def test(message: types.Message):
+    reply_markup = types.InlineKeyboardMarkup()
+    reply_markup.add("btn 1", "btn 2")
+    reply_markup.add(CANCEL)
+
+    await bot.send_message(message.chat.id, info_msg, reply_markup=reply_markup)
+
+
+@dp.callback_query_handler(func=lambda callback_query: "btn 1")
+async def some_callback_handler(callback_query: types.CallbackQuery):
+    await bot.send_message(callback_query.message.chat.id, "TEST")
+
+
+@dp.callback_query_handler(func=lambda callback_query: "btn 2")
+async def some_callback_handler2(callback_query: types.CallbackQuery):
+    callback_query.edit_message_text(text="Selected option: {}".format(callback_query.data))
 
 
 @dp.message_handler(commands=['start'])
@@ -323,7 +344,7 @@ async def echo(message: types.Message):
         location = await location_db.get_location(message.from_user.id)
         now = datetime.now(pytz.timezone(location.tz)) if location else datetime.now()
 
-        if 6 <= now.hour < 12:
+        if 4 <= now.hour < 12:
             await message.reply('Доброе утро, {}!'.format(message.from_user.first_name))
 
         elif 12 <= now.hour < 17:
@@ -333,10 +354,13 @@ async def echo(message: types.Message):
             await message.reply('Добрый вечер, {}!'.format(message.from_user.first_name))
 
         else:
-            await message.reply('Салам, {}!'.format(message.from_user.first_name))
+            await message.reply('Привет, {}!'.format(message.from_user.first_name))
 
-    elif msg == 'салам алейкум':
-        await message.reply('Алейкум Салам, {}!'.format(message.from_user.first_name))
+    elif "".join(re.findall("[a-zA-Z]+", msg)) in salem:
+        await message.reply('Уа-Алейкум Ас-Салям, {}!'.format(message.from_user.first_name))
+
+    elif msg == 'арау':
+        await message.reply('Урай!')
 
     else:
         # send info
