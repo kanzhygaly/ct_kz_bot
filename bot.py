@@ -113,7 +113,7 @@ async def sys_all_subs(message: types.Message):
     msg = ''
     counter = 1
     for sub in subscribers:
-        u = user_db.get_user(sub.user_id)
+        u = await user_db.get_user(sub.user_id)
         msg += f'{counter}. {u.name} {u.surname}\n'
         counter += 1
 
