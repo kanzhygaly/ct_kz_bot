@@ -67,7 +67,8 @@ async def get_wod():
     if wod_date.date().__eq__(now.date()):
         title = parser.get_wod_date()
         regional = parser.get_regional_wod()
-        description = regional + "\n" + parser.get_open_wod()
+        openw = parser.get_open_wod()
+        description = regional + "\n" + openw
 
         wod_id = await wod_db.add_wod(wod_date.date(), title, description)
 
@@ -91,6 +92,28 @@ async def sys_all_users(message: types.Message):
     msg = ''
     counter = 1
     for u in users:
+        msg += f'{counter}. {u.name} {u.surname}\n'
+        counter += 1
+
+    await bot.send_message(message.chat.id, msg, parse_mode=ParseMode.MARKDOWN)
+
+
+@dp.message_handler(commands=['sys_all_subs'])
+async def sys_all_subs(message: types.Message):
+    if not await user_db.is_admin(message.from_user.id):
+        print(message.from_user.id)
+        # send info
+        sub = "/subscribe - подписаться на ежедневную рассылку WOD"
+        if await subscriber_db.is_subscriber(message.from_user.id):
+            sub = "/unsubscribe - отписаться от ежедневной рассылки WOD"
+
+        return await message.reply(info_msg + sub)
+
+    subscribers = await subscriber_db.get_all_subscribers()
+    msg = ''
+    counter = 1
+    for sub in subscribers:
+        u = user_db.get_user(sub.user_id)
         msg += f'{counter}. {u.name} {u.surname}\n'
         counter += 1
 
