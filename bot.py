@@ -189,6 +189,9 @@ async def send_info(message: types.Message):
 
 @dp.message_handler(commands=['subscribe'])
 async def subscribe(message: types.Message):
+    if await subscriber_db.is_subscriber(message.from_user.id):
+        return await bot.send_message(message.chat.id, 'Вы уже подписаны на ежедневную рассылку WOD')
+
     await subscriber_db.add_subscriber(message.from_user.id)
 
     await bot.send_message(message.chat.id, 'Вы подписались на ежедневную рассылку WOD')
@@ -196,6 +199,9 @@ async def subscribe(message: types.Message):
 
 @dp.message_handler(commands=['unsubscribe'])
 async def unsubscribe(message: types.Message):
+    if not (await subscriber_db.is_subscriber(message.from_user.id)):
+        return await bot.send_message(message.chat.id, 'Вы уже отписаны от ежедневной рассылки WOD')
+
     await subscriber_db.unsubscribe(message.from_user.id)
 
     await bot.send_message(message.chat.id, 'Вы отписались от ежедневной рассылки WOD')
@@ -473,6 +479,7 @@ async def startup(dispatcher: Dispatcher):
     print('Startup CompTrainKZ Bot...')
     async with async_db.Entity.connection() as connection:
         # await async_db.drop_all_tables(connection)
+        await async_db.delete_duplicates(connection)
         await async_db.create_all_tables(connection)
 
 
