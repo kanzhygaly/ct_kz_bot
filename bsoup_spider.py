@@ -44,4 +44,4 @@ class BSoupParser:
         for p in sections:
             result += p.get_text() + "\n\n"
 
-        return result, sections
+        return result
