@@ -66,9 +66,8 @@ async def get_wod():
 
     if wod_date.date().__eq__(now.date()):
         title = parser.get_wod_date()
-        regional = parser.get_regional_wod()
-        openw = parser.get_open_wod()
-        description = regional + "\n" + openw
+
+        description = parser.get_regional_wod() + parser.get_open_wod()
 
         wod_id = await wod_db.add_wod(wod_date.date(), title, description)
 

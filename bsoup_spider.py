@@ -21,27 +21,25 @@ class BSoupParser:
     def get_regional_wod(self):
         result = ''
 
-        reg_part = self.content[0].find(class_='wpb_wrapper')
-        title = reg_part.find('h3').get_text()
-        result += title + '\n'
+        reg_part = self.content[0].find(class_='wpb_wrapper').find(class_='wpb_wrapper')
 
-        sections = reg_part.find_all('p')
-
-        for p in sections:
-            result += p.get_text() + "\n\n"
+        for tag in reg_part.find_all(["h3", "p"]):
+            if tag.name == 'h3':
+                result += tag.get_text().strip() + '\n'
+            else:
+                result += tag.get_text().strip() + '\n\n'
 
         return result
 
     def get_open_wod(self):
         result = ''
 
-        open_part = self.content[1].find(class_='wpb_wrapper')
-        title = open_part.find('h3').get_text()
-        result += title + '\n'
+        open_part = self.content[1].find(class_='wpb_wrapper').find(class_='wpb_wrapper')
 
-        sections = open_part.find_all('p')
-
-        for p in sections:
-            result += p.get_text() + "\n\n"
+        for tag in open_part.find_all(["h3", "p"]):
+            if tag.name == 'h3':
+                result += tag.get_text().strip() + '\n'
+            else:
+                result += tag.get_text().strip() + '\n\n'
 
         return result
