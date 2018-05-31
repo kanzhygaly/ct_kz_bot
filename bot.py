@@ -76,6 +76,26 @@ async def get_wod():
         return "Комплекс еще не вышел.\nСорян :(", None
 
 
+async def get_wod_results(user_id, wod_id):
+    location = await location_db.get_location(user_id)
+
+    wod_results = await wod_result_db.get_wod_results(wod_id)
+
+    if wod_results:
+        msg = ''
+        for res in wod_results:
+            u = await user_db.get_user(res.user_id)
+
+            dt = res.sys_date.astimezone(pytz.timezone(location.tz)) if location else res.sys_date
+
+            title = '_' + u.name + ' ' + u.surname + ', ' + dt.strftime("%H:%M:%S %d %B %Y") + '_'
+            msg += title + '\n' + res.result + '\n\n'
+
+        return msg
+    else:
+        return None
+
+
 @dp.message_handler(commands=['sys_all_users'])
 async def sys_all_users(message: types.Message):
     if not await user_db.is_admin(message.from_user.id):
@@ -113,8 +133,11 @@ async def sys_all_subs(message: types.Message):
     counter = 1
     for sub in subscribers:
         u = await user_db.get_user(sub.user_id)
-        msg += f'{counter}. {u.name} {u.surname}\n'
-        counter += 1
+        if not u:
+            await subscriber_db.unsubscribe(sub.user_id)
+        else:
+            msg += f'{counter}. {u.name} {u.surname}\n'
+            counter += 1
 
     await bot.send_message(message.chat.id, msg, parse_mode=ParseMode.MARKDOWN)
 
@@ -130,7 +153,8 @@ async def test(message: types.Message):
 
     # Configure InlineKeyboardMarkup
     reply_markup = types.InlineKeyboardMarkup()
-    reply_markup.add(types.InlineKeyboardButton(SHOW_RESULTS, callback_data=SHOW_RESULTS))
+    reply_markup.add(types.InlineKeyboardButton(SHOW_RESULTS, callback_data=ADD_RESULT),
+                     types.InlineKeyboardButton(SHOW_RESULTS, callback_data=SHOW_RESULTS))
 
     await bot.send_message(message.chat.id, msg, reply_markup=reply_markup)
 
@@ -141,22 +165,13 @@ async def show_results_callback(callback_query: types.CallbackQuery):
     data = await state.get_data()
 
     wod_id = data['wod_id']
-    wod_results = await wod_result_db.get_wod_results(wod_id)
 
-    if wod_results:
-        msg = ''
-        for res in wod_results:
-            u = await user_db.get_user(res.user_id)
+    msg = await get_wod_results(callback_query.from_user.id, wod_id)
 
-            location = await location_db.get_location(callback_query.from_user.id)
-            dt = res.sys_date.astimezone(pytz.timezone(location.tz)) if location else res.sys_date
-
-            title = '_' + u.name + ' ' + u.surname + ', ' + dt.strftime("%H:%M:%S %d %B %Y") + '_'
-            msg += title + '\n' + res.result + '\n\n'
-
+    if msg:
         await bot.send_message(callback_query.message.chat.id, msg, parse_mode=ParseMode.MARKDOWN)
         # Finish conversation, destroy all data in storage for current user
-        await state.finish()
+        # await state.finish()
     else:
         return await bot.send_message(callback_query.message.chat.id, 'Результатов пока нет.\n'
                                                                       'Станьте первым кто внесет свой результат!')
@@ -166,6 +181,7 @@ async def show_results_callback(callback_query: types.CallbackQuery):
 async def start(message: types.Message):
     user_id = message.from_user.id
 
+    # Check if user exist. If not, then add
     if not await user_db.is_user_exist(user_id):
         await user_db.add_user(user_id, message.from_user.first_name, message.from_user.last_name,
                                message.from_user.language_code)
@@ -188,10 +204,17 @@ async def send_info(message: types.Message):
 
 @dp.message_handler(commands=['subscribe'])
 async def subscribe(message: types.Message):
-    if await subscriber_db.is_subscriber(message.from_user.id):
+    user_id = message.from_user.id
+
+    # Check if user exist. If not, then add
+    if not await user_db.is_user_exist(user_id):
+        await user_db.add_user(user_id, message.from_user.first_name, message.from_user.last_name,
+                               message.from_user.language_code)
+
+    if await subscriber_db.is_subscriber(user_id):
         return await bot.send_message(message.chat.id, 'Вы уже подписаны на ежедневную рассылку WOD')
 
-    await subscriber_db.add_subscriber(message.from_user.id)
+    await subscriber_db.add_subscriber(user_id)
 
     await bot.send_message(message.chat.id, 'Вы подписались на ежедневную рассылку WOD')
 
@@ -252,11 +275,18 @@ async def request_result_for_add(message: types.Message):
 
 @dp.message_handler(state=ADD_WOD_RESULT)
 async def add_wod_result(message: types.Message):
-    state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
+    user_id = message.from_user.id
+
+    # Check if user exist. If not, then add
+    if not await user_db.is_user_exist(user_id):
+        await user_db.add_user(user_id, message.from_user.first_name, message.from_user.last_name,
+                               message.from_user.language_code)
+
+    state = dp.current_state(chat=message.chat.id, user=user_id)
     data = await state.get_data()
 
     wod_id = data['wod_id']
-    await wod_result_db.add_wod_result(wod_id, message.from_user.id, message.text, datetime.now())
+    await wod_result_db.add_wod_result(wod_id, user_id, message.text, datetime.now())
 
     await bot.send_message(message.chat.id, 'Ваш результат успешно добавлен!',
                            reply_markup=types.ReplyKeyboardRemove())
@@ -288,11 +318,20 @@ async def request_result_for_edit(message: types.Message):
 
 @dp.message_handler(state=EDIT_WOD_RESULT)
 async def edit_wod_result(message: types.Message):
-    state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
+    user_id = message.from_user.id
+
+    # Check if user exist. If not, then add
+    if not await user_db.is_user_exist(user_id):
+        await user_db.add_user(user_id, message.from_user.first_name, message.from_user.last_name,
+                               message.from_user.language_code)
+
+    state = dp.current_state(chat=message.chat.id, user=user_id)
     data = await state.get_data()
 
     wod_result_id = data['wod_result_id']
+
     wod_result = await wod_result_db.get_wod_result(wod_result_id=wod_result_id)
+
     if wod_result:
         wod_result.sys_date = datetime.now()
         wod_result.result = message.text
@@ -311,19 +350,10 @@ async def show_wod_results(message: types.Message):
     data = await state.get_data()
 
     wod_id = data['wod_id']
-    wod_results = await wod_result_db.get_wod_results(wod_id)
 
-    if wod_results:
-        msg = ''
-        for res in wod_results:
-            u = await user_db.get_user(res.user_id)
+    msg = await get_wod_results(message.from_user.id, wod_id)
 
-            location = await location_db.get_location(message.from_user.id)
-            dt = res.sys_date.astimezone(pytz.timezone(location.tz)) if location else res.sys_date
-
-            title = '_' + u.name + ' ' + u.surname + ', ' + dt.strftime("%H:%M:%S %d %B %Y") + '_'
-            msg += title + '\n' + res.result + '\n\n'
-
+    if msg:
         await bot.send_message(message.chat.id, msg, reply_markup=types.ReplyKeyboardRemove(),
                                parse_mode=ParseMode.MARKDOWN)
         # Finish conversation, destroy all data in storage for current user
@@ -412,6 +442,11 @@ async def set_location(message: types.Message):
     now = datetime.now(pytz.timezone(timezone_id))
     print(message.from_user.first_name, latitude, longitude, timezone_id, now)
 
+    # Check if user exist. If not, then add
+    if not await user_db.is_user_exist(user_id):
+        await user_db.add_user(user_id, message.from_user.first_name, message.from_user.last_name,
+                               message.from_user.language_code)
+
     await location_db.merge(user_id=user_id, latitude=latitude, longitude=longitude,
                             locale=message.from_user.language_code, timezone=timezone_id)
 
@@ -478,7 +513,6 @@ async def startup(dispatcher: Dispatcher):
     print('Startup CompTrainKZ Bot...')
     async with async_db.Entity.connection() as connection:
         # await async_db.drop_all_tables(connection)
-        await async_db.delete_duplicates(connection)
         await async_db.create_all_tables(connection)
 
 
