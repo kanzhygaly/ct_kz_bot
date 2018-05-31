@@ -22,8 +22,11 @@ async def is_subscriber(user_id):
 
 
 async def unsubscribe(user_id):
-    entity = await Subscriber.get_one(user_id=user_id)
-    await entity.delete()
+    try:
+        entity = await Subscriber.get_one(record=False, user_id=user_id)
+        await entity.delete()
+    except TypeError:
+        print(f'Subscriber with user_id {user_id} was not found in DB')
 
 
 async def get_all_subscribers():
