@@ -120,7 +120,6 @@ async def sys_all_users(message: types.Message):
 @dp.message_handler(commands=['sys_all_subs'])
 async def sys_all_subs(message: types.Message):
     if not await user_db.is_admin(message.from_user.id):
-        print(message.from_user.id)
         # send info
         sub = "/subscribe - подписаться на ежедневную рассылку WOD"
         if await subscriber_db.is_subscriber(message.from_user.id):

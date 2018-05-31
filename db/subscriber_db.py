@@ -22,7 +22,7 @@ async def is_subscriber(user_id):
 
 
 async def unsubscribe(user_id):
-    entity = Subscriber.get_one(user_id=user_id)
+    entity = await Subscriber.get_one(user_id=user_id)
     await entity.delete()
 
 
