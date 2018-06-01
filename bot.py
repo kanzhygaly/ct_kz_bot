@@ -367,7 +367,7 @@ async def find(message: types.Message):
     state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
     await state.set_state(FIND_WOD)
 
-    await bot.send_message(message.chat.id, 'Пожалуйста введите дату в формате *ДеньМесяцГод*'
+    await bot.send_message(message.chat.id, 'Для того чтобы найти комплекс просто введите дату в формате *ДеньМесяцГод*'
                                             '\n\n_Пример: 170518_', parse_mode=ParseMode.MARKDOWN)
 
 
