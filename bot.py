@@ -171,7 +171,7 @@ async def show_results_callback(callback_query: types.CallbackQuery):
     if msg:
         await bot.send_message(callback_query.message.chat.id, msg, parse_mode=ParseMode.MARKDOWN)
         # Finish conversation, destroy all data in storage for current user
-        # await state.finish()
+        await state.finish()
     else:
         return await bot.send_message(callback_query.message.chat.id, 'Результатов пока нет.\n'
                                                                       'Станьте первым кто внесет свой результат!')
@@ -263,7 +263,6 @@ async def hide_keyboard(message: types.Message):
 
 
 @dp.message_handler(state=WOD, func=lambda message: message.text == ADD_RESULT)
-@dp.callback_query_handler(func=lambda callback_query: callback_query.data == ADD_RESULT)
 async def request_result_for_add(message: types.Message):
     state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
     await state.set_state(ADD_WOD_RESULT)
