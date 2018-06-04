@@ -87,8 +87,9 @@ async def get_wod_results(user_id, wod_id):
             u = await user_db.get_user(res.user_id)
 
             dt = res.sys_date.astimezone(pytz.timezone(location.tz)) if location else res.sys_date
+            name = f'{u.name} {u.surname}' if u.surname else u.name
 
-            title = '_' + u.name + ' ' + u.surname + ', ' + dt.strftime("%H:%M:%S %d %B %Y") + '_'
+            title = '_' + name + ', ' + dt.strftime("%H:%M:%S %d %B %Y") + '_'
             msg += title + '\n' + res.result + '\n\n'
 
         return msg
