@@ -263,6 +263,7 @@ async def hide_keyboard(message: types.Message):
 
 
 @dp.message_handler(state=WOD, func=lambda message: message.text == ADD_RESULT)
+@dp.callback_query_handler(func=lambda callback_query: callback_query.data == ADD_RESULT)
 async def request_result_for_add(message: types.Message):
     state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
     await state.set_state(ADD_WOD_RESULT)
@@ -401,11 +402,13 @@ async def find_wod(message: types.Message):
 
         # Configure ReplyKeyboardMarkup
         reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+
         if time_between.days > 30 and res_button == EDIT_RESULT:
             # if wod result older than week, then disable edit
             reply_markup.add(SHOW_RESULTS)
         else:
             reply_markup.add(res_button, SHOW_RESULTS)
+
         reply_markup.add(CANCEL)
 
         await bot.send_message(message.chat.id, title + "\n\n" + description, reply_markup=reply_markup)
