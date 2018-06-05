@@ -37,6 +37,7 @@ info_msg = "CompTrainKZ BOT:\n\n" \
 WOD = 'wod'
 ADD_WOD_RESULT = 'add_wod_result'
 EDIT_WOD_RESULT = 'edit_wod_result'
+WOD_RESULT = 'wod_result'
 FIND_WOD = 'find_wod'
 SET_TIMEZONE = 'set_timezone'
 # Buttons
@@ -273,28 +274,6 @@ async def request_result_for_add(message: types.Message):
     await bot.send_message(message.chat.id, 'Пожалуйста введите ваш результат', reply_markup=reply_markup)
 
 
-@dp.message_handler(state=ADD_WOD_RESULT)
-async def add_wod_result(message: types.Message):
-    user_id = message.from_user.id
-
-    # Check if user exist. If not, then add
-    if not await user_db.is_user_exist(user_id):
-        await user_db.add_user(user_id, message.from_user.first_name, message.from_user.last_name,
-                               message.from_user.language_code)
-
-    state = dp.current_state(chat=message.chat.id, user=user_id)
-    data = await state.get_data()
-
-    wod_id = data['wod_id']
-    await wod_result_db.add_wod_result(wod_id, user_id, message.text, datetime.now())
-
-    await bot.send_message(message.chat.id, 'Ваш результат успешно добавлен!',
-                           reply_markup=types.ReplyKeyboardRemove())
-
-    # Finish conversation, destroy all data in storage for current user
-    await state.finish()
-
-
 @dp.message_handler(state=WOD, func=lambda message: message.text == EDIT_RESULT)
 async def request_result_for_edit(message: types.Message):
     state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
@@ -316,7 +295,7 @@ async def request_result_for_edit(message: types.Message):
     await bot.send_message(message.chat.id, msg, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
 
 
-@dp.message_handler(state=EDIT_WOD_RESULT)
+@dp.message_handler(state=WOD_RESULT)
 async def edit_wod_result(message: types.Message):
     user_id = message.from_user.id
 
@@ -329,16 +308,21 @@ async def edit_wod_result(message: types.Message):
     data = await state.get_data()
 
     wod_result_id = data['wod_result_id']
-
-    wod_result = await wod_result_db.get_wod_result(wod_result_id=wod_result_id)
+    wod_result = await wod_result_db.get_wod_result(wod_result_id=wod_result_id) if wod_result_id else None
 
     if wod_result:
         wod_result.sys_date = datetime.now()
         wod_result.result = message.text
         await wod_result.save()
 
-    await bot.send_message(message.chat.id, 'Ваш результат успешно обновлен!',
-                           reply_markup=types.ReplyKeyboardRemove())
+        await bot.send_message(message.chat.id, 'Ваш результат успешно обновлен!',
+                               reply_markup=types.ReplyKeyboardRemove())
+    else:
+        wod_id = data['wod_id']
+        await wod_result_db.add_wod_result(wod_id, user_id, message.text, datetime.now())
+
+        await bot.send_message(message.chat.id, 'Ваш результат успешно добавлен!',
+                               reply_markup=types.ReplyKeyboardRemove())
 
     # Finish conversation, destroy all data in storage for current user
     await state.finish()
