@@ -294,7 +294,7 @@ async def request_result_for_edit(message: types.Message):
 
 
 @dp.message_handler(state=WOD_RESULT)
-async def edit_wod_result(message: types.Message):
+async def update_wod_result(message: types.Message):
     user_id = message.from_user.id
 
     # Check if user exist. If not, then add
@@ -305,8 +305,8 @@ async def edit_wod_result(message: types.Message):
     state = dp.current_state(chat=message.chat.id, user=user_id)
     data = await state.get_data()
 
-    wod_result_id = data['wod_result_id']
-    wod_result = await wod_result_db.get_wod_result(wod_result_id=wod_result_id) if wod_result_id else None
+    wod_result = await wod_result_db.get_wod_result(wod_result_id=data['wod_result_id'])\
+        if ('wod_result_id' in data.keys()) else None
 
     if wod_result:
         wod_result.sys_date = datetime.now()
