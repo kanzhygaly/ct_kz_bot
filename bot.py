@@ -35,8 +35,6 @@ info_msg = "CompTrainKZ BOT:\n\n" \
 
 # States
 WOD = 'wod'
-ADD_WOD_RESULT = 'add_wod_result'
-EDIT_WOD_RESULT = 'edit_wod_result'
 WOD_RESULT = 'wod_result'
 FIND_WOD = 'find_wod'
 SET_TIMEZONE = 'set_timezone'
@@ -266,7 +264,7 @@ async def hide_keyboard(message: types.Message):
 @dp.message_handler(state=WOD, func=lambda message: message.text == ADD_RESULT)
 async def request_result_for_add(message: types.Message):
     state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
-    await state.set_state(ADD_WOD_RESULT)
+    await state.set_state(WOD_RESULT)
 
     reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
     reply_markup.add(CANCEL)
@@ -277,7 +275,7 @@ async def request_result_for_add(message: types.Message):
 @dp.message_handler(state=WOD, func=lambda message: message.text == EDIT_RESULT)
 async def request_result_for_edit(message: types.Message):
     state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
-    await state.set_state(EDIT_WOD_RESULT)
+    await state.set_state(WOD_RESULT)
     data = await state.get_data()
 
     msg = 'Пожалуйста введите ваш результат'
