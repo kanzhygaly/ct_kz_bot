@@ -305,17 +305,15 @@ async def find(message: types.Message):
     reply_markup = types.InlineKeyboardMarkup()
     now = datetime.now()
 
-    count = 0
+    row = []
     for i in range(7, 0, -1):
-        row = []
-        if count < 3:
+        if len(row) < 3:
             d = now - timedelta(days=i)
             row.append(types.InlineKeyboardButton(d.strftime("%d %B"),
                                                   callback_data=CHOOSE_DAY + '_' + d.strftime("%d%m%y")))
-            count += 1
         else:
             reply_markup.row(*row)
-            count = 0
+            row = []
 
     msg = 'Выберите день из списка либо введите дату в формате *ДеньМесяцГод* (_Пример: 170518_)'
 
