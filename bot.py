@@ -1,6 +1,6 @@
 import os
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytz
 from aiogram import Bot, types
@@ -10,9 +10,9 @@ from aiogram.types import ParseMode
 from aiogram.utils import executor
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-import utils
-from bsoup_spider import BSoupParser
 from db import user_db, subscriber_db, wod_db, wod_result_db, async_db, location_db
+from utils import tz_util
+from utils import wod_util
 
 bot = Bot(token=os.environ['API_TOKEN'])
 
@@ -43,57 +43,8 @@ ADD_RESULT = 'Добавить'
 EDIT_RESULT = 'Изменить'
 SHOW_RESULTS = 'Результаты'
 CANCEL = "Отмена"
-
-
-async def get_wod():
-    now = datetime.now()
-
-    result = await wod_db.get_wods(now.date())
-    if result:
-        wod_id = result[0].id
-        title = result[0].title
-        description = result[0].description
-
-        return title + "\n\n" + description, wod_id
-
-    parser = BSoupParser(url=os.environ['WEB_URL'])
-
-    # Remove anything other than digits
-    num = re.sub(r'\D', "", parser.get_wod_date())
-    wod_date = datetime.strptime(num, '%m%d%y')
-    print(wod_date.date())
-
-    if wod_date.date().__eq__(now.date()):
-        title = parser.get_wod_date()
-
-        description = parser.get_regional_wod() + parser.get_open_wod()
-
-        wod_id = await wod_db.add_wod(wod_date.date(), title, description)
-
-        return title + "\n\n" + description, wod_id
-    else:
-        return "Комплекс еще не вышел.\nСорян :(", None
-
-
-async def get_wod_results(user_id, wod_id):
-    location = await location_db.get_location(user_id)
-
-    wod_results = await wod_result_db.get_wod_results(wod_id)
-
-    if wod_results:
-        msg = ''
-        for res in wod_results:
-            u = await user_db.get_user(res.user_id)
-
-            dt = res.sys_date.astimezone(pytz.timezone(location.tz)) if location else res.sys_date
-            name = f'{u.name} {u.surname}' if u.surname else u.name
-
-            title = '_' + name + ', ' + dt.strftime("%H:%M:%S %d %B %Y") + '_'
-            msg += title + '\n' + res.result + '\n\n'
-
-        return msg
-    else:
-        return None
+# CALLBACK
+CHOOSE_DAY = 'choose_day'
 
 
 @dp.message_handler(commands=['sys_all_users'])
@@ -143,7 +94,7 @@ async def sys_all_subs(message: types.Message):
 
 @dp.message_handler(commands=['test'])
 async def test(message: types.Message):
-    msg, wod_id = await get_wod()
+    msg, wod_id = await wod_util.get_wod()
     user_id = message.from_user.id
 
     if wod_id is not None:
@@ -165,7 +116,7 @@ async def show_results_callback(callback_query: types.CallbackQuery):
 
     wod_id = data['wod_id']
 
-    msg = await get_wod_results(callback_query.from_user.id, wod_id)
+    msg = await wod_util.get_wod_results(callback_query.from_user.id, wod_id)
 
     if msg:
         await bot.send_message(callback_query.message.chat.id, msg, parse_mode=ParseMode.MARKDOWN)
@@ -231,7 +182,7 @@ async def unsubscribe(message: types.Message):
 @dp.message_handler(commands=['wod'])
 @dp.message_handler(func=lambda message: message.text.lower() in wod_requests)
 async def send_wod(message: types.Message):
-    msg, wod_id = await get_wod()
+    msg, wod_id = await wod_util.get_wod()
     user_id = message.from_user.id
     res_button = ADD_RESULT
 
@@ -333,7 +284,7 @@ async def show_wod_results(message: types.Message):
 
     wod_id = data['wod_id']
 
-    msg = await get_wod_results(message.from_user.id, wod_id)
+    msg = await wod_util.get_wod_results(message.from_user.id, wod_id)
 
     if msg:
         await bot.send_message(message.chat.id, msg, reply_markup=types.ReplyKeyboardRemove(),
@@ -350,29 +301,56 @@ async def find(message: types.Message):
     state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
     await state.set_state(FIND_WOD)
 
-    await bot.send_message(message.chat.id, 'Для того чтобы найти комплекс просто введите дату в формате *ДеньМесяцГод*'
-                                            '\n\n_Пример: 170518_', parse_mode=ParseMode.MARKDOWN)
+    # Configure InlineKeyboardMarkup
+    reply_markup = types.InlineKeyboardMarkup()
+    now = datetime.now()
+
+    count = 0
+    for i in range(7, 0, -1):
+        row = []
+        if count < 3:
+            d = now - timedelta(days=i)
+            row.append(types.InlineKeyboardButton(d.strftime("%d %B"),
+                                                  callback_data=CHOOSE_DAY + '_' + d.strftime("%d%m%y")))
+            count += 1
+        else:
+            reply_markup.row(*row)
+            count = 0
+
+    msg = 'Выберите день из списка либо введите дату в формате *ДеньМесяцГод* (_Пример: 170518_)'
+
+    await bot.send_message(message.chat.id, msg, parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
+
+
+@dp.callback_query_handler(state=FIND_WOD, func=lambda callback_query: callback_query.data[0:10] == CHOOSE_DAY)
+async def find_wod_by_btn(callback_query: types.CallbackQuery):
+    search_date = datetime.strptime(callback_query.data[11:], '%d%m%y')
+    await find_and_send_wod(callback_query.message.chat.id, callback_query.from_user.id, search_date)
+    await bot.answer_callback_query(callback_query.id, text="")
 
 
 @dp.message_handler(state=FIND_WOD)
-async def find_wod(message: types.Message):
+async def find_wod_by_text(message: types.Message):
     try:
         search_date = datetime.strptime(message.text, '%d%m%y')
     except ValueError:
         return await bot.send_message(message.chat.id, 'Пожалуйста введите дату в формате *ДеньМесяцГод*'
                                                        '\n\n_Пример: 170518_', parse_mode=ParseMode.MARKDOWN)
 
+    await find_and_send_wod(message.chat.id, message.from_user.id, search_date)
+
+
+async def find_and_send_wod(chat_id, user_id, search_date):
     time_between = datetime.now() - search_date
+    state = dp.current_state(chat=chat_id, user=user_id)
 
     wods = await wod_db.get_wods(search_date)
     if wods:
         wod_id = wods[0].id
         title = wods[0].title
         description = wods[0].description
-        user_id = message.from_user.id
         res_button = ADD_RESULT
 
-        state = dp.current_state(chat=message.chat.id, user=user_id)
         await state.update_data(wod_id=wod_id)
         await state.set_state(WOD)
 
@@ -385,14 +363,18 @@ async def find_wod(message: types.Message):
         reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
 
         if time_between.days > 30 and res_button == EDIT_RESULT:
-            # if wod result older than week, then disable edit
+            # if wod result older than month, then disable edit
             reply_markup.add(SHOW_RESULTS)
         else:
             reply_markup.add(res_button, SHOW_RESULTS)
 
         reply_markup.add(CANCEL)
 
-        await bot.send_message(message.chat.id, title + "\n\n" + description, reply_markup=reply_markup)
+        await bot.send_message(chat_id, title + "\n\n" + description, reply_markup=reply_markup)
+    else:
+        await bot.send_message(chat_id, 'На указанную дату комплекс не найден!', reply_markup=types.ReplyKeyboardRemove())
+        # Finish conversation, destroy all data in storage for current user
+        await state.finish()
 
 
 @dp.message_handler(commands=['timezone'])
@@ -416,8 +398,8 @@ async def set_location(message: types.Message):
     longitude = message.location.longitude
     state = dp.current_state(chat=message.chat.id, user=user_id)
 
-    timezone_id = await utils.get_timezone_id(latitude=message.location.latitude,
-                                              longitude=message.location.longitude)
+    timezone_id = await tz_util.get_timezone_id(latitude=message.location.latitude,
+                                                longitude=message.location.longitude)
 
     if not timezone_id:
         return await bot.send_message(message.chat.id, 'Убедитесь в том что Геолокация включена и у Телеграм '
@@ -482,7 +464,7 @@ async def scheduled_job():
     print('This job runs everyday at 8am')
     subscribers = await subscriber_db.get_all_subscribers()
 
-    msg, wod_id = await get_wod()
+    msg, wod_id = await wod_util.get_wod()
 
     print(f'Sending WOD to {len(subscribers)} subscribers')
     for sub in subscribers:
