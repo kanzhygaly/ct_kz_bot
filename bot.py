@@ -306,19 +306,22 @@ async def find(message: types.Message):
     now = datetime.now()
 
     row = []
-    for i in range(7, 0, -1):
+    count = 5
+
+    while count > 0:
         if len(row) < 3:
-            d = now - timedelta(days=i)
+            d = now - timedelta(days=count)
             row.append(types.InlineKeyboardButton(d.strftime("%d %B"),
                                                   callback_data=CHOOSE_DAY + '_' + d.strftime("%d%m%y")))
+            count -= 1
         else:
             reply_markup.row(*row)
-            row.clear()
+            row = []
 
-    reply_markup.insert(types.InlineKeyboardButton("Сегодня", callback_data="ignore"))
+    row.append(types.InlineKeyboardButton("Сегодня", callback_data="ignore"))
+    reply_markup.row(*row)
 
     msg = 'Выберите день из списка либо введите дату в формате *ДеньМесяцГод* (_Пример: 170518_)'
-
     await bot.send_message(message.chat.id, msg, parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
 
 

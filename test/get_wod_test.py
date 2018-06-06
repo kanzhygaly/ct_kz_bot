@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 
 from bsoup_spider import BSoupParser
@@ -22,7 +22,6 @@ if wod_date.date().__eq__(now.date()):
     openw = parser.get_open_wod()
     description = regional + "\n" + openw
 
-    wod_id = None
     reg_text = (''.join(regional.split())).lower()
     reg_text = reg_text[4:]
     open_text = (''.join(openw.split())).lower()
@@ -30,6 +29,20 @@ if wod_date.date().__eq__(now.date()):
 
     if not reg_text.startswith("regionalsathletesrest") and \
             not open_text.startswith("openathletesrest"):
-        print(title + "\n\n" + description + "\n\n" + msg + "\n\n" + wod_id)
+        print(title + "\n\n" + description + "\n\n" + msg)
 else:
     print("Комплекс еще не вышел.\nСорян :(")
+
+row = []
+count = 5
+while count > 0:
+    if len(row) < 3:
+        d = now - timedelta(days=count)
+        row.append(d.strftime("%d %B"))
+        count -= 1
+    else:
+        print(row)
+        row = []
+
+row.append("Today")
+print(row)
