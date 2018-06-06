@@ -313,7 +313,9 @@ async def find(message: types.Message):
                                                   callback_data=CHOOSE_DAY + '_' + d.strftime("%d%m%y")))
         else:
             reply_markup.row(*row)
-            row = []
+            row.clear()
+
+    reply_markup.insert(types.InlineKeyboardButton("Сегодня", callback_data="ignore"))
 
     msg = 'Выберите день из списка либо введите дату в формате *ДеньМесяцГод* (_Пример: 170518_)'
 
@@ -332,8 +334,8 @@ async def find_wod_by_text(message: types.Message):
     try:
         search_date = datetime.strptime(message.text, '%d%m%y')
     except ValueError:
-        return await bot.send_message(message.chat.id, 'Пожалуйста введите дату в формате *ДеньМесяцГод*'
-                                                       '\n\n_Пример: 170518_', parse_mode=ParseMode.MARKDOWN)
+        msg = 'Пожалуйста введите дату в формате *ДеньМесяцГод* (_Пример: 170518_)'
+        return await bot.send_message(message.chat.id, msg, parse_mode=ParseMode.MARKDOWN)
 
     await find_and_send_wod(message.chat.id, message.from_user.id, search_date)
 
