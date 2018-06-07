@@ -304,15 +304,15 @@ async def show_wod_results(message: types.Message):
         await state.reset_state()
         await state.update_data(wod_id=None)
         await state.update_data(wod_result_id=None)
-        await state.update_data(refresh_wod_id=wod_id)
+        # await state.update_data(refresh_wod_id=wod_id)
 
-        # Configure InlineKeyboardMarkup
-        reply_markup = types.InlineKeyboardMarkup()
-        reply_markup.add(types.InlineKeyboardButton(REFRESH, callback_data=REFRESH))
+        # reply_markup = types.InlineKeyboardMarkup()
+        # reply_markup.add(types.InlineKeyboardButton(REFRESH, callback_data=REFRESH))
 
-        await bot.send_message(message.chat.id, "", reply_markup=types.ReplyKeyboardRemove())
-        await bot.send_message(message.chat.id, msg, reply_markup=reply_markup,
+        await bot.send_message(message.chat.id, msg, reply_markup=types.ReplyKeyboardRemove(),
                                parse_mode=ParseMode.MARKDOWN)
+        # await bot.send_message(message.chat.id, msg, reply_markup=reply_markup,
+        #                        parse_mode=ParseMode.MARKDOWN)
     else:
         return await bot.send_message(message.chat.id, 'Результатов пока нет.\n'
                                                        'Станьте первым кто внесет свой результат!')
