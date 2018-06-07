@@ -33,16 +33,4 @@ if wod_date.date().__eq__(now.date()):
 else:
     print("Комплекс еще не вышел.\nСорян :(")
 
-row = []
-count = 5
-while count > 0:
-    if len(row) < 3:
-        d = now - timedelta(days=count)
-        row.append(d.strftime("%d %B"))
-        count -= 1
-    else:
-        print(row)
-        row = []
 
-row.append("Today")
-print(row)

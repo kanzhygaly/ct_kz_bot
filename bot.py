@@ -42,7 +42,8 @@ SET_TIMEZONE = 'set_timezone'
 ADD_RESULT = 'Добавить'
 EDIT_RESULT = 'Изменить'
 SHOW_RESULTS = 'Результаты'
-CANCEL = "Отмена"
+CANCEL = 'Отмена'
+REFRESH = 'Обновить'
 # CALLBACK
 CHOOSE_DAY = 'choose_day'
 
@@ -103,7 +104,7 @@ async def test(message: types.Message):
 
     # Configure InlineKeyboardMarkup
     reply_markup = types.InlineKeyboardMarkup()
-    reply_markup.add(types.InlineKeyboardButton(SHOW_RESULTS, callback_data=ADD_RESULT),
+    reply_markup.add(types.InlineKeyboardButton(ADD_RESULT, callback_data=ADD_RESULT),
                      types.InlineKeyboardButton(SHOW_RESULTS, callback_data=SHOW_RESULTS))
 
     await bot.send_message(message.chat.id, msg, reply_markup=reply_markup)
@@ -121,7 +122,7 @@ async def show_results_callback(callback_query: types.CallbackQuery):
     if msg:
         await bot.send_message(callback_query.message.chat.id, msg, parse_mode=ParseMode.MARKDOWN)
         # Finish conversation, destroy all data in storage for current user
-        await state.finish()
+        await state.update_data(wod_id=None)
     else:
         return await bot.send_message(callback_query.message.chat.id, 'Результатов пока нет.\n'
                                                                       'Станьте первым кто внесет свой результат!')
@@ -183,10 +184,11 @@ async def unsubscribe(message: types.Message):
 @dp.message_handler(func=lambda message: message.text.lower() in wod_requests)
 async def send_wod(message: types.Message):
     msg, wod_id = await wod_util.get_wod()
-    user_id = message.from_user.id
-    res_button = ADD_RESULT
 
-    if wod_id is not None:
+    if wod_id:
+        user_id = message.from_user.id
+        res_button = ADD_RESULT
+
         state = dp.current_state(chat=message.chat.id, user=user_id)
         await state.update_data(wod_id=wod_id)
         await state.set_state(WOD)
@@ -196,19 +198,24 @@ async def send_wod(message: types.Message):
             res_button = EDIT_RESULT
             await state.update_data(wod_result_id=wod_result.id)
 
-    # Configure ReplyKeyboardMarkup
-    reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
-    reply_markup.add(res_button, SHOW_RESULTS)
-    reply_markup.add(CANCEL)
+        # Configure ReplyKeyboardMarkup
+        reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+        reply_markup.add(res_button, SHOW_RESULTS)
+        reply_markup.add(CANCEL)
 
-    await bot.send_message(message.chat.id, msg, reply_markup=reply_markup)
+        await bot.send_message(message.chat.id, msg, reply_markup=reply_markup)
+    else:
+        await bot.send_message(message.chat.id, msg)
 
 
 @dp.message_handler(state='*', func=lambda message: message.text.lower() == CANCEL.lower())
 async def hide_keyboard(message: types.Message):
     state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
     # reset
-    await state.reset_state(with_data=True)
+    # await state.reset_state(with_data=True)
+    await state.reset_state()
+    await state.update_data(wod_id=None)
+    await state.update_data(wod_result_id=None)
     await bot.send_message(message.chat.id, info_msg, reply_markup=types.ReplyKeyboardRemove())
 
 
@@ -256,7 +263,7 @@ async def update_wod_result(message: types.Message):
     state = dp.current_state(chat=message.chat.id, user=user_id)
     data = await state.get_data()
 
-    wod_result = await wod_result_db.get_wod_result(wod_result_id=data['wod_result_id'])\
+    wod_result = await wod_result_db.get_wod_result(wod_result_id=data['wod_result_id']) \
         if ('wod_result_id' in data.keys()) else None
 
     if wod_result:
@@ -274,7 +281,10 @@ async def update_wod_result(message: types.Message):
                                reply_markup=types.ReplyKeyboardRemove())
 
     # Finish conversation, destroy all data in storage for current user
-    await state.finish()
+    # await state.finish()
+    await state.reset_state()
+    await state.update_data(wod_id=None)
+    await state.update_data(wod_result_id=None)
 
 
 @dp.message_handler(state=WOD, func=lambda message: message.text == SHOW_RESULTS)
@@ -287,13 +297,39 @@ async def show_wod_results(message: types.Message):
     msg = await wod_util.get_wod_results(message.from_user.id, wod_id)
 
     if msg:
-        await bot.send_message(message.chat.id, msg, reply_markup=types.ReplyKeyboardRemove(),
-                               parse_mode=ParseMode.MARKDOWN)
+        # await bot.send_message(message.chat.id, msg, reply_markup=types.ReplyKeyboardRemove(),
+        #                        parse_mode=ParseMode.MARKDOWN)
         # Finish conversation, destroy all data in storage for current user
-        await state.finish()
+        # await state.finish()
+        await state.reset_state()
+        await state.update_data(wod_id=None)
+        await state.update_data(wod_result_id=None)
+        await state.update_data(refresh_wod_id=wod_id)
+
+        # Configure InlineKeyboardMarkup
+        reply_markup = types.InlineKeyboardMarkup()
+        reply_markup.add(types.InlineKeyboardButton(REFRESH, callback_data=REFRESH))
+
+        await bot.send_message(message.chat.id, msg, reply_markup=reply_markup,
+                               parse_mode=ParseMode.MARKDOWN)
     else:
         return await bot.send_message(message.chat.id, 'Результатов пока нет.\n'
                                                        'Станьте первым кто внесет свой результат!')
+
+
+@dp.callback_query_handler(func=lambda callback_query: callback_query.data == REFRESH)
+async def refresh_results_callback(callback_query: types.CallbackQuery):
+    state = dp.current_state(chat=callback_query.message.chat.id, user=callback_query.from_user.id)
+    data = await state.get_data()
+
+    wod_id = data['refresh_wod_id']
+
+    msg = await wod_util.get_wod_results(callback_query.from_user.id, wod_id) if wod_id else None
+
+    if msg:
+        await bot.edit_message_text(text=msg, chat_id=callback_query.message.chat_id,
+                                    message_id=callback_query.message.message_id,
+                                    parse_mode=ParseMode.MARKDOWN)
 
 
 @dp.message_handler(commands=['find'])
@@ -375,9 +411,11 @@ async def find_and_send_wod(chat_id, user_id, search_date):
 
         await bot.send_message(chat_id, title + "\n\n" + description, reply_markup=reply_markup)
     else:
-        await bot.send_message(chat_id, 'На указанную дату комплекс не найден!', reply_markup=types.ReplyKeyboardRemove())
+        await bot.send_message(chat_id, 'На указанную дату комплекс не найден!',
+                               reply_markup=types.ReplyKeyboardRemove())
         # Finish conversation, destroy all data in storage for current user
-        await state.finish()
+        # await state.finish()
+        await state.reset_state()
 
 
 @dp.message_handler(commands=['timezone'])
@@ -423,7 +461,8 @@ async def set_location(message: types.Message):
                            reply_markup=types.ReplyKeyboardRemove())
 
     # Finish conversation, destroy all data in storage for current user
-    await state.finish()
+    # await state.finish()
+    await state.reset_state()
 
 
 @dp.message_handler()
@@ -470,12 +509,28 @@ async def scheduled_job():
     msg, wod_id = await wod_util.get_wod()
 
     print(f'Sending WOD to {len(subscribers)} subscribers')
-    for sub in subscribers:
-        if wod_id is not None:
-            with dp.current_state(chat=sub.user_id, user=sub.user_id) as state:
-                await state.update_data(wod_id=wod_id)
+    if wod_id:
+        for sub in subscribers:
+            res_button = ADD_RESULT
 
-        await bot.send_message(sub.user_id, msg)
+            state = dp.current_state(chat=sub.user_id, user=sub.user_id)
+            await state.update_data(wod_id=wod_id)
+            await state.set_state(WOD)
+
+            wod_result = await wod_result_db.get_user_wod_result(wod_id=wod_id, user_id=sub.user_id)
+            if wod_result:
+                res_button = EDIT_RESULT
+                await state.update_data(wod_result_id=wod_result.id)
+
+            # Configure ReplyKeyboardMarkup
+            reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+            reply_markup.add(res_button, SHOW_RESULTS)
+            reply_markup.add(CANCEL)
+
+            await bot.send_message(sub.user_id, msg, reply_markup=reply_markup)
+    else:
+        for sub in subscribers:
+            await bot.send_message(sub.user_id, msg)
 
 
 async def startup(dispatcher: Dispatcher):
