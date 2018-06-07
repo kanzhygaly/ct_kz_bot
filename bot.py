@@ -310,6 +310,7 @@ async def show_wod_results(message: types.Message):
         reply_markup = types.InlineKeyboardMarkup()
         reply_markup.add(types.InlineKeyboardButton(REFRESH, callback_data=REFRESH))
 
+        await bot.send_message(chat_id=message.chat.id, reply_markup=types.ReplyKeyboardRemove())
         await bot.send_message(message.chat.id, msg, reply_markup=reply_markup,
                                parse_mode=ParseMode.MARKDOWN)
     else:
@@ -327,7 +328,7 @@ async def refresh_results_callback(callback_query: types.CallbackQuery):
     msg = await wod_util.get_wod_results(callback_query.from_user.id, wod_id) if wod_id else None
 
     if msg:
-        await bot.edit_message_text(text=msg, chat_id=callback_query.message.chat_id,
+        await bot.edit_message_text(text=msg, chat_id=callback_query.message.chat.id,
                                     message_id=callback_query.message.message_id,
                                     parse_mode=ParseMode.MARKDOWN)
 
