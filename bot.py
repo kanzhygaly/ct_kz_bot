@@ -310,7 +310,7 @@ async def show_wod_results(message: types.Message):
         reply_markup = types.InlineKeyboardMarkup()
         reply_markup.add(types.InlineKeyboardButton(REFRESH, callback_data=REFRESH))
 
-        await bot.send_message(chat_id=message.chat.id, reply_markup=types.ReplyKeyboardRemove())
+        await bot.send_message(message.chat.id, "", reply_markup=types.ReplyKeyboardRemove())
         await bot.send_message(message.chat.id, msg, reply_markup=reply_markup,
                                parse_mode=ParseMode.MARKDOWN)
     else:
