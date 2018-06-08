@@ -199,7 +199,7 @@ async def send_wod(message: types.Message):
             await state.update_data(wod_result_id=wod_result.id)
 
         # Configure ReplyKeyboardMarkup
-        reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True, one_time_keyboard=True)
+        reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
         reply_markup.add(res_button, SHOW_RESULTS)
         reply_markup.add(CANCEL)
 
@@ -289,12 +289,14 @@ async def update_wod_result(message: types.Message):
 
 @dp.message_handler(state=WOD, func=lambda message: message.text == SHOW_RESULTS)
 async def show_wod_results(message: types.Message):
-    state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
+    user_id = message.from_user.id
+
+    state = dp.current_state(chat=message.chat.id, user=user_id)
     data = await state.get_data()
 
     wod_id = data['wod_id']
 
-    msg = await wod_util.get_wod_results(message.from_user.id, wod_id)
+    msg = await wod_util.get_wod_results(user_id, wod_id)
 
     if msg:
         # await bot.send_message(message.chat.id, msg, reply_markup=types.ReplyKeyboardRemove(),
@@ -306,13 +308,17 @@ async def show_wod_results(message: types.Message):
         await state.update_data(wod_result_id=None)
         await state.update_data(refresh_wod_id=wod_id)
 
+        location = await location_db.get_location(user_id)
+        wod = await wod_db.get_wod(wod_id)
+        dt = wod.wod_day.astimezone(pytz.timezone(location.tz)) if location else wod.wod_day
+
         reply_markup = types.InlineKeyboardMarkup()
         reply_markup.add(types.InlineKeyboardButton(REFRESH, callback_data=REFRESH))
 
-        await bot.send_message(message.chat.id, msg, reply_markup=types.ReplyKeyboardRemove(),
-                               parse_mode=ParseMode.MARKDOWN)
-        await bot.send_message(message.chat.id, 'Нажмите чтобы обновить результаты', reply_markup=reply_markup,
-                               parse_mode=ParseMode.MARKDOWN)
+        await bot.send_message(message.chat.id, f'Результаты {dt.strftime("%d.%m.%Y")}',
+                               reply_markup=types.ReplyKeyboardRemove(), parse_mode=ParseMode.MARKDOWN)
+
+        await bot.send_message(message.chat.id, msg, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
     else:
         return await bot.send_message(message.chat.id, 'Результатов пока нет.\n'
                                                        'Станьте первым кто внесет свой результат!')
@@ -328,10 +334,13 @@ async def refresh_results_callback(callback_query: types.CallbackQuery):
     msg = await wod_util.get_wod_results(callback_query.from_user.id, wod_id) if wod_id else None
 
     if msg:
+        reply_markup = types.InlineKeyboardMarkup()
+        reply_markup.add(types.InlineKeyboardButton(REFRESH, callback_data=REFRESH))
+
         await bot.edit_message_text(text=msg, chat_id=callback_query.message.chat.id,
                                     message_id=callback_query.message.message_id,
-                                    parse_mode=ParseMode.MARKDOWN)
-        # await bot.answer_callback_query(callback_query.id, text="")
+                                    parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
+        await bot.answer_callback_query(callback_query.id, text="")
 
 
 @dp.message_handler(commands=['find'])
@@ -505,7 +514,7 @@ async def echo(message: types.Message):
         if await subscriber_db.is_subscriber(message.from_user.id):
             sub = "/unsubscribe - отписаться от ежедневной рассылки WOD"
 
-        await message.reply(info_msg + sub)
+        await message.reply(info_msg + sub, reply_markup=types.ReplyKeyboardRemove())
 
 
 @scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=2)

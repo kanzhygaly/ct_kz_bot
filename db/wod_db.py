@@ -22,3 +22,10 @@ async def add_wod(wod_day, title, description):
     entity = WOD(wod_day=wod_day, title=title, description=description)
     await entity.save()
     return entity.id
+
+
+async def get_wod(wod_id):
+    try:
+        return await WOD.get_one(record=False, id=wod_id)
+    except TypeError:
+        return None
