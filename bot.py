@@ -309,9 +309,9 @@ async def show_wod_results(message: types.Message):
         reply_markup = types.InlineKeyboardMarkup()
         reply_markup.add(types.InlineKeyboardButton(REFRESH, callback_data=REFRESH))
 
-        # await bot.send_message(message.chat.id, msg, reply_markup=types.ReplyKeyboardRemove(),
-        #                        parse_mode=ParseMode.MARKDOWN)
-        await bot.send_message(message.chat.id, msg, reply_markup=reply_markup,
+        await bot.send_message(message.chat.id, msg, reply_markup=types.ReplyKeyboardRemove(),
+                               parse_mode=ParseMode.MARKDOWN)
+        await bot.send_message(message.chat.id, 'Нажмите чтобы обновить результаты', reply_markup=reply_markup,
                                parse_mode=ParseMode.MARKDOWN)
     else:
         return await bot.send_message(message.chat.id, 'Результатов пока нет.\n'
@@ -331,7 +331,7 @@ async def refresh_results_callback(callback_query: types.CallbackQuery):
         await bot.edit_message_text(text=msg, chat_id=callback_query.message.chat.id,
                                     message_id=callback_query.message.message_id,
                                     parse_mode=ParseMode.MARKDOWN)
-        await bot.answer_callback_query(callback_query.id, text="")
+        # await bot.answer_callback_query(callback_query.id, text="")
 
 
 @dp.message_handler(commands=['find'])
