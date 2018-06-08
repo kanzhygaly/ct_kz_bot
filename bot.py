@@ -44,6 +44,7 @@ EDIT_RESULT = 'Изменить'
 SHOW_RESULTS = 'Результаты'
 CANCEL = 'Отмена'
 REFRESH = 'Обновить'
+VIEW_RESULT = 'Посмотреть результат'
 # CALLBACK
 CHOOSE_DAY = 'choose_day'
 
@@ -91,41 +92,6 @@ async def sys_all_subs(message: types.Message):
             counter += 1
 
     await bot.send_message(message.chat.id, msg, parse_mode=ParseMode.MARKDOWN)
-
-
-@dp.message_handler(commands=['test'])
-async def test(message: types.Message):
-    msg, wod_id = await wod_util.get_wod()
-    user_id = message.from_user.id
-
-    if wod_id is not None:
-        state = dp.current_state(chat=message.chat.id, user=user_id)
-        await state.update_data(wod_id=wod_id)
-
-    # Configure InlineKeyboardMarkup
-    reply_markup = types.InlineKeyboardMarkup()
-    reply_markup.add(types.InlineKeyboardButton(ADD_RESULT, callback_data=ADD_RESULT),
-                     types.InlineKeyboardButton(SHOW_RESULTS, callback_data=SHOW_RESULTS))
-
-    await bot.send_message(message.chat.id, msg, reply_markup=reply_markup)
-
-
-@dp.callback_query_handler(func=lambda callback_query: callback_query.data == SHOW_RESULTS)
-async def show_results_callback(callback_query: types.CallbackQuery):
-    state = dp.current_state(chat=callback_query.message.chat.id, user=callback_query.from_user.id)
-    data = await state.get_data()
-
-    wod_id = data['wod_id']
-
-    msg = await wod_util.get_wod_results(callback_query.from_user.id, wod_id)
-
-    if msg:
-        await bot.send_message(callback_query.message.chat.id, msg, parse_mode=ParseMode.MARKDOWN)
-        # Finish conversation, destroy all data in storage for current user
-        await state.update_data(wod_id=None)
-    else:
-        return await bot.send_message(callback_query.message.chat.id, 'Результатов пока нет.\n'
-                                                                      'Станьте первым кто внесет свой результат!')
 
 
 @dp.message_handler(commands=['start'])
@@ -280,6 +246,28 @@ async def update_wod_result(message: types.Message):
         await bot.send_message(message.chat.id, 'Ваш результат успешно добавлен!',
                                reply_markup=types.ReplyKeyboardRemove())
 
+        # Notify other users that new result was added
+        wod = await wod_db.get_wod(wod_id)
+        diff = datetime.now().date() - wod.wod_day
+
+        if diff.days < 2:
+            wod_results = await wod_result_db.get_wod_results(wod_id)
+            for wr in wod_results:
+                if wr.user_id == user_id:
+                    continue
+
+                st = dp.current_state(chat=wr.user_id, user=wr.user_id)
+                await st.update_data(view_wod_id=wod_id)
+
+                u = await user_db.get_user(wr.user_id)
+                name = f'{u.name} {u.surname}' if u.surname else u.name
+                msg = f'{name} записал результат за {wod.title}'
+
+                reply_markup = types.InlineKeyboardMarkup()
+                reply_markup.add(types.InlineKeyboardButton(VIEW_RESULT, callback_data=VIEW_RESULT))
+
+                await bot.send_message(wr.user_id, msg, reply_markup=reply_markup)
+
     # Finish conversation, destroy all data in storage for current user
     # await state.finish()
     await state.reset_state()
@@ -323,7 +311,7 @@ async def show_wod_results(message: types.Message):
 
 
 @dp.callback_query_handler(func=lambda callback_query: callback_query.data == REFRESH)
-async def refresh_results_callback(callback_query: types.CallbackQuery):
+async def refresh_wod_results_callback(callback_query: types.CallbackQuery):
     state = dp.current_state(chat=callback_query.message.chat.id, user=callback_query.from_user.id)
     data = await state.get_data()
 
@@ -343,6 +331,22 @@ async def refresh_results_callback(callback_query: types.CallbackQuery):
                                             message_id=callback_query.message.message_id, reply_markup=reply_markup)
 
 
+@dp.callback_query_handler(func=lambda callback_query: callback_query.data == VIEW_RESULT)
+async def view_wod_results_callback(callback_query: types.CallbackQuery):
+    state = dp.current_state(chat=callback_query.message.chat.id, user=callback_query.from_user.id)
+    data = await state.get_data()
+
+    wod_id = data['view_wod_id']
+
+    msg = await wod_util.get_wod_results(callback_query.from_user.id, wod_id) if wod_id else None
+
+    if msg:
+        await bot.edit_message_text(text=msg, chat_id=callback_query.message.chat.id,
+                                    message_id=callback_query.message.message_id,
+                                    parse_mode=ParseMode.MARKDOWN)
+        await state.update_data(view_wod_id=None)
+
+
 @dp.message_handler(commands=['find'])
 async def find(message: types.Message):
     state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
@@ -358,8 +362,9 @@ async def find(message: types.Message):
     while count > 0:
         if len(row) < 3:
             d = now - timedelta(days=count)
-            row.append(types.InlineKeyboardButton(d.strftime("%d %B"),
-                                                  callback_data=CHOOSE_DAY + '_' + d.strftime("%d%m%y")))
+            btn_name = d.strftime("%A") if d.weekday() in (3, 6) else d.strftime("%d %B")
+
+            row.append(types.InlineKeyboardButton(btn_name, callback_data=CHOOSE_DAY + '_' + d.strftime("%d%m%y")))
             count -= 1
         else:
             reply_markup.row(*row)
@@ -530,6 +535,7 @@ async def scheduled_job():
             res_button = ADD_RESULT
 
             state = dp.current_state(chat=sub.user_id, user=sub.user_id)
+            await state.update_data(refresh_wod_id=None)
             await state.update_data(wod_id=wod_id)
             await state.set_state(WOD)
 

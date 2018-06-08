@@ -18,3 +18,7 @@ print(row)
 msg = 'CHOOSE_DAY_120318'
 print(msg[0:10])
 print(msg[11:])
+
+wod_day = datetime.datetime.strptime('060618', '%d%m%y').date()
+timedelta = now.date() - wod_day
+print(timedelta.days)
