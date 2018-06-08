@@ -199,7 +199,7 @@ async def send_wod(message: types.Message):
             await state.update_data(wod_result_id=wod_result.id)
 
         # Configure ReplyKeyboardMarkup
-        reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+        reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True, one_time_keyboard=True)
         reply_markup.add(res_button, SHOW_RESULTS)
         reply_markup.add(CANCEL)
 
@@ -304,15 +304,15 @@ async def show_wod_results(message: types.Message):
         await state.reset_state()
         await state.update_data(wod_id=None)
         await state.update_data(wod_result_id=None)
-        # await state.update_data(refresh_wod_id=wod_id)
+        await state.update_data(refresh_wod_id=wod_id)
 
-        # reply_markup = types.InlineKeyboardMarkup()
-        # reply_markup.add(types.InlineKeyboardButton(REFRESH, callback_data=REFRESH))
+        reply_markup = types.InlineKeyboardMarkup()
+        reply_markup.add(types.InlineKeyboardButton(REFRESH, callback_data=REFRESH))
 
-        await bot.send_message(message.chat.id, msg, reply_markup=types.ReplyKeyboardRemove(),
-                               parse_mode=ParseMode.MARKDOWN)
-        # await bot.send_message(message.chat.id, msg, reply_markup=reply_markup,
+        # await bot.send_message(message.chat.id, msg, reply_markup=types.ReplyKeyboardRemove(),
         #                        parse_mode=ParseMode.MARKDOWN)
+        await bot.send_message(message.chat.id, msg, reply_markup=reply_markup,
+                               parse_mode=ParseMode.MARKDOWN)
     else:
         return await bot.send_message(message.chat.id, 'Результатов пока нет.\n'
                                                        'Станьте первым кто внесет свой результат!')
@@ -331,6 +331,7 @@ async def refresh_results_callback(callback_query: types.CallbackQuery):
         await bot.edit_message_text(text=msg, chat_id=callback_query.message.chat.id,
                                     message_id=callback_query.message.message_id,
                                     parse_mode=ParseMode.MARKDOWN)
+        await bot.answer_callback_query(callback_query.id, text="")
 
 
 @dp.message_handler(commands=['find'])
@@ -366,6 +367,11 @@ async def find(message: types.Message):
 async def find_wod_by_btn(callback_query: types.CallbackQuery):
     search_date = datetime.strptime(callback_query.data[11:], '%d%m%y')
     await find_and_send_wod(callback_query.message.chat.id, callback_query.from_user.id, search_date)
+    await bot.answer_callback_query(callback_query.id, text="")
+
+
+@dp.callback_query_handler(func=lambda callback_query: callback_query.data == 'ignore')
+async def ignore(callback_query):
     await bot.answer_callback_query(callback_query.id, text="")
 
 
