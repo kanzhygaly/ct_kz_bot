@@ -309,12 +309,12 @@ async def show_wod_results(message: types.Message):
         await state.update_data(refresh_wod_id=wod_id)
 
         wod = await wod_db.get_wod(wod_id)
-        dt = wod.wod_day.strftime("%d.%m.%Y")
+        # dt = wod.wod_day.strftime("%d.%m.%Y")
 
         reply_markup = types.InlineKeyboardMarkup()
         reply_markup.add(types.InlineKeyboardButton(REFRESH, callback_data=REFRESH))
 
-        await bot.send_message(message.chat.id, f'Результаты {dt}', reply_markup=types.ReplyKeyboardRemove(),
+        await bot.send_message(message.chat.id, f'Результаты {wod.title}', reply_markup=types.ReplyKeyboardRemove(),
                                parse_mode=ParseMode.MARKDOWN)
 
         await bot.send_message(message.chat.id, msg, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
@@ -338,7 +338,7 @@ async def refresh_results_callback(callback_query: types.CallbackQuery):
 
         await bot.edit_message_text(text=msg, chat_id=callback_query.message.chat.id,
                                     message_id=callback_query.message.message_id,
-                                    parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
+                                    parse_mode=ParseMode.MARKDOWN)
         await bot.answer_callback_query(callback_query.id, text="")
 
 
