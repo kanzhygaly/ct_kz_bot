@@ -308,15 +308,14 @@ async def show_wod_results(message: types.Message):
         await state.update_data(wod_result_id=None)
         await state.update_data(refresh_wod_id=wod_id)
 
-        location = await location_db.get_location(user_id)
         wod = await wod_db.get_wod(wod_id)
-        dt = wod.wod_day.astimezone(pytz.timezone(location.tz)) if location else wod.wod_day
+        dt = wod.wod_day.strftime("%d.%m.%Y")
 
         reply_markup = types.InlineKeyboardMarkup()
         reply_markup.add(types.InlineKeyboardButton(REFRESH, callback_data=REFRESH))
 
-        await bot.send_message(message.chat.id, f'Результаты {dt.strftime("%d.%m.%Y")}',
-                               reply_markup=types.ReplyKeyboardRemove(), parse_mode=ParseMode.MARKDOWN)
+        await bot.send_message(message.chat.id, f'Результаты {dt}', reply_markup=types.ReplyKeyboardRemove(),
+                               parse_mode=ParseMode.MARKDOWN)
 
         await bot.send_message(message.chat.id, msg, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
     else:
