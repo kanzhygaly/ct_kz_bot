@@ -287,6 +287,10 @@ async def update_wod_result(message: types.Message):
     await state.update_data(wod_result_id=None)
 
 
+refresh_markup = types.InlineKeyboardMarkup()
+refresh_markup.add(types.InlineKeyboardButton(REFRESH, callback_data=REFRESH))
+
+
 @dp.message_handler(state=WOD, func=lambda message: message.text == SHOW_RESULTS)
 async def show_wod_results(message: types.Message):
     user_id = message.from_user.id
@@ -309,15 +313,11 @@ async def show_wod_results(message: types.Message):
         await state.update_data(refresh_wod_id=wod_id)
 
         wod = await wod_db.get_wod(wod_id)
-        # dt = wod.wod_day.strftime("%d.%m.%Y")
 
-        reply_markup = types.InlineKeyboardMarkup()
-        reply_markup.add(types.InlineKeyboardButton(REFRESH, callback_data=REFRESH))
-
-        await bot.send_message(message.chat.id, f'Результаты {wod.title}', reply_markup=types.ReplyKeyboardRemove(),
+        await bot.send_message(message.chat.id, wod.title, reply_markup=types.ReplyKeyboardRemove(),
                                parse_mode=ParseMode.MARKDOWN)
 
-        await bot.send_message(message.chat.id, msg, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+        await bot.send_message(message.chat.id, msg, reply_markup=refresh_markup, parse_mode=ParseMode.MARKDOWN)
     else:
         return await bot.send_message(message.chat.id, 'Результатов пока нет.\n'
                                                        'Станьте первым кто внесет свой результат!')
@@ -333,13 +333,10 @@ async def refresh_results_callback(callback_query: types.CallbackQuery):
     msg = await wod_util.get_wod_results(callback_query.from_user.id, wod_id) if wod_id else None
 
     if msg:
-        reply_markup = types.InlineKeyboardMarkup()
-        reply_markup.add(types.InlineKeyboardButton(REFRESH, callback_data=REFRESH))
-
         await bot.edit_message_text(text=msg, chat_id=callback_query.message.chat.id,
                                     message_id=callback_query.message.message_id,
-                                    parse_mode=ParseMode.MARKDOWN)
-        await bot.answer_callback_query(callback_query.id, text="")
+                                    parse_mode=ParseMode.MARKDOWN, reply_markup=refresh_markup)
+        # await bot.edit_message_reply_markup()
 
 
 @dp.message_handler(commands=['find'])
