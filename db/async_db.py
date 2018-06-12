@@ -77,12 +77,3 @@ async def delete_duplicates(connection) -> None:
     await connection.execute('''
             DELETE FROM subscribers a USING subscribers b WHERE a.id < b.id AND a.user_id = b.user_id;
     ''')
-
-
-async def update_db(connection) -> None:
-    await connection.execute('''
-            DROP TABLE IF EXISTS wod_result;
-             
-            ALTER TABLE wod add COLUMN warmup TEXT;
-    ''')
-
