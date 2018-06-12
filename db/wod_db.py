@@ -12,6 +12,7 @@ class WOD(Entity):
     wod_day = Column()
     title = Column()
     description = Column()
+    warmup = Column()
 
 
 async def get_wods(wod_day):
@@ -28,4 +29,31 @@ async def get_wod(wod_id):
     try:
         return await WOD.get_one(record=False, id=wod_id)
     except TypeError:
+        return None
+    except Exception as e:
+        print(e)
+        return None
+
+
+async def add_warmup(wod_id, txt):
+    try:
+        entity = await WOD.get_one(record=False, id=wod_id)
+        entity.warmup = txt
+        entity.save()
+        return entity.warmup
+    except TypeError:
+        return None
+    except Exception as e:
+        print(e)
+        return None
+
+
+async def get_warmup(wod_day):
+    try:
+        entity = await WOD.get_one(record=False, wod_day=wod_day)
+        return entity.warmup
+    except TypeError:
+        return None
+    except Exception as e:
+        print(e)
         return None

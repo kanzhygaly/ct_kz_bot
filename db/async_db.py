@@ -26,7 +26,7 @@ async def drop_all_tables(connection) -> None:
             DROP TABLE IF EXISTS benchmark_result;
             DROP TABLE IF EXISTS benchmark_ru;
             DROP TABLE IF EXISTS benchmark;
-            DROP TABLE IF EXISTS wod_result;
+            DROP TABLE IF EXISTS wod_result;            
             DROP TABLE IF EXISTS wod_ru;
             DROP TABLE IF EXISTS wod;
             DROP TABLE IF EXISTS subscribers;
@@ -43,10 +43,7 @@ async def create_all_tables(connection) -> None:
             CREATE TABLE IF NOT EXISTS subscribers (id uuid PRIMARY KEY, user_id BIGINT UNIQUE);
 
             CREATE TABLE IF NOT EXISTS wod (id uuid PRIMARY KEY, wod_day date, title VARCHAR(150),
-            description TEXT);
-
-            CREATE TABLE IF NOT EXISTS wod_ru (wod_id uuid PRIMARY KEY, title VARCHAR(150),
-            description TEXT);
+            description TEXT, warmup TEXT);
 
             CREATE TABLE IF NOT EXISTS wod_result (id uuid PRIMARY KEY, wod_id uuid not null,
             user_id BIGINT, result TEXT, sys_date TIMESTAMP);
@@ -65,6 +62,13 @@ async def create_all_tables(connection) -> None:
         ''')
 
 
+async def create_extra_tables(connection) -> None:
+    await connection.execute('''
+            CREATE TABLE IF NOT EXISTS wod_ru (wod_id uuid PRIMARY KEY, title VARCHAR(150),
+            description TEXT);            
+        ''')
+
+
 async def drop_table(connection, table_name) -> None:
     await connection.execute('''DROP TABLE IF EXISTS $1''', table_name)
 
@@ -77,3 +81,10 @@ async def delete_duplicates(connection) -> None:
     await connection.execute('''
             DELETE FROM subscribers a USING subscribers b WHERE a.id < b.id AND a.user_id = b.user_id;
     ''')
+
+
+async def update_db(connection) -> None:
+    await connection.execute('''
+            ALTER TABLE wod add COLUMN warmup TEXT;
+    ''')
+

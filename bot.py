@@ -8,6 +8,7 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import Dispatcher
 from aiogram.types import ParseMode
 from aiogram.utils import executor
+from aiogram.utils.emoji import emojize
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from db import user_db, subscriber_db, wod_db, wod_result_db, async_db, location_db
@@ -38,6 +39,7 @@ WOD = 'wod'
 WOD_RESULT = 'wod_result'
 FIND_WOD = 'find_wod'
 SET_TIMEZONE = 'set_timezone'
+WARM_UP = 'warm_up'
 # Buttons
 ADD_RESULT = 'Добавить'
 EDIT_RESULT = 'Изменить'
@@ -486,6 +488,52 @@ async def set_location(message: types.Message):
     await state.reset_state()
 
 
+@dp.message_handler(commands=['warmup'])
+async def view_warmup(message: types.Message):
+    result = await wod_db.get_warmup(datetime.now().date())
+    if result:
+        await bot.send_message(message.chat.id, result)
+    else:
+        await bot.send_message(message.chat.id, emojize("На сегодня разминки пока что нет :disappointed:"))
+
+
+@dp.message_handler(commands=['add_warmup'])
+async def add_warmup_request(message: types.Message):
+    if not await user_db.is_admin(message.from_user.id):
+        # send info
+        sub = "/subscribe - подписаться на ежедневную рассылку WOD"
+        if await subscriber_db.is_subscriber(message.from_user.id):
+            sub = "/unsubscribe - отписаться от ежедневной рассылки WOD"
+
+        return await message.reply(info_msg + sub)
+
+    result = await wod_db.get_wods(datetime.now().date())
+    if result:
+        wod_id = result[0].id
+
+        state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
+        await state.set_state(WARM_UP)
+        await state.update_data(wod_id=wod_id)
+
+    await bot.send_message(message.chat.id, 'Пожалуйста введите текст:')
+
+
+@dp.message_handler(state=WARM_UP)
+async def update_warmup(message: types.Message):
+    state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
+    data = await state.get_data()
+    wod_id = data['wod_id']
+
+    if await wod_db.add_warmup(wod_id, message.text):
+        await bot.send_message(message.chat.id, 'Ваши изменения успешно выполнены!')
+    else:
+        await bot.send_message(message.chat.id, 'Ошибка при внесении данных!')
+
+    # Finish conversation, destroy all data in storage for current user
+    await state.reset_state()
+    await state.update_data(wod_id=None)
+
+
 @dp.message_handler()
 async def echo(message: types.Message):
     msg = "".join(re.findall("[a-zA-Zа-яА-Я]+", message.text.lower()))
@@ -559,6 +607,8 @@ async def startup(dispatcher: Dispatcher):
     print('Startup CompTrainKZ Bot...')
     async with async_db.Entity.connection() as connection:
         # await async_db.drop_all_tables(connection)
+        await async_db.drop_table(connection, 'wod_result')
+        await async_db.update_db(connection)
         await async_db.create_all_tables(connection)
 
 

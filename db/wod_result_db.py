@@ -40,3 +40,6 @@ async def get_wod_result(wod_result_id):
         return await WodResult.get_one(record=False, id=wod_result_id)
     except TypeError:
         return None
+    except Exception as e:
+        print(e)
+        return None

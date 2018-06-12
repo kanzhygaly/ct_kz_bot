@@ -23,5 +23,6 @@ async def get_location(user_id):
         return await Location.get_one(record=False, user_id=user_id)
     except TypeError:
         return None
-
-
+    except Exception as e:
+        print(e)
+        return None
