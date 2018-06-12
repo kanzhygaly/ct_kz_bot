@@ -534,6 +534,20 @@ async def update_warmup(message: types.Message):
     await state.update_data(wod_id=None)
 
 
+@dp.message_handler(commands=['results'])
+async def view_results(message: types.Message):
+    user_id = message.from_user.id
+
+    wod = await wod_db.get_wod_by_date(datetime.now().date())
+
+    msg = await wod_util.get_wod_results(user_id, wod.id) if wod else None
+
+    if msg:
+        await bot.send_message(message.chat.id, f'{wod.title}\n\n{msg}', parse_mode=ParseMode.MARKDOWN)
+    else:
+        await bot.send_message(message.chat.id, emojize("На сегодня результатов пока что нет :disappointed:"))
+
+
 @dp.message_handler()
 async def echo(message: types.Message):
     msg = "".join(re.findall("[a-zA-Zа-яА-Я]+", message.text.lower()))
