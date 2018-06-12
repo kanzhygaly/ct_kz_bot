@@ -69,10 +69,6 @@ async def create_extra_tables(connection) -> None:
         ''')
 
 
-async def drop_table(connection, table_name) -> None:
-    await connection.execute('''DROP TABLE IF EXISTS $1''', table_name)
-
-
 async def set_admin(connection, user_id) -> None:
     await connection.execute('''UPDATE users SET admin=true WHERE user_id = $1''', user_id)
 
@@ -85,6 +81,8 @@ async def delete_duplicates(connection) -> None:
 
 async def update_db(connection) -> None:
     await connection.execute('''
+            DROP TABLE IF EXISTS wod_result;
+             
             ALTER TABLE wod add COLUMN warmup TEXT;
     ''')
 
