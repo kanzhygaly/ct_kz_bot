@@ -4,3 +4,4 @@ apscheduler
 requests
 aiogram
 beautifulsoup4
+emoji
