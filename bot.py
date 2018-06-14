@@ -27,11 +27,16 @@ greetings = ['здравствуй', 'привет', 'ку', 'здорово', '
 salem = ['салам', 'слм', 'саламалейкум', 'ассаламуагалейкум', 'ассалямуагалейкум',
          'ассаламуалейкум', 'мирвам', 'миртебе']
 wod_requests = ['чтс', 'что там сегодня', 'тренировка', 'треня', 'wod', 'workout']
+warmup_requests = ['разминка', 'warmup']
+result_requests = ['результаты', 'results']
+add_requests = ['добавить', 'add']
 
 info_msg = "CompTrainKZ BOT:\n\n" \
            "/help - справочник\n\n" \
-           "/wod - комплекс дня\n\n" \
-           "/find - найти комплекс\n\n" \
+           "/wod - тренировка на сегодня\n\n" \
+           "/results - результаты за сегодня\n\n" \
+           "/add - записать результат тренировки\n\n" \
+           "/find - найти тренировку по дате\n\n" \
            "/timezone - установить часовой пояс\n\n\n"
 
 # States
@@ -131,21 +136,21 @@ async def subscribe(message: types.Message):
                                message.from_user.language_code)
 
     if await subscriber_db.is_subscriber(user_id):
-        return await bot.send_message(message.chat.id, 'Вы уже подписаны на ежедневную рассылку WOD')
+        return await bot.send_message(message.chat.id, emojize("Вы уже подписаны на ежедневную рассылку WOD :alien:"))
 
     await subscriber_db.add_subscriber(user_id)
 
-    await bot.send_message(message.chat.id, 'Вы подписались на ежедневную рассылку WOD')
+    await bot.send_message(message.chat.id, emojize("Вы подписались на ежедневную рассылку WOD :+1:"))
 
 
 @dp.message_handler(commands=['unsubscribe'])
 async def unsubscribe(message: types.Message):
     if not (await subscriber_db.is_subscriber(message.from_user.id)):
-        return await bot.send_message(message.chat.id, 'Вы уже отписаны от ежедневной рассылки WOD')
+        return await bot.send_message(message.chat.id, emojize("Вы уже отписаны от ежедневной рассылки WOD :alien:"))
 
     await subscriber_db.unsubscribe(message.from_user.id)
 
-    await bot.send_message(message.chat.id, 'Вы отписались от ежедневной рассылки WOD')
+    await bot.send_message(message.chat.id, emojize("Вы отписались от ежедневной рассылки WOD :-1:"))
 
 
 @dp.message_handler(commands=['wod'])
@@ -180,7 +185,6 @@ async def send_wod(message: types.Message):
 async def hide_keyboard(message: types.Message):
     state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
     # reset
-    # await state.reset_state(with_data=True)
     await state.reset_state()
     await state.update_data(wod_id=None)
     await state.update_data(wod_result_id=None)
@@ -195,7 +199,7 @@ async def request_result_for_add(message: types.Message):
     reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
     reply_markup.add(CANCEL)
 
-    await bot.send_message(message.chat.id, 'Пожалуйста введите ваш результат', reply_markup=reply_markup)
+    await bot.send_message(message.chat.id, 'Пожалуйста введите ваш результат:', reply_markup=reply_markup)
 
 
 @dp.message_handler(state=WOD, func=lambda message: message.text == EDIT_RESULT)
@@ -204,14 +208,14 @@ async def request_result_for_edit(message: types.Message):
     await state.set_state(WOD_RESULT)
     data = await state.get_data()
 
-    msg = 'Пожалуйста введите ваш результат'
+    msg = 'Пожалуйста введите ваш результат:'
 
     wod_result_id = data['wod_result_id']
     wod_result = await wod_result_db.get_wod_result(wod_result_id=wod_result_id)
     if wod_result:
         msg = 'Ваш текущий результат:\n\n_' \
               + wod_result.result + \
-              '_\n\nПожалуйста введите ваш новый результат'
+              '_\n\nПожалуйста введите ваш новый результат:'
 
     reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
     reply_markup.add(CANCEL)
@@ -239,13 +243,13 @@ async def update_wod_result(message: types.Message):
         wod_result.result = message.text
         await wod_result.save()
 
-        await bot.send_message(message.chat.id, 'Ваш результат успешно обновлен!',
+        await bot.send_message(message.chat.id, emojize(":white_check_mark: Ваш результат успешно обновлен!"),
                                reply_markup=types.ReplyKeyboardRemove())
     else:
         wod_id = data['wod_id']
         await wod_result_db.add_wod_result(wod_id, user_id, message.text, datetime.now())
 
-        await bot.send_message(message.chat.id, 'Ваш результат успешно добавлен!',
+        await bot.send_message(message.chat.id, emojize(":white_check_mark: Ваш результат успешно добавлен!"),
                                reply_markup=types.ReplyKeyboardRemove())
 
         # Notify other users that new result was added
@@ -253,6 +257,10 @@ async def update_wod_result(message: types.Message):
         diff = datetime.now().date() - wod.wod_day
 
         if diff.days < 2:
+            author = await user_db.get_user(user_id)
+            name = f'{author.name} {author.surname}' if author.surname else author.name
+            msg = f'{name} записал результат за {wod.title}'
+
             wod_results = await wod_result_db.get_wod_results(wod_id)
             for wr in wod_results:
                 if wr.user_id == user_id:
@@ -261,17 +269,12 @@ async def update_wod_result(message: types.Message):
                 st = dp.current_state(chat=wr.user_id, user=wr.user_id)
                 await st.update_data(view_wod_id=wod_id)
 
-                u = await user_db.get_user(wr.user_id)
-                name = f'{u.name} {u.surname}' if u.surname else u.name
-                msg = f'{name} записал результат за {wod.title}'
-
                 reply_markup = types.InlineKeyboardMarkup()
                 reply_markup.add(types.InlineKeyboardButton(VIEW_RESULT, callback_data=VIEW_RESULT))
 
                 await bot.send_message(wr.user_id, msg, reply_markup=reply_markup)
 
     # Finish conversation, destroy all data in storage for current user
-    # await state.finish()
     await state.reset_state()
     await state.update_data(wod_id=None)
     await state.update_data(wod_result_id=None)
@@ -292,7 +295,6 @@ async def show_wod_results(message: types.Message):
         # await bot.send_message(message.chat.id, msg, reply_markup=types.ReplyKeyboardRemove(),
         #                        parse_mode=ParseMode.MARKDOWN)
         # Finish conversation, destroy all data in storage for current user
-        # await state.finish()
         await state.reset_state()
         await state.update_data(wod_id=None)
         await state.update_data(wod_result_id=None)
@@ -308,8 +310,9 @@ async def show_wod_results(message: types.Message):
 
         await bot.send_message(message.chat.id, msg, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
     else:
-        return await bot.send_message(message.chat.id, 'Результатов пока нет.\n'
-                                                       'Станьте первым кто внесет свой результат!')
+        return await bot.send_message(message.chat.id, emojize("На сегодня результатов пока что нет :crying_cat_face:"
+                                                               "\nСтаньте первым кто внесет свой результат :smiley_cat:"
+                                                               ))
 
 
 @dp.callback_query_handler(func=lambda callback_query: callback_query.data == REFRESH)
@@ -317,7 +320,7 @@ async def refresh_wod_results_callback(callback_query: types.CallbackQuery):
     state = dp.current_state(chat=callback_query.message.chat.id, user=callback_query.from_user.id)
     data = await state.get_data()
 
-    wod_id = data['refresh_wod_id']
+    wod_id = data['refresh_wod_id'] if ('refresh_wod_id' in data.keys()) else None
 
     msg = await wod_util.get_wod_results(callback_query.from_user.id, wod_id) if wod_id else None
 
@@ -338,7 +341,7 @@ async def view_wod_results_callback(callback_query: types.CallbackQuery):
     state = dp.current_state(chat=callback_query.message.chat.id, user=callback_query.from_user.id)
     data = await state.get_data()
 
-    wod_id = data['view_wod_id']
+    wod_id = data['view_wod_id'] if ('view_wod_id' in data.keys()) else None
 
     msg = await wod_util.get_wod_results(callback_query.from_user.id, wod_id) if wod_id else None
 
@@ -434,10 +437,9 @@ async def find_and_send_wod(chat_id, user_id, search_date):
 
         await bot.send_message(chat_id, title + "\n\n" + description, reply_markup=reply_markup)
     else:
-        await bot.send_message(chat_id, 'На указанную дату комплекс не найден!',
+        await bot.send_message(chat_id, emojize(":squirrel: На указанную дату тренировка не найдена!"),
                                reply_markup=types.ReplyKeyboardRemove())
         # Finish conversation, destroy all data in storage for current user
-        # await state.finish()
         await state.reset_state()
 
 
@@ -451,8 +453,9 @@ async def set_timezone(message: types.Message):
     reply_markup.insert(loc_btn)
     reply_markup.add(CANCEL)
 
-    await bot.send_message(message.chat.id, "Мне нужна ваша геолокация для того, чтобы установить "
-                                            "правильный часовой пояс", reply_markup=reply_markup)
+    await bot.send_message(message.chat.id, emojize(":earth_asia: Мне нужна ваша геолокация для того,"
+                                                    "чтобы установить правильный часовой пояс"),
+                           reply_markup=reply_markup)
 
 
 @dp.message_handler(state=SET_TIMEZONE, content_types=types.ContentType.LOCATION)
@@ -484,11 +487,11 @@ async def set_location(message: types.Message):
                            reply_markup=types.ReplyKeyboardRemove())
 
     # Finish conversation, destroy all data in storage for current user
-    # await state.finish()
     await state.reset_state()
 
 
 @dp.message_handler(commands=['warmup'])
+@dp.message_handler(func=lambda message: message.text.lower() in warmup_requests)
 async def view_warmup(message: types.Message):
     result = await wod_db.get_warmup(datetime.now().date())
     if result:
@@ -525,9 +528,9 @@ async def update_warmup(message: types.Message):
     wod_id = data['wod_id']
 
     if await wod_db.add_warmup(wod_id, message.text):
-        await bot.send_message(message.chat.id, 'Ваши изменения успешно выполнены!')
+        await bot.send_message(message.chat.id, emojize(":white_check_mark: Ваши изменения успешно выполнены!"))
     else:
-        await bot.send_message(message.chat.id, 'Ошибка при внесении данных!')
+        await bot.send_message(message.chat.id, emojize(":heavy_exclamation_mark: Ошибка при внесении данных!"))
 
     # Finish conversation, destroy all data in storage for current user
     await state.reset_state()
@@ -535,6 +538,7 @@ async def update_warmup(message: types.Message):
 
 
 @dp.message_handler(commands=['results'])
+@dp.message_handler(func=lambda message: message.text.lower() in result_requests)
 async def view_results(message: types.Message):
     user_id = message.from_user.id
 
@@ -546,6 +550,31 @@ async def view_results(message: types.Message):
         await bot.send_message(message.chat.id, f'{wod.title}\n\n{msg}', parse_mode=ParseMode.MARKDOWN)
     else:
         await bot.send_message(message.chat.id, emojize("На сегодня результатов пока что нет :disappointed:"))
+
+
+@dp.message_handler(commands=['add'])
+@dp.message_handler(func=lambda message: message.text.lower() in add_requests)
+async def add_result(message: types.Message):
+    user_id = message.from_user.id
+
+    wod = await wod_db.get_wod_by_date(datetime.now().date())
+
+    if wod:
+        state = dp.current_state(chat=message.chat.id, user=user_id)
+        await state.set_state(WOD_RESULT)
+
+        reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+        reply_markup.add(CANCEL)
+
+        wod_result = await wod_result_db.get_user_wod_result(wod_id=wod.id, user_id=user_id)
+
+        msg = 'Пожалуйста введите ваш результат:'
+        if wod_result:
+            msg = 'Ваш текущий результат:\n\n_' + wod_result.result + '_\n\nПожалуйста введите ваш новый результат'
+
+        await bot.send_message(message.chat.id, msg, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+    else:
+        await bot.send_message(message.chat.id, emojize("На сегодня тренировки пока что нет :disappointed:"))
 
 
 @dp.message_handler()
@@ -573,7 +602,7 @@ async def echo(message: types.Message):
         await message.reply('Уа-Алейкум Ас-Салям, {}!'.format(message.from_user.first_name))
 
     elif msg == 'арау':
-        await message.reply('Урай!')
+        await message.reply(emojize(":trollface: Урай!"))
 
     else:
         # send info
