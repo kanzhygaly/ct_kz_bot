@@ -22,14 +22,21 @@ async def get_wod():
     # Remove anything other than digits
     num = re.sub(r'\D', "", parser.get_wod_date())
     wod_date = datetime.strptime(num, '%m%d%y')
-    print(wod_date.date())
 
     if wod_date.date().__eq__(now.date()):
         title = parser.get_wod_date()
+        regional_part = parser.get_regional_wod()
+        open_part = parser.get_open_wod()
+        description = regional_part + "\n" + open_part
 
-        description = parser.get_regional_wod() + parser.get_open_wod()
+        reg_text = (''.join(regional_part.split())).lower()
+        reg_text = reg_text[4:]
+        open_text = (''.join(open_part.split())).lower()
+        open_text = open_text[4:]
 
-        wod_id = await wod_db.add_wod(wod_date.date(), title, description)
+        wod_id = None
+        if not reg_text.startswith("regionalsathletesrest") and not open_text.startswith("openathletesrest"):
+            wod_id = await wod_db.add_wod(wod_date.date(), title, description)
 
         return title + "\n\n" + description, wod_id
     else:
