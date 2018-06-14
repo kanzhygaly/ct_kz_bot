@@ -602,7 +602,7 @@ async def echo(message: types.Message):
         await message.reply('Уа-Алейкум Ас-Салям, {}!'.format(message.from_user.first_name))
 
     elif msg == 'арау':
-        await message.reply(emojize(":trollface: Урай!"))
+        await message.reply(emojize("Урай! :punch:"))
 
     else:
         # send info
