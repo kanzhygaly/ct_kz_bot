@@ -338,7 +338,7 @@ async def refresh_wod_results_callback(callback_query: types.CallbackQuery):
 
 @dp.callback_query_handler(func=lambda callback_query: callback_query.data == VIEW_RESULT)
 async def view_wod_results_callback(callback_query: types.CallbackQuery):
-    state = dp.current_state(chat=callback_query.message.chat.id, user=callback_query.from_user.id)
+    state = dp.current_state(chat=callback_query.from_user.id, user=callback_query.from_user.id)
     data = await state.get_data()
 
     wod_id = data['view_wod_id'] if ('view_wod_id' in data.keys()) else None
@@ -562,6 +562,7 @@ async def add_result(message: types.Message):
     if wod:
         state = dp.current_state(chat=message.chat.id, user=user_id)
         await state.set_state(WOD_RESULT)
+        await state.update_data(wod_id=wod.id)
 
         reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
         reply_markup.add(CANCEL)
@@ -570,6 +571,7 @@ async def add_result(message: types.Message):
 
         msg = 'Пожалуйста введите ваш результат:'
         if wod_result:
+            await state.update_data(wod_result_id=wod_result.id)
             msg = 'Ваш текущий результат:\n\n_' + wod_result.result + '_\n\nПожалуйста введите ваш новый результат'
 
         await bot.send_message(message.chat.id, msg, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
