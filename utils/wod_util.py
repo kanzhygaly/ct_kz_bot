@@ -22,6 +22,7 @@ async def get_wod():
     # Remove anything other than digits
     num = re.sub(r'\D', "", parser.get_wod_date())
     wod_date = datetime.strptime(num, '%m%d%y')
+    print(f'WOD date {wod_date}')
 
     if wod_date.date().__eq__(now.date()):
         title = parser.get_wod_date()
