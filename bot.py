@@ -494,7 +494,6 @@ async def set_location(message: types.Message):
 @dp.message_handler(func=lambda message: message.text.lower() in warmup_requests)
 async def view_warmup(message: types.Message):
     today = datetime.now().date()
-    print(today)
     result = await wod_db.get_warmup(today)
     if result:
         await bot.send_message(message.chat.id, result)
