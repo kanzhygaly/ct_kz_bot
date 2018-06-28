@@ -24,7 +24,10 @@ async def get_wod():
     wod_date = datetime.strptime(num, '%m%d%y')
     print(f'WOD date {wod_date}')
 
-    if wod_date.date().__eq__(now.date()):
+    today = now.date()
+
+    if wod_date.date().__eq__(today):
+
         title = parser.get_wod_date()
         regional_part = parser.get_regional_wod()
         open_part = parser.get_open_wod()
@@ -40,8 +43,43 @@ async def get_wod():
             wod_id = await wod_db.add_wod(wod_date.date(), title, description)
 
         return title + "\n\n" + description, wod_id
+
     else:
-        return "Комплекс еще не вышел.\nСорян :(", None
+
+        weekday = {
+            '0': 'sunday',
+            '1': 'monday',
+            '2': 'tuesday',
+            '3': 'wednesday',
+            '4': 'thursday',
+            '5': 'friday',
+            '6': 'saturday'
+        }
+        index = today.strftime("%w")
+        target = today.strftime("%m-%d-%y").lstrip("0").replace("0", "")
+        base = os.environ['MAIN_URL']
+        url = f'{base}/workout/{weekday.get(index)}-·-{target}'
+
+        try:
+            parser = BSoupParser(url=url)
+            title = parser.get_wod_date()
+            regional_part = parser.get_regional_wod()
+            open_part = parser.get_open_wod()
+            description = regional_part + "\n" + open_part
+
+            reg_text = (''.join(regional_part.split())).lower()
+            reg_text = reg_text[4:]
+            open_text = (''.join(open_part.split())).lower()
+            open_text = open_text[4:]
+
+            wod_id = None
+            if not reg_text.startswith("regionalsathletesrest") and not open_text.startswith("openathletesrest"):
+                wod_id = await wod_db.add_wod(wod_date.date(), title, description)
+
+            return title + "\n\n" + description, wod_id
+        except Exception as e:
+            print(e)
+            return "Комплекс еще не вышел.\nСорян :(", None
 
 
 async def get_wod_results(user_id, wod_id):
