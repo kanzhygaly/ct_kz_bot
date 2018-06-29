@@ -36,7 +36,7 @@ async def get_wod():
         title = parser.get_wod_date()
         regional_part = parser.get_regional_wod()
         open_part = parser.get_open_wod()
-        description = regional_part + "\n" + open_part
+        description = regional_part + open_part
 
         reg_text = (''.join(regional_part.split())).lower()
         reg_text = reg_text[4:]

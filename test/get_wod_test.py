@@ -3,7 +3,7 @@ import re
 
 from bsoup_spider import BSoupParser
 
-now = datetime.now()
+today = datetime.now().date()
 
 url = 'http://comptrain.co/individuals/home'
 parser = BSoupParser(url=url)
@@ -12,8 +12,6 @@ parser = BSoupParser(url=url)
 num = re.sub(r'\D', "", parser.get_wod_date())
 wod_date = datetime.strptime(num, '%m%d%y')
 print(wod_date)
-
-today = now.date()
 
 if wod_date.date().__eq__(today):
     title = parser.get_wod_date()
@@ -27,7 +25,7 @@ if wod_date.date().__eq__(today):
     open_text = open_text[4:]
 
     if not reg_text.startswith("regionalsathletesrest") and not open_text.startswith("openathletesrest"):
-        print(title + "\n\n" + description)
+        # print(title + "\n\n" + description)
         pass
     else:
         print(reg_text + "\n\n" + open_text)
@@ -50,7 +48,7 @@ try:
     parser = BSoupParser(url=url)
     regional_part = parser.get_regional_wod()
     open_part = parser.get_open_wod()
-    description = regional_part + "\n" + open_part
+    description = regional_part + open_part
 
     reg_text = (''.join(regional_part.split())).lower()
     reg_text = reg_text[4:]
