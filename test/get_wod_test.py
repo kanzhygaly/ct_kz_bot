@@ -27,7 +27,7 @@ if wod_date.date().__eq__(today):
     open_text = open_text[4:]
 
     if not reg_text.startswith("regionalsathletesrest") and not open_text.startswith("openathletesrest"):
-        # print(title + "\n\n" + description + "\n\n" + msg)
+        print(title + "\n\n" + description)
         pass
     else:
         print(reg_text + "\n\n" + open_text)
