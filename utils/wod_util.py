@@ -1,13 +1,14 @@
 import os
 import re
 import pytz
-from datetime import datetime
+from datetime import datetime, timedelta
 from bsoup_spider import BSoupParser
 from db import user_db, wod_db, wod_result_db, location_db
 
 
 async def get_wod():
     today = datetime.now().date()
+    today = today - timedelta(days=1)
 
     result = await wod_db.get_wods(today)
     if result:
@@ -27,7 +28,8 @@ async def get_wod():
         '6': 'saturday'
     }
     index = today.strftime("%w")
-    target = today.strftime("%m-%d-%y").lstrip("0").replace("0", "")
+    # target = today.strftime("%m-%d-%y")
+    target = f'{today.month}-{today.day}-{str(today.year)[-2:]}'
     base = os.environ['MAIN_URL']
     url = f'{base}/workout/{weekday.get(index)}-·-{target}'
 

@@ -42,10 +42,12 @@ weekday = {
     '6': 'saturday'
 }
 index = today.strftime("%w")
-target = today.strftime("%m-%d-%y").lstrip("0").replace("0", "")
+# target = today.strftime("%m-%d-%y")
+target = f'{today.month}-{today.day}-{str(today.year)[-2:]}'
 url = f'http://comptrain.co/individuals/workout/{weekday.get(index)}-·-{target}'
 try:
     parser = BSoupParser(url=url)
+    title = parser.get_wod_date()
     regional_part = parser.get_regional_wod()
     open_part = parser.get_open_wod()
     description = regional_part + open_part
