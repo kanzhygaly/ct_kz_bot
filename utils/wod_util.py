@@ -8,7 +8,6 @@ from db import user_db, wod_db, wod_result_db, location_db
 
 async def get_wod():
     today = datetime.now().date()
-    today = today - timedelta(days=1)
 
     result = await wod_db.get_wods(today)
     if result:
