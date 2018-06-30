@@ -616,8 +616,8 @@ async def echo(message: types.Message):
         await message.reply(info_msg + sub, reply_markup=types.ReplyKeyboardRemove())
 
 
-@scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=2)
-async def scheduled_job():
+@scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=2, id='wod_dispatch')
+async def wod_dispatch():
     print('This job runs everyday at 8am')
     subscribers = await subscriber_db.get_all_subscribers()
 
@@ -647,6 +647,22 @@ async def scheduled_job():
     else:
         for sub in subscribers:
             await bot.send_message(sub.user_id, msg)
+
+
+@scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=17, id='notify_to_add_result')
+async def notify_to_add_result():
+    msg, wod_id = await wod_util.get_wod()
+
+    if wod_id:
+        subscribers = await subscriber_db.get_all_subscribers()
+
+        for sub in subscribers:
+            if await wod_result_db.get_user_wod_result(wod_id=wod_id, user_id=sub.user_id):
+                continue
+
+            msg = "Не забудьте записать результат сегодняшней тренировки :grimacing:\n" \
+                  "Для того чтобы записать результат наберите команду /add"
+            await bot.send_message(sub.user_id, emojize(msg), reply_markup=types.ReplyKeyboardRemove())
 
 
 async def startup(dispatcher: Dispatcher):
