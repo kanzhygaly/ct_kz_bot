@@ -624,29 +624,31 @@ async def wod_dispatch():
     msg, wod_id = await wod_util.get_wod()
 
     print(f'Sending WOD to {len(subscribers)} subscribers')
-    if wod_id:
-        for sub in subscribers:
-            res_button = ADD_RESULT
-
-            state = dp.current_state(chat=sub.user_id, user=sub.user_id)
-            await state.update_data(refresh_wod_id=None)
-            await state.update_data(wod_id=wod_id)
-            await state.set_state(WOD)
-
-            wod_result = await wod_result_db.get_user_wod_result(wod_id=wod_id, user_id=sub.user_id)
-            if wod_result:
-                res_button = EDIT_RESULT
-                await state.update_data(wod_result_id=wod_result.id)
-
-            # Configure ReplyKeyboardMarkup
-            reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
-            reply_markup.add(res_button, SHOW_RESULTS)
-            reply_markup.add(CANCEL)
-
-            await bot.send_message(sub.user_id, msg, reply_markup=reply_markup)
-    else:
-        for sub in subscribers:
-            await bot.send_message(sub.user_id, msg)
+    for sub in subscribers:
+        await bot.send_message(sub.user_id, msg)
+    # if wod_id:
+    #     for sub in subscribers:
+    #         res_button = ADD_RESULT
+    #
+    #         state = dp.current_state(chat=sub.user_id, user=sub.user_id)
+    #         await state.update_data(refresh_wod_id=None)
+    #         await state.update_data(wod_id=wod_id)
+    #         await state.set_state(WOD)
+    #
+    #         wod_result = await wod_result_db.get_user_wod_result(wod_id=wod_id, user_id=sub.user_id)
+    #         if wod_result:
+    #             res_button = EDIT_RESULT
+    #             await state.update_data(wod_result_id=wod_result.id)
+    #
+    #         # Configure ReplyKeyboardMarkup
+    #         reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+    #         reply_markup.add(res_button, SHOW_RESULTS)
+    #         reply_markup.add(CANCEL)
+    #
+    #         await bot.send_message(sub.user_id, msg, reply_markup=reply_markup)
+    # else:
+    #     for sub in subscribers:
+    #         await bot.send_message(sub.user_id, msg)
 
 
 @scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=17, id='notify_to_add_result')
