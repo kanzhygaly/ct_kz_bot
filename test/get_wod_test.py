@@ -15,11 +15,11 @@ print(wod_date)
 
 if wod_date.date().__eq__(today):
     title = parser.get_wod_date()
-    regional_part = parser.get_regional_wod()
+    reg_part = parser.get_regional_wod()
     open_part = parser.get_open_wod()
-    description = regional_part + "\n" + open_part
+    description = reg_part + "\n" + open_part
 
-    reg_text = (''.join(regional_part.split())).lower()
+    reg_text = (''.join(reg_part.split())).lower()
     reg_text = reg_text[4:]
     open_text = (''.join(open_part.split())).lower()
     open_text = open_text[4:]
@@ -50,18 +50,16 @@ try:
     parser = BSoupParser(url=url)
     title = parser.get_wod_date()
 
-    video_url = parser.get_video_url()
-    if video_url:
-        title += "\n\n" + video_url
-        video_text = parser.get_video_text()
-        if video_text:
-            title += "\n" + video_text
+    description = parser.get_video_url()
+    video_text = parser.get_video_text()
+    if video_text:
+        description = (description + "\n" + video_text) if description else video_text
 
-    regional_part = parser.get_regional_wod()
+    reg_part = parser.get_regional_wod()
     open_part = parser.get_open_wod()
-    description = regional_part + open_part
+    description = (description + "\n\n" + reg_part + open_part) if description else (reg_part + open_part)
 
-    reg_text = (''.join(regional_part.split())).lower()
+    reg_text = (''.join(reg_part.split())).lower()
     reg_text = reg_text[4:]
     open_text = (''.join(open_part.split())).lower()
     open_text = open_text[4:]
