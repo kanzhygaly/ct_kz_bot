@@ -1,7 +1,7 @@
 import os
 import re
 import pytz
-from datetime import datetime, timedelta
+from datetime import datetime
 from bsoup_spider import BSoupParser
 from db import user_db, wod_db, wod_result_db, location_db
 
@@ -34,7 +34,16 @@ async def get_wod():
 
     try:
         parser = BSoupParser(url=url)
+
         title = parser.get_wod_date()
+
+        video_url = parser.get_video_url()
+        if video_url:
+            title += "\n\n" + video_url
+            video_text = parser.get_video_text()
+            if video_text:
+                title += "\n" + video_text
+
         regional_part = parser.get_regional_wod()
         open_part = parser.get_open_wod()
         description = regional_part + open_part
