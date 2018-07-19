@@ -45,7 +45,7 @@ class BSoupParser:
 
         return result
 
-    def get_video_url(self):
+    def get_video_header(self):
         video_wrapper = self.head[0].find(class_='wpb_video_wrapper')
         if video_wrapper:
             # https: // www.youtube.com / embed / F08jr6g5WWM?feature = oembed
@@ -55,10 +55,10 @@ class BSoupParser:
             if start > -1:
                 start += 6
                 end = url.find('?feature=oembed')
-                return f'https://youtu.be/{url[start:end]}'
+                url = f'https://youtu.be/{url[start:end]}'
+
+            par = self.head[1].find(class_='wpb_wrapper').find('p')
+            if par:
+                return url + "\n" + par.get_text().strip()
             else:
                 return url
-
-    def get_video_text(self):
-        if len(self.head) > 1:
-            return self.head[1].find(class_='wpb_wrapper').find('p').get_text().strip()

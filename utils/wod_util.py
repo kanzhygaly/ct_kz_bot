@@ -37,10 +37,7 @@ async def get_wod():
 
         title = parser.get_wod_date()
 
-        description = parser.get_video_url()
-        video_text = parser.get_video_text()
-        if video_text:
-            description = (description + "\n" + video_text) if description else video_text
+        description = parser.get_video_header()
 
         reg_part = parser.get_regional_wod()
         open_part = parser.get_open_wod()
