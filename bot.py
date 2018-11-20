@@ -31,13 +31,13 @@ warmup_requests = ['разминка', 'warmup']
 result_requests = ['результаты', 'results']
 add_requests = ['добавить', 'add']
 
-info_msg = "CompTrainKZ BOT:\n\n" \
-           "/help - справочник\n\n" \
-           "/wod - тренировка на сегодня\n\n" \
-           "/results - результаты за сегодня\n\n" \
-           "/add - записать результат тренировки за сегодня\n\n" \
-           "/find - найти тренировку по дате\n\n" \
-           "/timezone - установить часовой пояс\n\n"
+info_msg = 'CompTrainKZ BOT:\n\n' \
+           '/help - справочник\n\n' \
+           '/wod - тренировка на сегодня\n\n' \
+           '/results - результаты за сегодня\n\n' \
+           '/add - записать результат тренировки за сегодня\n\n' \
+           '/find - найти тренировку по дате\n\n' \
+           '/timezone - установить часовой пояс\n\n'
 
 # States
 WOD = 'wod'
@@ -52,8 +52,11 @@ SHOW_RESULTS = 'Результаты'
 CANCEL = 'Отмена'
 REFRESH = 'Обновить'
 VIEW_RESULT = 'Посмотреть результат'
+# Commands
+HELP = 'help'
 # CALLBACK
 CHOOSE_DAY = 'choose_day'
+ADD_RESULT = 'add_result'
 
 
 @dp.message_handler(commands=['sys_all_users'])
@@ -117,8 +120,23 @@ async def start(message: types.Message):
     await bot.send_message(message.chat.id, info_msg + sub)
 
 
-@dp.message_handler(commands=['help'])
-async def send_info(message: types.Message):
+@dp.callback_query_handler(func=lambda callback_query: callback_query.data == HELP)
+async def help_cbq(callback_query: types.CallbackQuery):
+    user_id = callback_query.from_user.id
+
+    # Destroy all data in storage for current user
+    state = dp.current_state(chat=callback_query.chat.id, user=user_id)
+    await state.update_data(wod_result_txt=None)
+
+    sub = "/subscribe - подписаться на ежедневную рассылку WOD"
+    if await subscriber_db.is_subscriber(user_id):
+        sub = "/unsubscribe - отписаться от ежедневной рассылки WOD"
+
+    await bot.answer_callback_query(callback_query.id, text=info_msg + sub)
+
+
+@dp.message_handler(commands=[HELP])
+async def help_msg(message: types.Message):
     sub = "/subscribe - подписаться на ежедневную рассылку WOD"
     if await subscriber_db.is_subscriber(message.from_user.id):
         sub = "/unsubscribe - отписаться от ежедневной рассылки WOD"
@@ -311,8 +329,8 @@ async def show_wod_results(message: types.Message):
         await bot.send_message(message.chat.id, msg, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
     else:
         return await bot.send_message(message.chat.id, emojize("На сегодня результатов пока что нет :crying_cat_face:"
-                                                               "\nСтаньте первым кто внесет свой результат :smiley_cat:"
-                                                               ))
+                                                               "\nСтаньте первым кто внесет свой "
+                                                               "результат :smiley_cat:\n/add"))
 
 
 @dp.callback_query_handler(func=lambda callback_query: callback_query.data == REFRESH)
@@ -556,11 +574,10 @@ async def view_results(message: types.Message):
 @dp.message_handler(commands=['add'])
 @dp.message_handler(func=lambda message: message.text.lower() in add_requests)
 async def add_result(message: types.Message):
-    user_id = message.from_user.id
-
     wod = await wod_db.get_wod_by_date(datetime.now().date())
-
     if wod:
+        user_id = message.from_user.id
+
         state = dp.current_state(chat=message.chat.id, user=user_id)
         await state.set_state(WOD_RESULT)
         await state.update_data(wod_id=wod.id)
@@ -608,49 +625,96 @@ async def echo(message: types.Message):
         await message.reply(emojize("Урай! :punch:"))
 
     else:
-        # send info
-        sub = "/subscribe - подписаться на ежедневную рассылку WOD"
-        if await subscriber_db.is_subscriber(message.from_user.id):
-            sub = "/unsubscribe - отписаться от ежедневной рассылки WOD"
+        yesterday = (datetime.now() - timedelta(1)).date()
 
-        await message.reply(info_msg + sub, reply_markup=types.ReplyKeyboardRemove())
+        reply_markup = types.InlineKeyboardMarkup()
+
+        if yesterday.weekday() not in (3, 6):
+            msg = 'За какой день вы хотите добавить результат?'
+            reply_markup.add(types.InlineKeyboardButton("Вчера", callback_data="yesterday"),
+                             types.InlineKeyboardButton("Сегодня", callback_data="today"))
+        else:
+            msg = 'Вы хотите добавить результат за СЕГОДНЯ?'
+            reply_markup.add(types.InlineKeyboardButton("Да", callback_data="today"))
+
+        reply_markup.add(types.InlineKeyboardButton("Нет!", callback_data=HELP))
+
+        state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
+        await state.update_data(wod_result_txt=message.text)
+
+        await bot.send_message(message.chat.id, msg, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
 
 
-@scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=2, id='wod_dispatch')
+@dp.callback_query_handler(func=lambda callback_query: callback_query.data[0:10] == ADD_RESULT)
+async def add_result_by_date(callback_query: types.CallbackQuery):
+    wod_date = datetime.strptime(callback_query.data[11:], '%d%m%y')
+
+    wod = await wod_db.get_wod_by_date(wod_date)
+    if wod:
+        user_id = callback_query.from_user.id
+        chat_id = callback_query.chat.id
+
+        state = dp.current_state(chat=chat_id, user=user_id)
+        data = await state.get_data()
+
+        if 'wod_result_txt' in data.keys():
+            wod_result_txt = data['wod_result_txt']
+            # Destroy all data in storage for current user
+            await state.update_data(wod_result_txt=None)
+
+            wod_result = await wod_result_db.get_user_wod_result(wod_id=wod.id, user_id=user_id)
+
+            if wod_result:
+                wod_result.sys_date = datetime.now()
+                wod_result.result = wod_result_txt
+                await wod_result.save()
+
+                await bot.send_message(chat_id, emojize(":white_check_mark: Ваш результат успешно обновлен!"),
+                                       reply_markup=types.ReplyKeyboardRemove())
+            else:
+                await wod_result_db.add_wod_result(wod.id, user_id, wod_result_txt, datetime.now())
+
+                await bot.send_message(chat_id, emojize(":white_check_mark: Ваш результат успешно добавлен!"),
+                                       reply_markup=types.ReplyKeyboardRemove())
+
+                # Notify other users that new result was added
+                diff = datetime.now().date() - wod.wod_day
+                if diff.days < 2:
+                    author = await user_db.get_user(user_id)
+                    name = f'{author.name} {author.surname}' if author.surname else author.name
+                    msg = f'{name} записал результат за {wod.title}'
+
+                    wod_results = await wod_result_db.get_wod_results(wod.id)
+                    for wr in wod_results:
+                        if wr.user_id == user_id:
+                            continue
+
+                        st = dp.current_state(chat=wr.user_id, user=wr.user_id)
+                        await st.update_data(view_wod_id=wod.id)
+
+                        reply_markup = types.InlineKeyboardMarkup()
+                        reply_markup.add(types.InlineKeyboardButton(VIEW_RESULT, callback_data=VIEW_RESULT))
+
+                        await bot.send_message(wr.user_id, msg, reply_markup=reply_markup)
+
+
+# Daily WOD subscription at 07:00 GMT+6
+@scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=1, id='wod_dispatch')
 async def wod_dispatch():
-    print('This job runs everyday at 8am')
+    print('This job runs everyday at 7 am')
     subscribers = await subscriber_db.get_all_subscribers()
 
     msg, wod_id = await wod_util.get_wod()
 
+    msg += "\n\n/add - записать/изменить результат за СЕГОДНЯ" \
+           "/results - посмотреть результаты за СЕГОДНЯ"
+
     print(f'Sending WOD to {len(subscribers)} subscribers')
     for sub in subscribers:
         await bot.send_message(sub.user_id, msg)
-    # if wod_id:
-    #     for sub in subscribers:
-    #         res_button = ADD_RESULT
-    #
-    #         state = dp.current_state(chat=sub.user_id, user=sub.user_id)
-    #         await state.update_data(refresh_wod_id=None)
-    #         await state.update_data(wod_id=wod_id)
-    #         await state.set_state(WOD)
-    #
-    #         wod_result = await wod_result_db.get_user_wod_result(wod_id=wod_id, user_id=sub.user_id)
-    #         if wod_result:
-    #             res_button = EDIT_RESULT
-    #             await state.update_data(wod_result_id=wod_result.id)
-    #
-    #         # Configure ReplyKeyboardMarkup
-    #         reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
-    #         reply_markup.add(res_button, SHOW_RESULTS)
-    #         reply_markup.add(CANCEL)
-    #
-    #         await bot.send_message(sub.user_id, msg, reply_markup=reply_markup)
-    # else:
-    #     for sub in subscribers:
-    #         await bot.send_message(sub.user_id, msg)
 
 
+# Notify to add results for Today's WOD at 23:00 GMT+6
 @scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=17, id='notify_to_add_result')
 async def notify_to_add_result():
     msg, wod_id = await wod_util.get_wod()
@@ -658,12 +722,13 @@ async def notify_to_add_result():
     if wod_id:
         subscribers = await subscriber_db.get_all_subscribers()
 
+        msg = "Не забудьте записать результат сегодняшней тренировки :grimacing:\n" \
+              "Для того чтобы записать результат за СЕГОДНЯ наберите команду /add"
+
         for sub in subscribers:
             if await wod_result_db.get_user_wod_result(wod_id=wod_id, user_id=sub.user_id):
                 continue
 
-            msg = "Не забудьте записать результат сегодняшней тренировки :grimacing:\n" \
-                  "Для того чтобы записать результат наберите команду /add"
             await bot.send_message(sub.user_id, emojize(msg), reply_markup=types.ReplyKeyboardRemove())
 
 
