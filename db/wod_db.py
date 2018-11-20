@@ -35,6 +35,11 @@ async def add_wod(wod_day, title, description):
     return entity.id
 
 
+async def edit_wod(id, wod_day, title, description):
+    entity = WOD(id=id, wod_day=wod_day, title=title, description=description)
+    await entity.save()
+
+
 async def get_wod(wod_id):
     try:
         return await WOD.get_one(record=False, id=wod_id)

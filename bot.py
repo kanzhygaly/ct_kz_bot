@@ -104,6 +104,21 @@ async def sys_all_subs(message: types.Message):
     await bot.send_message(message.chat.id, msg, parse_mode=ParseMode.MARKDOWN)
 
 
+@dp.message_handler(commands=['sys_reset_wod'])
+async def sys_reset_wod(message: types.Message):
+    if not await user_db.is_admin(message.from_user.id):
+        # send info
+        sub = "/subscribe - подписаться на ежедневную рассылку WOD"
+        if await subscriber_db.is_subscriber(message.from_user.id):
+            sub = "/unsubscribe - отписаться от ежедневной рассылки WOD"
+
+        return await message.reply(info_msg + sub)
+
+    msg = await wod_util.reset_wod()
+
+    await bot.send_message(message.chat.id, msg, parse_mode=ParseMode.MARKDOWN)
+
+
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
     user_id = message.from_user.id
