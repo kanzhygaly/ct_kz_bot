@@ -21,7 +21,7 @@ async def get_wod():
 
     # Remove anything other than digits
     num = re.sub(r'\D', "", parser.get_wod_date())
-    wod_date = datetime.datetime.strptime(num, '%m%d%Y')
+    wod_date = datetime.strptime(num, '%m%d%Y')
 
     if wod_date.date().__eq__(today):
         title = parser.get_wod_date()
@@ -75,7 +75,7 @@ async def reset_wod():
 
     # Remove anything other than digits
     num = re.sub(r'\D', "", parser.get_wod_date())
-    wod_date = datetime.datetime.strptime(num, '%m%d%Y')
+    wod_date = datetime.strptime(num, '%m%d%Y')
 
     if wod_date.date().__eq__(today):
         title = parser.get_wod_date()
