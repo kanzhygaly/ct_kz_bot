@@ -683,9 +683,6 @@ async def add_result_by_date(callback_query: types.CallbackQuery):
 
         if 'wod_result_txt' in data.keys():
             wod_result_txt = data['wod_result_txt']
-            # Destroy all data in storage for current user
-            await state.update_data(wod_result_txt=None)
-
             wod_result = await wod_result_db.get_user_wod_result(wod_id=wod.id, user_id=user_id)
 
             if wod_result:
@@ -693,13 +690,23 @@ async def add_result_by_date(callback_query: types.CallbackQuery):
                 wod_result.result = wod_result_txt
                 await wod_result.save()
 
-                await bot.send_message(chat_id, emojize(":white_check_mark: Ваш результат успешно обновлен!"),
-                                       reply_markup=types.ReplyKeyboardRemove())
+                # await bot.send_message(chat_id, emojize(":white_check_mark: Ваш результат успешно обновлен!"),
+                #                        reply_markup=types.ReplyKeyboardRemove())
+                await bot.edit_message_text(text=emojize(":white_check_mark: Ваш результат успешно обновлен!"),
+                                            chat_id=chat_id, message_id=callback_query.message.message_id,
+                                            parse_mode=ParseMode.MARKDOWN)
+
+                # Destroy all data in storage for current user
+                await state.update_data(wod_result_txt=None)
             else:
                 await wod_result_db.add_wod_result(wod.id, user_id, wod_result_txt, datetime.now())
 
-                await bot.send_message(chat_id, emojize(":white_check_mark: Ваш результат успешно добавлен!"),
-                                       reply_markup=types.ReplyKeyboardRemove())
+                await bot.edit_message_text(text=emojize(":white_check_mark: Ваш результат успешно добавлен!"),
+                                            chat_id=chat_id, message_id=callback_query.message.message_id,
+                                            parse_mode=ParseMode.MARKDOWN)
+
+                # Destroy all data in storage for current user
+                await state.update_data(wod_result_txt=None)
 
                 # Notify other users that new result was added
                 diff = datetime.now().date() - wod.wod_day
