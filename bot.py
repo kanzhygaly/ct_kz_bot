@@ -140,7 +140,7 @@ async def help_cbq(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
 
     # Destroy all data in storage for current user
-    state = dp.current_state(chat=callback_query.chat.id, user=user_id)
+    state = dp.current_state(chat=callback_query.message.chat.id, user=user_id)
     await state.update_data(wod_result_txt=None)
 
     sub = "/subscribe - подписаться на ежедневную рассылку WOD"
@@ -674,7 +674,7 @@ async def add_result_by_date(callback_query: types.CallbackQuery):
     wod = await wod_db.get_wod_by_date(wod_date)
     if wod:
         user_id = callback_query.from_user.id
-        chat_id = callback_query.chat.id
+        chat_id = callback_query.message.chat.id
 
         state = dp.current_state(chat=chat_id, user=user_id)
         data = await state.get_data()
