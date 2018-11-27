@@ -682,6 +682,7 @@ async def add_result_by_date(callback_query: types.CallbackQuery):
     print(wod_date.date())
 
     wod = await wod_db.get_wod_by_date(wod_date.date())
+    print(wod)
     if wod:
         user_id = callback_query.from_user.id
         chat_id = callback_query.message.chat.id
