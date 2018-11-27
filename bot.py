@@ -424,9 +424,11 @@ async def find(message: types.Message):
 
 @dp.callback_query_handler(state=FIND_WOD, func=lambda callback_query: callback_query.data[0:10] == CB_CHOOSE_DAY)
 async def find_wod_by_btn(callback_query: types.CallbackQuery):
+    chat_id = callback_query.message.chat.id
+    await bot.edit_message_text(text="", chat_id=chat_id, message_id=callback_query.message.message_id)
+
     search_date = datetime.strptime(callback_query.data[11:], '%d%m%y')
-    await find_and_send_wod(callback_query.message.chat.id, callback_query.from_user.id, search_date)
-    await bot.answer_callback_query(callback_query.id, text="")
+    await find_and_send_wod(chat_id, callback_query.from_user.id, search_date)
 
 
 @dp.callback_query_handler(func=lambda callback_query: callback_query.data == 'ignore')
@@ -647,10 +649,7 @@ async def echo(message: types.Message):
         await message.reply(emojize("Урай! :punch:"))
 
     else:
-        # location = await location_db.get_location(message.from_user.id)
-        # now = datetime.now(pytz.timezone(location.tz)) if location else datetime.now()
         now = datetime.now()
-
         yesterday = (now - timedelta(1)).date()
 
         reply_markup = types.InlineKeyboardMarkup()
@@ -659,12 +658,12 @@ async def echo(message: types.Message):
             msg = 'За какой день вы хотите добавить результат?'
             reply_markup.add(
                 types.InlineKeyboardButton("Вчера", callback_data=CB_ADD_RESULT + '_' + yesterday.strftime("%d%m%y")),
-                types.InlineKeyboardButton("Сегодня", callback_data=CB_ADD_RESULT + '_' + now.date().strftime("%d%m%y"))
+                types.InlineKeyboardButton("Сегодня", callback_data=CB_ADD_RESULT + '_' + now.strftime("%d%m%y"))
             )
         else:
             msg = 'Вы хотите добавить результат за СЕГОДНЯ?'
             reply_markup.add(
-                types.InlineKeyboardButton("Да", callback_data=CB_ADD_RESULT + '_' + now.date().strftime("%d%m%y"))
+                types.InlineKeyboardButton("Да", callback_data=CB_ADD_RESULT + '_' + now.strftime("%d%m%y"))
             )
 
         reply_markup.add(types.InlineKeyboardButton("Нет!", callback_data=HELP))
@@ -677,27 +676,19 @@ async def echo(message: types.Message):
 
 @dp.callback_query_handler(func=lambda callback_query: callback_query.data[0:10] == CB_ADD_RESULT)
 async def add_result_by_date(callback_query: types.CallbackQuery):
+    user_id = callback_query.from_user.id
+    chat_id = callback_query.message.chat.id
+    state = dp.current_state(chat=chat_id, user=user_id)
+
     wod_date = datetime.strptime(callback_query.data[11:], '%d%m%y')
-
-    print(wod_date)
-    print(wod_date.date())
-
     wod = await wod_db.get_wod_by_date(wod_date.date())
-    print(wod)
+
     if wod:
-        user_id = callback_query.from_user.id
-        chat_id = callback_query.message.chat.id
-
-        state = dp.current_state(chat=chat_id, user=user_id)
         data = await state.get_data()
-
-        print(data['wod_result_txt'])
 
         if 'wod_result_txt' in data.keys():
             wod_result_txt = data['wod_result_txt']
             wod_result = await wod_result_db.get_user_wod_result(wod_id=wod.id, user_id=user_id)
-
-            print(wod_result)
 
             if wod_result:
                 wod_result.sys_date = datetime.now()
@@ -741,6 +732,12 @@ async def add_result_by_date(callback_query: types.CallbackQuery):
                         reply_markup.add(types.InlineKeyboardButton(VIEW_RESULT, callback_data=VIEW_RESULT))
 
                         await bot.send_message(wr.user_id, msg, reply_markup=reply_markup)
+    else:
+        await bot.edit_message_text(text=emojize("На сегодня тренировки пока что нет :disappointed:"),
+                                    chat_id=chat_id, message_id=callback_query.message.message_id,
+                                    parse_mode=ParseMode.MARKDOWN)
+        # Destroy all data in storage for current user
+        await state.update_data(wod_result_txt=None)
 
 
 # Daily WOD subscription at 07:00 GMT+6
