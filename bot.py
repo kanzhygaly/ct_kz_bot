@@ -164,6 +164,7 @@ async def help_msg(message: types.Message):
 @dp.message_handler(commands=['subscribe'])
 async def subscribe(message: types.Message):
     user_id = message.from_user.id
+    chat_id = message.chat.id
 
     # Check if user exist. If not, then add
     if not await user_db.is_user_exist(user_id):
@@ -171,11 +172,11 @@ async def subscribe(message: types.Message):
                                message.from_user.language_code)
 
     if await subscriber_db.is_subscriber(user_id):
-        return await bot.send_message(message.chat.id, emojize("Вы уже подписаны на ежедневную рассылку WOD :alien:"))
+        return await bot.send_message(chat_id, emojize("Вы уже подписаны на ежедневную рассылку WOD :alien:"))
 
     await subscriber_db.add_subscriber(user_id)
 
-    await bot.send_message(message.chat.id, emojize("Вы подписались на ежедневную рассылку WOD :+1:"))
+    await bot.send_message(chat_id, emojize("Вы подписались на ежедневную рассылку WOD :+1:"))
 
 
 @dp.message_handler(commands=['unsubscribe'])
@@ -352,37 +353,41 @@ async def show_wod_results(message: types.Message):
 
 @dp.callback_query_handler(func=lambda callback_query: callback_query.data == REFRESH)
 async def refresh_wod_results_callback(callback_query: types.CallbackQuery):
-    state = dp.current_state(chat=callback_query.message.chat.id, user=callback_query.from_user.id)
+    user_id = callback_query.from_user.id
+    chat_id = callback_query.message.chat.id
+
+    state = dp.current_state(chat=chat_id, user=user_id)
     data = await state.get_data()
 
     wod_id = data['refresh_wod_id'] if ('refresh_wod_id' in data.keys()) else None
 
-    msg = await wod_util.get_wod_results(callback_query.from_user.id, wod_id) if wod_id else None
+    msg = await wod_util.get_wod_results(user_id, wod_id) if wod_id else None
 
     if msg:
-        await bot.edit_message_text(text=msg, chat_id=callback_query.message.chat.id,
-                                    message_id=callback_query.message.message_id,
+        await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id,
                                     parse_mode=ParseMode.MARKDOWN)
 
         reply_markup = types.InlineKeyboardMarkup()
         reply_markup.add(types.InlineKeyboardButton(REFRESH, callback_data=REFRESH))
 
-        await bot.edit_message_reply_markup(chat_id=callback_query.message.chat.id,
-                                            message_id=callback_query.message.message_id, reply_markup=reply_markup)
+        await bot.edit_message_reply_markup(chat_id=chat_id, message_id=callback_query.message.message_id,
+                                            reply_markup=reply_markup)
 
 
 @dp.callback_query_handler(func=lambda callback_query: callback_query.data == VIEW_RESULT)
 async def view_wod_results_callback(callback_query: types.CallbackQuery):
-    state = dp.current_state(chat=callback_query.from_user.id, user=callback_query.from_user.id)
+    user_id = callback_query.from_user.id
+    chat_id = callback_query.message.chat.id
+
+    state = dp.current_state(chat=chat_id, user=user_id)
     data = await state.get_data()
 
     wod_id = data['view_wod_id'] if ('view_wod_id' in data.keys()) else None
 
-    msg = await wod_util.get_wod_results(callback_query.from_user.id, wod_id) if wod_id else None
+    msg = await wod_util.get_wod_results(user_id, wod_id) if wod_id else None
 
     if msg:
-        await bot.edit_message_text(text=msg, chat_id=callback_query.message.chat.id,
-                                    message_id=callback_query.message.message_id,
+        await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id,
                                     parse_mode=ParseMode.MARKDOWN)
         await state.update_data(view_wod_id=None)
 
@@ -672,6 +677,7 @@ async def echo(message: types.Message):
 @dp.callback_query_handler(func=lambda callback_query: callback_query.data[0:10] == CB_ADD_RESULT)
 async def add_result_by_date(callback_query: types.CallbackQuery):
     wod_date = datetime.strptime(callback_query.data[11:], '%d%m%y')
+    print(wod_date)
 
     wod = await wod_db.get_wod_by_date(wod_date)
     if wod:
@@ -681,9 +687,13 @@ async def add_result_by_date(callback_query: types.CallbackQuery):
         state = dp.current_state(chat=chat_id, user=user_id)
         data = await state.get_data()
 
+        print(data['wod_result_txt'])
+
         if 'wod_result_txt' in data.keys():
             wod_result_txt = data['wod_result_txt']
             wod_result = await wod_result_db.get_user_wod_result(wod_id=wod.id, user_id=user_id)
+
+            print(wod_result)
 
             if wod_result:
                 wod_result.sys_date = datetime.now()
