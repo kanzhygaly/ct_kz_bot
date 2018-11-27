@@ -438,13 +438,15 @@ async def ignore(callback_query):
 
 @dp.message_handler(state=FIND_WOD)
 async def find_wod_by_text(message: types.Message):
+    chat_id = message.chat.id
+
     try:
         search_date = datetime.strptime(message.text, '%d%m%y')
     except ValueError:
         msg = 'Пожалуйста введите дату в формате *ДеньМесяцГод* (_Пример: 170518_)'
-        return await bot.send_message(message.chat.id, msg, parse_mode=ParseMode.MARKDOWN)
+        return await bot.send_message(chat_id, msg, parse_mode=ParseMode.MARKDOWN)
 
-    await find_and_send_wod(message.chat.id, message.from_user.id, search_date)
+    await find_and_send_wod(chat_id, message.from_user.id, search_date)
 
 
 async def find_and_send_wod(chat_id, user_id, search_date):
@@ -700,9 +702,6 @@ async def add_result_by_date(callback_query: types.CallbackQuery):
                 await bot.edit_message_text(text=emojize(":white_check_mark: Ваш результат успешно обновлен!"),
                                             chat_id=chat_id, message_id=callback_query.message.message_id,
                                             parse_mode=ParseMode.MARKDOWN)
-
-                # Destroy all data in storage for current user
-                await state.update_data(wod_result_txt=None)
             else:
                 await wod_result_db.add_wod_result(wod.id, user_id, wod_result_txt, datetime.now())
 
@@ -710,28 +709,28 @@ async def add_result_by_date(callback_query: types.CallbackQuery):
                                             chat_id=chat_id, message_id=callback_query.message.message_id,
                                             parse_mode=ParseMode.MARKDOWN)
 
-                # Destroy all data in storage for current user
-                await state.update_data(wod_result_txt=None)
+            # Destroy all data in storage for current user
+            await state.update_data(wod_result_txt=None)
 
-                # Notify other users that new result was added
-                diff = datetime.now().date() - wod.wod_day
-                if diff.days < 2:
-                    author = await user_db.get_user(user_id)
-                    name = f'{author.name} {author.surname}' if author.surname else author.name
-                    msg = f'{name} записал результат за {wod.title}'
+            # Notify other users that new result was added
+            diff = datetime.now().date() - wod.wod_day
+            if diff.days < 2:
+                author = await user_db.get_user(user_id)
+                name = f'{author.name} {author.surname}' if author.surname else author.name
+                msg = f'{name} записал результат за {wod.title}'
 
-                    wod_results = await wod_result_db.get_wod_results(wod.id)
-                    for wr in wod_results:
-                        if wr.user_id == user_id:
-                            continue
+                wod_results = await wod_result_db.get_wod_results(wod.id)
+                for wr in wod_results:
+                    if wr.user_id == user_id:
+                        continue
 
-                        st = dp.current_state(chat=wr.user_id, user=wr.user_id)
-                        await st.update_data(view_wod_id=wod.id)
+                    st = dp.current_state(chat=wr.user_id, user=wr.user_id)
+                    await st.update_data(view_wod_id=wod.id)
 
-                        reply_markup = types.InlineKeyboardMarkup()
-                        reply_markup.add(types.InlineKeyboardButton(VIEW_RESULT, callback_data=VIEW_RESULT))
+                    reply_markup = types.InlineKeyboardMarkup()
+                    reply_markup.add(types.InlineKeyboardButton(VIEW_RESULT, callback_data=VIEW_RESULT))
 
-                        await bot.send_message(wr.user_id, msg, reply_markup=reply_markup)
+                    await bot.send_message(wr.user_id, msg, reply_markup=reply_markup)
     else:
         await bot.edit_message_text(text=emojize("На сегодня тренировки пока что нет :disappointed:"),
                                     chat_id=chat_id, message_id=callback_query.message.message_id,
