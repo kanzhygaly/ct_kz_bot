@@ -138,16 +138,18 @@ async def start(message: types.Message):
 @dp.callback_query_handler(func=lambda callback_query: callback_query.data == HELP)
 async def help_cbq(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
-
-    # Destroy all data in storage for current user
-    state = dp.current_state(chat=callback_query.message.chat.id, user=user_id)
-    await state.update_data(wod_result_txt=None)
+    chat_id = callback_query.message.chat.id
 
     sub = "/subscribe - подписаться на ежедневную рассылку WOD"
     if await subscriber_db.is_subscriber(user_id):
         sub = "/unsubscribe - отписаться от ежедневной рассылки WOD"
 
-    await bot.answer_callback_query(callback_query.id, text=info_msg + sub)
+    await bot.edit_message_text(text=info_msg + sub, chat_id=chat_id, message_id=callback_query.message.message_id,
+                                parse_mode=ParseMode.MARKDOWN)
+
+    # Destroy all data in storage for current user
+    state = dp.current_state(chat=chat_id, user=user_id)
+    await state.update_data(wod_result_txt=None)
 
 
 @dp.message_handler(commands=[HELP])
