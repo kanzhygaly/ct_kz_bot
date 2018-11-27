@@ -647,8 +647,9 @@ async def echo(message: types.Message):
         await message.reply(emojize("Урай! :punch:"))
 
     else:
-        location = await location_db.get_location(message.from_user.id)
-        now = datetime.now(pytz.timezone(location.tz)) if location else datetime.now()
+        # location = await location_db.get_location(message.from_user.id)
+        # now = datetime.now(pytz.timezone(location.tz)) if location else datetime.now()
+        now = datetime.now()
 
         yesterday = (now - timedelta(1)).date()
 
@@ -658,12 +659,12 @@ async def echo(message: types.Message):
             msg = 'За какой день вы хотите добавить результат?'
             reply_markup.add(
                 types.InlineKeyboardButton("Вчера", callback_data=CB_ADD_RESULT + '_' + yesterday.strftime("%d%m%y")),
-                types.InlineKeyboardButton("Сегодня", callback_data=CB_ADD_RESULT + '_' + now.strftime("%d%m%y"))
+                types.InlineKeyboardButton("Сегодня", callback_data=CB_ADD_RESULT + '_' + now.date().strftime("%d%m%y"))
             )
         else:
             msg = 'Вы хотите добавить результат за СЕГОДНЯ?'
             reply_markup.add(
-                types.InlineKeyboardButton("Да", callback_data=CB_ADD_RESULT + '_' + now.strftime("%d%m%y"))
+                types.InlineKeyboardButton("Да", callback_data=CB_ADD_RESULT + '_' + now.date().strftime("%d%m%y"))
             )
 
         reply_markup.add(types.InlineKeyboardButton("Нет!", callback_data=HELP))
