@@ -440,12 +440,18 @@ async def find(message: types.Message):
 
 @dp.callback_query_handler(state=FIND_WOD, func=lambda callback_query: callback_query.data[0:10] == CB_CHOOSE_DAY)
 async def find_wod_by_btn(callback_query: types.CallbackQuery):
+    user_id = callback_query.from_user.id
     chat_id = callback_query.message.chat.id
 
-    await bot.edit_message_text(text="", chat_id=chat_id, message_id=callback_query.message.message_id)
-
     search_date = datetime.strptime(callback_query.data[11:], '%d%m%y')
-    await find_and_send_wod(chat_id, callback_query.from_user.id, search_date)
+    msg, reply_markup = await find_and_get_wod(chat_id, user_id, search_date)
+
+    if reply_markup:
+        await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id,
+                                    reply_markup=reply_markup)
+    else:
+        await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id,
+                                    parse_mode=ParseMode.MARKDOWN)
 
 
 @dp.callback_query_handler(func=lambda callback_query: callback_query.data == 'ignore')
@@ -455,6 +461,7 @@ async def ignore(callback_query):
 
 @dp.message_handler(state=FIND_WOD)
 async def find_wod_by_text(message: types.Message):
+    user_id = message.from_user.id
     chat_id = message.chat.id
 
     try:
@@ -463,10 +470,15 @@ async def find_wod_by_text(message: types.Message):
         msg = 'Пожалуйста введите дату в формате *ДеньМесяцГод* (_Пример: 170518_)'
         return await bot.send_message(chat_id, msg, parse_mode=ParseMode.MARKDOWN)
 
-    await find_and_send_wod(chat_id, message.from_user.id, search_date)
+    msg, reply_markup = await find_and_get_wod(chat_id, user_id, search_date)
+
+    if reply_markup:
+        await bot.send_message(chat_id, msg, reply_markup=reply_markup)
+    else:
+        await bot.send_message(chat_id, msg, parse_mode=ParseMode.MARKDOWN)
 
 
-async def find_and_send_wod(chat_id, user_id, search_date):
+async def find_and_get_wod(chat_id, user_id, search_date):
     time_between = datetime.now() - search_date
     state = dp.current_state(chat=chat_id, user=user_id)
 
@@ -496,12 +508,12 @@ async def find_and_send_wod(chat_id, user_id, search_date):
 
         reply_markup.add(CANCEL)
 
-        await bot.send_message(chat_id, title + "\n\n" + description, reply_markup=reply_markup)
+        return title + "\n\n" + description, reply_markup;
     else:
-        await bot.send_message(chat_id, emojize(":squirrel: На указанную дату тренировка не найдена!"),
-                               reply_markup=types.ReplyKeyboardRemove())
         # Finish conversation, destroy all data in storage for current user
         await state.reset_state()
+
+        return emojize(":squirrel: На указанную дату тренировка не найдена!"), None
 
 
 @dp.message_handler(commands=['timezone'])
