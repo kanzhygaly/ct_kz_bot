@@ -510,7 +510,7 @@ async def find_and_get_wod(chat_id, user_id, search_date):
 
         reply_markup.add(CANCEL)
 
-        return title + "\n\n" + description, reply_markup;
+        return title + "\n\n" + description, reply_markup
     else:
         # Finish conversation, destroy all data in storage for current user
         await state.reset_state()
