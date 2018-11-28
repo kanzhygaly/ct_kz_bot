@@ -728,8 +728,9 @@ async def wod_dispatch():
 
     msg, wod_id = await wod_util.get_wod()
 
-    msg += "\n\n/add - записать/изменить результат за СЕГОДНЯ\n" \
-           "/results - посмотреть результаты за СЕГОДНЯ"
+    if wod_id:
+        msg += "\n\n/add - записать/изменить результат за СЕГОДНЯ\n" \
+               "/results - посмотреть результаты за СЕГОДНЯ"
 
     print(f'Sending WOD to {len(subscribers)} subscribers')
     for sub in subscribers:
