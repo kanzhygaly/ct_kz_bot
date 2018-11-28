@@ -287,6 +287,8 @@ async def update_wod_result(message: types.Message):
         if ('wod_result_id' in data.keys()) else None
 
     if wod_result:
+        wod_id = wod_result.wod_id
+
         wod_result.sys_date = datetime.now()
         wod_result.result = message.text
         await wod_result.save()
