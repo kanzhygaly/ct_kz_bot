@@ -224,11 +224,13 @@ async def hide_keyboard(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
 
-    state = dp.current_state(chat=chat_id, user=user_id)
     # reset
+    state = dp.current_state(chat=chat_id, user=user_id)
     await state.reset_state()
     await state.update_data(wod_id=None)
     await state.update_data(wod_result_id=None)
+
+    await bot.send_message(chat_id, "", reply_markup=types.ReplyKeyboardRemove())
 
 
 @dp.message_handler(state=WOD, func=lambda message: message.text == ADD_RESULT)
