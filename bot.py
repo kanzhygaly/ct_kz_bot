@@ -230,7 +230,8 @@ async def hide_keyboard(message: types.Message):
     await state.update_data(wod_id=None)
     await state.update_data(wod_result_id=None)
 
-    await bot.send_message(chat_id, "", reply_markup=types.ReplyKeyboardRemove())
+    await bot.send_message(chat_id, emojize("Список команд :point_right: /help"),
+                           reply_markup=types.ReplyKeyboardRemove())
 
 
 @dp.message_handler(state=WOD, func=lambda message: message.text == ADD_RESULT)
