@@ -449,8 +449,12 @@ async def find_wod_by_btn(callback_query: types.CallbackQuery):
     msg, reply_markup = await find_and_get_wod(chat_id, user_id, search_date)
 
     if reply_markup:
-        await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id,
-                                    reply_markup=reply_markup)
+        await bot.edit_message_reply_markup(chat_id=chat_id, message_id=callback_query.message.message_id,
+                                            reply_markup=types.InlineKeyboardMarkup())
+
+        await bot.send_message(chat_id, msg, reply_markup=reply_markup)
+        # await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id,
+        #                             reply_markup=reply_markup)
     else:
         await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id,
                                     parse_mode=ParseMode.MARKDOWN)
