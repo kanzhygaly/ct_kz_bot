@@ -18,7 +18,8 @@ class WOD(Entity):
 async def get_wods(wod_day):
     try:
         return await WOD.get(records=False, wod_day=wod_day)
-    except TypeError:
+    except TypeError as e:
+        print(e)
         return None
     except Exception as e:
         print(e)
