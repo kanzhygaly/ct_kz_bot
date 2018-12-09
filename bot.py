@@ -220,6 +220,7 @@ async def send_wod(message: types.Message):
 
 
 @dp.message_handler(state='*', func=lambda message: message.text.lower() == CANCEL.lower())
+@dp.message_handler(state=WOD, func=lambda message: message.text not in [ADD_RESULT, EDIT_RESULT, SHOW_RESULTS])
 async def hide_keyboard(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -785,10 +786,10 @@ async def add_result_by_date(callback_query: types.CallbackQuery):
         await state.update_data(wod_result_txt=None)
 
 
-# Daily WOD subscription at 07:00 GMT+6
-@scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=1, id='wod_dispatch')
+# Daily WOD subscription at 06:30 GMT+6
+@scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=0, minute=30, id='wod_dispatch')
 async def wod_dispatch():
-    print('This job runs everyday at 7 am')
+    print('This job runs everyday at 06:30 am')
     subscribers = await subscriber_db.get_all_subscribers()
 
     msg, wod_id = await wod_util.get_wod()
