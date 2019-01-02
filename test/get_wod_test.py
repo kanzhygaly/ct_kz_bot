@@ -12,7 +12,8 @@ parser = BSoupParser(url=url)
 num = re.sub(r'\D', "", parser.get_wod_date())
 wod_date = datetime.datetime.strptime(num, '%m%d%Y')
 
-if wod_date.date().__eq__(today):
+# if wod_date.date().__eq__(today): while year is incorrect compare by day and month
+if wod_date.day.__eq__(today.day) and wod_date.month.__eq__(today.month):
     title = parser.get_wod_date()
     reg_part = parser.get_regional_wod()
     open_part = parser.get_open_wod()
@@ -62,7 +63,7 @@ def test_old():
         open_text = (''.join(open_part.split())).lower()
         open_text = open_text[4:]
 
-        if not reg_text.startswith("regionalsathletesrest") and not open_text.startswith("openathletesrest"):
+        if not reg_text.startswith("qualifierathletesrest") and not open_text.startswith("openathletesrest"):
             print(title + "\n\n" + description)
         else:
             print(reg_text + "\n\n" + open_text)

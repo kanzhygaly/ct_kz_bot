@@ -23,7 +23,9 @@ async def get_wod():
     num = re.sub(r'\D', "", parser.get_wod_date())
     wod_date = datetime.strptime(num, '%m%d%Y')
 
-    if wod_date.date().__eq__(today):
+    # if wod_date.date().__eq__(today):
+    # compare by day and month, while year on site is incorrect
+    if wod_date.day.__eq__(today.day) and wod_date.month.__eq__(today.month):
         title = parser.get_wod_date()
 
         reg_part = parser.get_regional_wod()
@@ -78,7 +80,9 @@ async def reset_wod():
     num = re.sub(r'\D', "", parser.get_wod_date())
     wod_date = datetime.strptime(num, '%m%d%Y')
 
-    if wod_date.date().__eq__(today):
+    # if wod_date.date().__eq__(today):
+    # compare by day and month, while year on site is incorrect
+    if wod_date.day.__eq__(today.day) and wod_date.month.__eq__(today.month):
         title = parser.get_wod_date()
 
         reg_part = parser.get_regional_wod()
