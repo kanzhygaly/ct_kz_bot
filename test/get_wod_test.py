@@ -9,11 +9,12 @@ url = 'https://comptrain.co/individuals/programming'
 parser = BSoupParser(url=url)
 
 # Remove anything other than digits
-num = re.sub(r'\D', "", parser.get_wod_date())
-wod_date = datetime.datetime.strptime(num, '%m%d%Y')
+# num = re.sub(r'\D', "", parser.get_wod_date())
+num = ''.join(c for c in parser.get_wod_date() if c.isdigit() or c == '.')
+wod_date = datetime.datetime.strptime(num, '%m.%d.%Y')
 
-# if wod_date.date().__eq__(today): while year is incorrect compare by day and month
-if wod_date.day.__eq__(today.day) and wod_date.month.__eq__(today.month):
+# if wod_date.date().__eq__(today):
+if wod_date.day.__eq__(today.day) and wod_date.month.__eq__(today.month) and wod_date.year.__eq__(today.year):
     title = parser.get_wod_date()
     reg_part = parser.get_regional_wod()
     open_part = parser.get_open_wod()
