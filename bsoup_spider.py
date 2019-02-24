@@ -35,6 +35,12 @@ class BSoupParser:
                     inner.string = f'{counter}. {inner.string}'
                     counter += 1
 
+                for link in tag.find_all('a'):
+                    if link.string is None:
+                        link.string = link.get('href')
+                    else:
+                        link.string = link.get('href') + ' ' + link.string
+
                 for inner in tag.stripped_strings:
                     # Remove unnecessary repeated spaces
                     inner = " ".join(inner.split())
@@ -59,6 +65,12 @@ class BSoupParser:
                     # Add numbers for sections
                     inner.string = f'{counter}. {inner.string}'
                     counter += 1
+
+                for link in tag.find_all('a'):
+                    if link.string is None:
+                        link.string = link.get('href')
+                    else:
+                        link.string = link.get('href') + ' ' + link.string
 
                 for inner in tag.stripped_strings:
                     # Remove unnecessary repeated spaces
