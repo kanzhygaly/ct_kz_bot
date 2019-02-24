@@ -214,7 +214,7 @@ async def send_wod(message: types.Message):
         reply_markup.add(res_button, SHOW_RESULTS)
         reply_markup.add(CANCEL)
 
-        await bot.send_message(chat_id, msg, reply_markup=reply_markup)
+        await bot.send_message(chat_id, msg, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
     else:
         await bot.send_message(chat_id, msg)
 
@@ -480,7 +480,7 @@ async def find_wod_by_text(message: types.Message):
     msg, reply_markup = await find_and_get_wod(chat_id, user_id, search_date)
 
     if reply_markup:
-        await bot.send_message(chat_id, msg, reply_markup=reply_markup)
+        await bot.send_message(chat_id, msg, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
     else:
         await bot.send_message(chat_id, msg, parse_mode=ParseMode.MARKDOWN)
 
@@ -582,7 +582,7 @@ async def view_warmup(message: types.Message):
     today = datetime.now().date()
     result = await wod_db.get_warmup(today)
     if result:
-        await bot.send_message(chat_id, result)
+        await bot.send_message(chat_id, result, parse_mode=ParseMode.MARKDOWN)
     else:
         await bot.send_message(chat_id, emojize("На сегодня разминки пока что нет :disappointed:"))
 
@@ -800,7 +800,7 @@ async def wod_dispatch():
 
     print(f'Sending WOD to {len(subscribers)} subscribers')
     for sub in subscribers:
-        await bot.send_message(sub.user_id, msg)
+        await bot.send_message(sub.user_id, msg, parse_mode=ParseMode.MARKDOWN)
 
 
 # Notify to add results for Today's WOD at 23:00 GMT+6
