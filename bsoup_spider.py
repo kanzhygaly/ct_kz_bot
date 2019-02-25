@@ -36,10 +36,7 @@ class BSoupParser:
                     counter += 1
 
                 for link in tag.find_all('a'):
-                    if link.string is None:
-                        link.string = link.get('href')
-                    else:
-                        link.string = f"[{link.string}]({link.get('href')})"
+                    link.string = link.get('href')
 
                 for inner in tag.stripped_strings:
                     # Remove unnecessary repeated spaces
@@ -67,10 +64,7 @@ class BSoupParser:
                     counter += 1
 
                 for link in tag.find_all('a'):
-                    if link.string is None:
-                        link.string = link.get('href')
-                    else:
-                        link.string = link.get('href') + ' ' + link.string
+                    link.string = link.get('href')
 
                 for inner in tag.stripped_strings:
                     # Remove unnecessary repeated spaces
