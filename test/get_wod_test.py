@@ -23,13 +23,15 @@ if wod_date.day.__eq__(today.day) and wod_date.month.__eq__(today.month) and wod
     reg_text = (''.join(reg_part.split())).lower()
     reg_text = reg_text[4:25]
     open_text = (''.join(open_part.split())).lower()
-    open_text = open_text[4:25]
+    open_text = open_text[4:20]
 
-    if not reg_text.startswith("qualifierathletesrest") and not open_text.startswith("openathletesrest"):
+    # if reg_part.find("Rest Day") != -1 and open_part.find("Rest Day") != -1:
+    if reg_text == "qualifierathletesrest" and open_text == "openathletesrest":
+        print("NO DB")
         print(title + "\n\n" + description)
-        pass
     else:
-        print(reg_text + "\n\n" + open_text)
+        print("SAVE TO DB")
+        print(title + "\n\n" + description)
 else:
     print("Комплекс еще не вышел.\nСорян :(")
 

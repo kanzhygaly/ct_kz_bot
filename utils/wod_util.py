@@ -35,10 +35,11 @@ async def get_wod():
         reg_text = (''.join(reg_part.split())).lower()
         reg_text = reg_text[4:25]
         open_text = (''.join(open_part.split())).lower()
-        open_text = open_text[4:25]
+        open_text = open_text[4:20]
 
-        wod_id = None
-        if not reg_text.startswith("qualifierathletesrest") and not open_text.startswith("openathletesrest"):
+        if reg_text == "qualifierathletesrest" and open_text == "openathletesrest":
+            wod_id = None
+        else:
             wod_id = await wod_db.add_wod(today, title, description)
 
         return title + "\n\n" + description, wod_id
