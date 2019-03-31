@@ -793,8 +793,9 @@ async def add_result_by_date(callback_query: types.CallbackQuery):
 async def wod_dispatch():
     print('wod_dispatch')
     today = datetime.now().date()
-
     result = await wod_db.get_wods(today)
+
+    # check if result is None or is empty
     if not result:
         subscribers = await subscriber_db.get_all_subscribers()
 
