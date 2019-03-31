@@ -786,21 +786,24 @@ async def add_result_by_date(callback_query: types.CallbackQuery):
         await state.update_data(wod_result_txt=None)
 
 
-# Daily WOD subscription at 06:30 GMT+6
-@scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=0, minute=30, id='wod_dispatch')
+# https://apscheduler.readthedocs.io/en/latest/modules/triggers/cron.html#module-apscheduler.triggers.cron
+# Daily WOD subscription at 06:30 and 13:30 GMT+6
+@scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=0, minute=30, id='wod_dispatch_1')
+@scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=7, minute=30, id='wod_dispatch_2')
 async def wod_dispatch():
-    print('This job runs everyday at 06:30 am')
-    subscribers = await subscriber_db.get_all_subscribers()
+    print('wod_dispatch')
+    if wod_util.is_to_send_wod():
+        subscribers = await subscriber_db.get_all_subscribers()
 
-    msg, wod_id = await wod_util.get_wod()
+        msg, wod_id = await wod_util.get_wod()
 
-    if wod_id:
-        msg += "\n\n/add - записать/изменить результат за СЕГОДНЯ\n" \
-               "/results - посмотреть результаты за СЕГОДНЯ"
+        if wod_id:
+            msg += "\n\n/add - записать/изменить результат за СЕГОДНЯ\n" \
+                   "/results - посмотреть результаты за СЕГОДНЯ"
 
-    print(f'Sending WOD to {len(subscribers)} subscribers')
-    for sub in subscribers:
-        await bot.send_message(sub.user_id, msg)
+        print(f'Sending WOD to {len(subscribers)} subscribers')
+        for sub in subscribers:
+            await bot.send_message(sub.user_id, msg)
 
 
 # Notify to add results for Today's WOD at 23:00 GMT+6
