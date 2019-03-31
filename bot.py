@@ -787,12 +787,15 @@ async def add_result_by_date(callback_query: types.CallbackQuery):
 
 
 # https://apscheduler.readthedocs.io/en/latest/modules/triggers/cron.html#module-apscheduler.triggers.cron
-# Daily WOD subscription at 06:30 and 13:30 GMT+6
+# Daily WOD subscription at 06:30 and 14:00 GMT+6
 @scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=0, minute=30, id='wod_dispatch_1')
-@scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=7, minute=30, id='wod_dispatch_2')
+@scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=8, minute=00, id='wod_dispatch_2')
 async def wod_dispatch():
     print('wod_dispatch')
-    if wod_util.is_to_send_wod():
+    today = datetime.now().date()
+
+    result = await wod_db.get_wods(today)
+    if not result:
         subscribers = await subscriber_db.get_all_subscribers()
 
         msg, wod_id = await wod_util.get_wod()

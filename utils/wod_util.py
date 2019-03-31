@@ -39,14 +39,6 @@ async def get_wod():
         return "Комплекс еще не вышел.\nСорян :(", None
 
 
-async def is_to_send_wod():
-    today = datetime.now().date()
-    if await wod_db.get_wods(today):
-        return False
-
-    return True
-
-
 async def get_wod_results(user_id, wod_id):
     location = await location_db.get_location(user_id)
 
