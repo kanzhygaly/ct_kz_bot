@@ -21,12 +21,12 @@ if wod_date.day.__eq__(today.day) and wod_date.month.__eq__(today.month) and wod
     description = reg_part + "\n" + open_part
 
     reg_text = (''.join(reg_part.split())).lower()
-    reg_text = reg_text[4:25]
+    reg_text = reg_text[:25]
     open_text = (''.join(open_part.split())).lower()
-    open_text = open_text[4:20]
+    open_text = open_text[:20]
 
-    # if reg_part.find("Rest Day") != -1 and open_part.find("Rest Day") != -1:
-    if reg_text == "qualifierathletesrest" and open_text == "openathletesrest":
+    # if reg_text == "qualifierathletesrest" and open_text == "openathletesrest":
+    if reg_part.find("Rest Day") != -1 or open_part.find("Rest Day") != -1:
         print("NO DB")
         print(title + "\n\n" + description)
     else:

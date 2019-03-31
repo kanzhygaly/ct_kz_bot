@@ -1,5 +1,4 @@
 import os
-import re
 import pytz
 from datetime import datetime
 from bsoup_spider import BSoupParser
@@ -20,11 +19,9 @@ async def get_wod():
     parser = BSoupParser(url=os.environ['WEB_URL'])
 
     # Remove anything other than digits
-    # num = re.sub(r'\D', "", parser.get_wod_date())
     num = ''.join(c for c in parser.get_wod_date() if c.isdigit() or c == '.')
     wod_date = datetime.strptime(num, '%m.%d.%Y')
 
-    # if wod_date.date().__eq__(today):
     if wod_date.day.__eq__(today.day) and wod_date.month.__eq__(today.month) and wod_date.year.__eq__(today.year):
         title = parser.get_wod_date()
 
@@ -32,12 +29,7 @@ async def get_wod():
         open_part = parser.get_open_wod()
         description = reg_part + "\n" + open_part
 
-        reg_text = (''.join(reg_part.split())).lower()
-        reg_text = reg_text[4:25]
-        open_text = (''.join(open_part.split())).lower()
-        open_text = open_text[4:20]
-
-        if reg_text == "qualifierathletesrest" and open_text == "openathletesrest":
+        if reg_part.find("Rest Day") != -1 or open_part.find("Rest Day") != -1:
             wod_id = None
         else:
             wod_id = await wod_db.add_wod(today, title, description)
@@ -78,11 +70,9 @@ async def reset_wod():
     parser = BSoupParser(url=os.environ['WEB_URL'])
 
     # Remove anything other than digits
-    # num = re.sub(r'\D', "", parser.get_wod_date())
     num = ''.join(c for c in parser.get_wod_date() if c.isdigit() or c == '.')
     wod_date = datetime.strptime(num, '%m.%d.%Y')
 
-    # if wod_date.date().__eq__(today):
     # compare by day and month, while year on site is incorrect
     if wod_date.day.__eq__(today.day) and wod_date.month.__eq__(today.month):
         title = parser.get_wod_date()
@@ -91,12 +81,7 @@ async def reset_wod():
         open_part = parser.get_open_wod()
         description = reg_part + "\n" + open_part
 
-        reg_text = (''.join(reg_part.split())).lower()
-        reg_text = reg_text[4:25]
-        open_text = (''.join(open_part.split())).lower()
-        open_text = open_text[4:25]
-
-        if not reg_text.startswith("qualifierathletesrest") and not open_text.startswith("openathletesrest"):
+        if reg_part.find("Rest Day") == -1 or open_part.find("Rest Day") == -1:
             await wod_db.edit_wod(wod_id, today, title, description)
 
         return "Today's(" + today.strftime("%d %B %Y") + ") WOD successfully updated!"
@@ -125,7 +110,6 @@ async def get_wod_old():
         '6': 'saturday'
     }
     index = today.strftime("%w")
-    # target = today.strftime("%m-%d-%y")
     target = f'{today.month}-{today.day}-{str(today.year)[-2:]}'
     base = os.environ['MAIN_URL']
     url = f'{base}/workout/{weekday.get(index)}-·-{target}'
