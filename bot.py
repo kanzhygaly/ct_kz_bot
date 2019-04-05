@@ -362,7 +362,7 @@ async def show_wod_results(message: types.Message):
         reply_markup = types.InlineKeyboardMarkup()
         reply_markup.add(types.InlineKeyboardButton(REFRESH, callback_data=REFRESH))
 
-        await bot.send_message(chat_id, msg, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+        await bot.send_message(chat_id, msg, reply_markup=reply_markup)
     else:
         return await bot.send_message(chat_id, emojize("На сегодня результатов пока что нет :crying_cat_face:"
                                                        "\nСтаньте первым кто внесет свой результат :smiley_cat:"
@@ -382,8 +382,7 @@ async def refresh_wod_results_callback(callback_query: types.CallbackQuery):
     msg = await wod_util.get_wod_results(user_id, wod_id) if wod_id else None
 
     if msg:
-        await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id,
-                                    parse_mode=ParseMode.MARKDOWN)
+        await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id)
 
         reply_markup = types.InlineKeyboardMarkup()
         reply_markup.add(types.InlineKeyboardButton(REFRESH, callback_data=REFRESH))
@@ -405,8 +404,7 @@ async def view_wod_results_callback(callback_query: types.CallbackQuery):
     msg = await wod_util.get_wod_results(user_id, wod_id) if wod_id else None
 
     if msg:
-        await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id,
-                                    parse_mode=ParseMode.MARKDOWN)
+        await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id)
         await state.update_data(view_wod_id=None)
 
 
@@ -640,7 +638,7 @@ async def view_results(message: types.Message):
     msg = await wod_util.get_wod_results(user_id, wod.id) if wod else None
 
     if msg:
-        await bot.send_message(chat_id, f'{wod.title}\n\n{msg}', parse_mode=ParseMode.MARKDOWN)
+        await bot.send_message(chat_id, f'{wod.title}\n\n{msg}')
     else:
         await bot.send_message(chat_id, emojize("На сегодня результатов пока что нет :disappointed:"))
 
