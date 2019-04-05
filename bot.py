@@ -362,7 +362,7 @@ async def show_wod_results(message: types.Message):
         reply_markup = types.InlineKeyboardMarkup()
         reply_markup.add(types.InlineKeyboardButton(REFRESH, callback_data=REFRESH))
 
-        await bot.send_message(chat_id, msg, reply_markup=reply_markup)
+        await bot.send_message(chat_id, msg, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
     else:
         return await bot.send_message(chat_id, emojize("На сегодня результатов пока что нет :crying_cat_face:"
                                                        "\nСтаньте первым кто внесет свой результат :smiley_cat:"
@@ -382,7 +382,8 @@ async def refresh_wod_results_callback(callback_query: types.CallbackQuery):
     msg = await wod_util.get_wod_results(user_id, wod_id) if wod_id else None
 
     if msg:
-        await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id)
+        await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id,
+                                    parse_mode=ParseMode.MARKDOWN)
 
         reply_markup = types.InlineKeyboardMarkup()
         reply_markup.add(types.InlineKeyboardButton(REFRESH, callback_data=REFRESH))
@@ -404,7 +405,8 @@ async def view_wod_results_callback(callback_query: types.CallbackQuery):
     msg = await wod_util.get_wod_results(user_id, wod_id) if wod_id else None
 
     if msg:
-        await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id)
+        await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id,
+                                    parse_mode=ParseMode.MARKDOWN)
         await state.update_data(view_wod_id=None)
 
 
@@ -638,7 +640,7 @@ async def view_results(message: types.Message):
     msg = await wod_util.get_wod_results(user_id, wod.id) if wod else None
 
     if msg:
-        await bot.send_message(chat_id, f'{wod.title}\n\n{msg}')
+        await bot.send_message(chat_id, f'{wod.title}\n\n{msg}', parse_mode=ParseMode.MARKDOWN)
     else:
         await bot.send_message(chat_id, emojize("На сегодня результатов пока что нет :disappointed:"))
 
@@ -785,15 +787,17 @@ async def add_result_by_date(callback_query: types.CallbackQuery):
 
 
 # https://apscheduler.readthedocs.io/en/latest/modules/triggers/cron.html#module-apscheduler.triggers.cron
-# Daily WOD subscription at 06:30 and 14:00 GMT+6
+# Daily WOD subscription at 06:30 GMT+6
+# Second WOD dispatch 14:00 GMT+6, except Thursday and Sunday
 @scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=0, minute=30, id='wod_dispatch_1')
-@scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=8, minute=00, id='wod_dispatch_2')
+@scheduler.scheduled_job('cron', day_of_week='mon,tue,wed,fri,sat', hour=8, minute=00, id='wod_dispatch_2')
 async def wod_dispatch():
     print('wod_dispatch')
-    today = datetime.now().date()
-    result = await wod_db.get_wods(today)
+    now = datetime.now()
+    result = await wod_db.get_wods(now.date())
 
-    # check if result is None or is empty
+    # if result is equal to None or is empty, then True
+    # there's no entry in DB for today
     if not result:
         subscribers = await subscriber_db.get_all_subscribers()
 

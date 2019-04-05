@@ -56,6 +56,9 @@ async def get_wod_results(user_id, wod_id):
             msg += f'{title}\n' \
                    f'{res.result}\n\n'
 
+        # replace * with x in text. if it has odd number of * then MARKDOWN will fail
+        msg = msg.replace('*','x')
+
         return msg
     else:
         return None
