@@ -45,8 +45,8 @@ async def get_add_rest_wod_kb():
                 delta = date.weekday() - 3
                 date = date - datetime.timedelta(days=delta)
 
-                # Thu 18 Apr
-                btn_name = date.strftime("%a %d %b")
+            # Thu 18 Apr
+            btn_name = date.strftime("%a %d %b")
             row.append(types.InlineKeyboardButton(
                 btn_name, callback_data=CB_CHOOSE_DAY + '_' + date.strftime("%d%m%y")))
 
