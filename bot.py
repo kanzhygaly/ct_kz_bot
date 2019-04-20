@@ -691,8 +691,8 @@ async def sys_add_wod(message: types.Message):
     await state.set_state(ADD_WOD)
 
     # Configure InlineKeyboardMarkup
-    menu = await tz_util.get_add_rest_wod_menu()
-    reply_markup = types.InlineKeyboardMarkup(menu)
+    keyboard = await tz_util.get_add_rest_wod_kb()
+    reply_markup = types.InlineKeyboardMarkup(inline_keyboard=keyboard)
 
     msg = 'Выберите день из списка либо введите дату в формате *ДеньМесяцГод* (_Пример: 170518_)'
     await bot.send_message(chat_id, msg, parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)

@@ -30,7 +30,7 @@ async def get_timezone_id(latitude, longitude):
     return None
 
 
-async def get_add_rest_wod_menu():
+async def get_add_rest_wod_kb():
     keyboard = []
     row = []
     count = 9
