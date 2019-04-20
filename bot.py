@@ -748,7 +748,7 @@ async def update_wod(message: types.Message):
     data = await state.get_data()
     wod_id = data['wod_id']
 
-    wod = await wod_util.update_wod(wod_id, message.text)
+    wod = await wod_db.edit_wod(wod_id, message.text)
 
     if wod:
         await bot.send_message(chat_id, emojize(":white_check_mark: WOD за " + wod.wod_day.strftime("%d %B %Y")

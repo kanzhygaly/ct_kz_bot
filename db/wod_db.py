@@ -48,8 +48,16 @@ async def edit_wod(id, wod_day, title, description):
 
 
 async def edit_wod(id, description):
-    entity = WOD(id=id, description=description)
-    await entity.save()
+    try:
+        entity = await WOD.get_one(record=False, id=id)
+        entity.description = description
+        await entity.save()
+        return entity
+    except TypeError:
+        return None
+    except Exception as e:
+        print(e)
+        return None
 
 
 async def get_wod(wod_id):
