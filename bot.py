@@ -76,7 +76,7 @@ async def sys_all_users(message: types.Message):
     msg = ''
     counter = 1
     for u in users:
-        msg += f'{counter}. {u.name} {u.surname}\n'
+        msg += f'{counter}. {u.name} {u.surname} {u.user_id}\n'
         counter += 1
 
     await bot.send_message(message.chat.id, msg, parse_mode=ParseMode.MARKDOWN)
@@ -100,7 +100,7 @@ async def sys_all_subs(message: types.Message):
         if not u:
             await subscriber_db.unsubscribe(sub.user_id)
         else:
-            msg += f'{counter}. {u.name} {u.surname}\n'
+            msg += f'{counter}. {u.name} {u.surname} {u.user_id}\n'
             counter += 1
 
     await bot.send_message(message.chat.id, msg, parse_mode=ParseMode.MARKDOWN)
