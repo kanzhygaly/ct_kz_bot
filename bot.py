@@ -45,6 +45,8 @@ WOD_RESULT = 'wod_result'
 FIND_WOD = 'find_wod'
 SET_TIMEZONE = 'set_timezone'
 WARM_UP = 'warm_up'
+ADD_WOD = 'add_wod'
+ADD_WOD_REQ = 'add_wod_req'
 # Buttons
 ADD_RESULT = 'Добавить'
 EDIT_RESULT = 'Изменить'
@@ -670,6 +672,93 @@ async def add_result(message: types.Message):
         await bot.send_message(chat_id, msg, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
     else:
         await bot.send_message(chat_id, emojize("На сегодня тренировки пока что нет :disappointed:"))
+
+
+@dp.message_handler(commands=['sys_add_wod'])
+async def sys_add_wod(message: types.Message):
+    if not await user_db.is_admin(message.from_user.id):
+        # send info
+        sub = "/subscribe - подписаться на ежедневную рассылку WOD"
+        if await subscriber_db.is_subscriber(message.from_user.id):
+            sub = "/unsubscribe - отписаться от ежедневной рассылки WOD"
+
+        return await message.reply(info_msg + sub)
+
+    user_id = message.from_user.id
+    chat_id = message.chat.id
+
+    state = dp.current_state(chat=chat_id, user=user_id)
+    await state.set_state(ADD_WOD)
+
+    # Configure InlineKeyboardMarkup
+    menu = tz_util.get_add_rest_wod_menu()
+    reply_markup = types.InlineKeyboardMarkup(menu)
+
+    msg = 'Выберите день из списка либо введите дату в формате *ДеньМесяцГод* (_Пример: 170518_)'
+    await bot.send_message(chat_id, msg, parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
+
+
+@dp.callback_query_handler(state=ADD_WOD, func=lambda callback_query: callback_query.data[0:10] == CB_CHOOSE_DAY)
+async def add_wod_by_btn(callback_query: types.CallbackQuery):
+    user_id = callback_query.from_user.id
+    chat_id = callback_query.message.chat.id
+
+    wod_date = datetime.strptime(callback_query.data[11:], '%d%m%y')
+
+    # Saturday 4.20.2019
+    title = wod_date.strftime("%A %m.%d.%Y")
+    wod_id = wod_util.add_wod(wod_date, title, '')
+
+    state = dp.current_state(chat=chat_id, user=user_id)
+    await state.set_state(ADD_WOD_REQ)
+    await state.update_data(wod_id=wod_id)
+
+    await bot.edit_message_text(text='Пожалуйста введите текст:', chat_id=chat_id,
+                                message_id=callback_query.message.message_id)
+
+
+@dp.message_handler(state=ADD_WOD)
+async def add_wod_by_text(message: types.Message):
+    user_id = message.from_user.id
+    chat_id = message.chat.id
+
+    try:
+        wod_date = datetime.strptime(message.text, '%d%m%y')
+    except ValueError:
+        msg = 'Пожалуйста введите дату в формате *ДеньМесяцГод* (_Пример: 170518_)'
+        return await bot.send_message(chat_id, msg, parse_mode=ParseMode.MARKDOWN)
+
+    # Saturday 4.20.2019
+    title = wod_date.strftime("%A %m.%d.%Y")
+    wod_id = wod_util.add_wod(wod_date, title, '')
+
+    state = dp.current_state(chat=chat_id, user=user_id)
+    await state.set_state(ADD_WOD_REQ)
+    await state.update_data(wod_id=wod_id)
+
+    await bot.send_message(chat_id, 'Пожалуйста введите текст:')
+
+
+@dp.message_handler(state=ADD_WOD_REQ)
+async def update_wod(message: types.Message):
+    user_id = message.from_user.id
+    chat_id = message.chat.id
+
+    state = dp.current_state(chat=chat_id, user=user_id)
+    data = await state.get_data()
+    wod_id = data['wod_id']
+
+    wod = await wod_util.update_wod(wod_id, message.text)
+
+    if wod:
+        await bot.send_message(chat_id, emojize(":white_check_mark: WOD за " + wod.wod_day.strftime("%d %B %Y")
+                                                + " успешно добавлен"))
+    else:
+        await bot.send_message(chat_id, emojize(":heavy_exclamation_mark: Ошибка при внесении данных!"))
+
+    # Finish conversation, destroy all data in storage for current user
+    await state.reset_state()
+    await state.update_data(wod_id=None)
 
 
 @dp.message_handler()

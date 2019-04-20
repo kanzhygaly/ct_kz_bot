@@ -92,6 +92,21 @@ async def reset_wod():
         return "Error occurred while updating today's(" + today.strftime("%d %B %Y") + ") WOD!"
 
 
+async def add_wod(wod_date, title, description):
+    wod = await wod_db.get_wod_by_date(wod_date)
+    if wod:
+        await wod_db.edit_wod(wod.id, wod_date, title, description)
+        return wod.id
+    else:
+        return await wod_db.add_wod(wod.id, wod_date, title, description)
+
+
+async def update_wod(wod_id, description):
+    await wod_db.edit_wod(wod_id, description)
+
+    return await wod_db.get_wod(wod_id)
+
+
 async def get_wod_old():
     today = datetime.now().date()
 

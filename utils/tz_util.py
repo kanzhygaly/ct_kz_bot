@@ -1,4 +1,9 @@
 import requests
+import datetime
+from aiogram import types
+
+
+CB_CHOOSE_DAY = 'choose_day'
 
 
 async def get_timezone_id(latitude, longitude):
@@ -23,3 +28,31 @@ async def get_timezone_id(latitude, longitude):
         except Exception as e:
             print('Error requesting timezone identification: %s' % (str(e)))
     return None
+
+
+async def get_add_rest_wod_menu():
+    keyboard = []
+    row = []
+    count = 9
+    date = datetime.datetime.now()
+
+    while count >= 0:
+        if len(row) < 3:
+            if date.weekday() <= 3:
+                delta = 1 + date.weekday()
+                date = date - datetime.timedelta(days=delta)
+            elif date.weekday() > 3:
+                delta = date.weekday() - 3
+                date = date - datetime.timedelta(days=delta)
+
+                # Thu 18 Apr
+                btn_name = date.strftime("%a %d %b")
+            row.append(types.InlineKeyboardButton(
+                btn_name, callback_data=CB_CHOOSE_DAY + '_' + date.strftime("%d%m%y")))
+
+            count -= 1
+        else:
+            keyboard.append(row)
+            row = []
+
+    return keyboard
