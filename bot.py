@@ -691,7 +691,7 @@ async def sys_add_wod(message: types.Message):
     await state.set_state(ADD_WOD)
 
     # Configure InlineKeyboardMarkup
-    menu = tz_util.get_add_rest_wod_menu()
+    menu = await tz_util.get_add_rest_wod_menu()
     reply_markup = types.InlineKeyboardMarkup(menu)
 
     msg = 'Выберите день из списка либо введите дату в формате *ДеньМесяцГод* (_Пример: 170518_)'
@@ -707,7 +707,7 @@ async def add_wod_by_btn(callback_query: types.CallbackQuery):
 
     # Saturday 4.20.2019
     title = wod_date.strftime("%A %m.%d.%Y")
-    wod_id = wod_util.add_wod(wod_date, title, '')
+    wod_id = await wod_util.add_wod(wod_date, title, '')
 
     state = dp.current_state(chat=chat_id, user=user_id)
     await state.set_state(ADD_WOD_REQ)
@@ -730,7 +730,7 @@ async def add_wod_by_text(message: types.Message):
 
     # Saturday 4.20.2019
     title = wod_date.strftime("%A %m.%d.%Y")
-    wod_id = wod_util.add_wod(wod_date, title, '')
+    wod_id = await wod_util.add_wod(wod_date, title, '')
 
     state = dp.current_state(chat=chat_id, user=user_id)
     await state.set_state(ADD_WOD_REQ)
