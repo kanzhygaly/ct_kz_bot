@@ -95,7 +95,7 @@ async def reset_wod():
 async def add_wod(wod_date, title, description):
     wod = await wod_db.get_wod_by_date(wod_date)
     if wod:
-        await wod_db.edit_wod(wod.id, wod_date, title, description)
+        await wod_db.edit_wod(id=wod.id, description=description, title=title)
         return wod.id
     else:
         return await wod_db.add_wod(wod_date, title, description)
