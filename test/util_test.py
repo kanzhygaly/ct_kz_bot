@@ -36,6 +36,11 @@ def test_add_wod():
     count = 9
     date = now
 
+    # if today is Thursday then include it
+    if date.weekday() == 3:
+        count = 8
+        row.append(date.strftime("%a %d %b"))
+
     while count >= 0:
         if len(row) < 3:
             if date.weekday() <= 3:
