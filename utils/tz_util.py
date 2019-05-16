@@ -38,8 +38,10 @@ async def get_add_rest_wod_kb():
 
     # if today is Thursday then include it
     if date.weekday() == 3:
-        count = 8
-        row.append(date.strftime("%a %d %b"))
+        count = 8        
+		btn_name = date.strftime("%a %d %b")
+		row.append(types.InlineKeyboardButton(
+			btn_name, callback_data=CB_CHOOSE_DAY + '_' + date.strftime("%d%m%y")))
 
     while count >= 0:
         if len(row) < 3:
