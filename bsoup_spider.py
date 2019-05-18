@@ -30,10 +30,11 @@ class BSoupParser:
                 text = " ".join(tag.get_text().split())
                 result += text + '\n\n'
             else:
-                for inner in tag.find_all('strong'):
-                    if (''.join(inner.get_text().split())) == 'RestDay':
-                        continue
+                for inner in tag.find_all('em'):
+                    # remove <strong> in <em>
+                    inner.string = inner.get_text()
 
+                for inner in tag.find_all('strong'):
                     # Add numbers for sections
                     inner.string = f'{counter}. {inner.get_text()}'
                     counter += 1
@@ -61,10 +62,11 @@ class BSoupParser:
                 text = " ".join(tag.get_text().split())
                 result += text + '\n\n'
             else:
-                for inner in tag.find_all('strong'):
-                    if (''.join(inner.get_text().split())) == 'RestDay':
-                        continue
+                for inner in tag.find_all('em'):
+                    # remove <strong> in <em>
+                    inner.string = inner.get_text()
 
+                for inner in tag.find_all('strong'):
                     # Add numbers for sections
                     inner.string = f'{counter}. {inner.get_text()}'
                     counter += 1
