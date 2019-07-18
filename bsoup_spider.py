@@ -35,6 +35,8 @@ class BSoupParser:
                     inner.string = inner.get_text()
 
                 for inner in tag.find_all('strong'):
+                    if not inner.get_text().split():
+                        continue
                     # Add numbers for sections
                     inner.string = f'{counter}. {inner.get_text()}'
                     counter += 1
@@ -67,6 +69,8 @@ class BSoupParser:
                     inner.string = inner.get_text()
 
                 for inner in tag.find_all('strong'):
+                    if not inner.get_text().split():
+                        continue
                     # Add numbers for sections
                     inner.string = f'{counter}. {inner.get_text()}'
                     counter += 1
