@@ -85,7 +85,7 @@ async def reset_wod():
         description = reg_part + "\n" + open_part
 
         if reg_part.find("Rest Day") == -1 or open_part.find("Rest Day") == -1:
-            await wod_db.edit_wod(wod_id, today, title, description)
+            await wod_db.edit_wod(id=wod_id, description=description, title=title)
 
         return "Today's(" + today.strftime("%d %B %Y") + ") WOD successfully updated!"
     else:
