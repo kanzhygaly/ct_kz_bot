@@ -14,6 +14,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from db import user_db, subscriber_db, wod_db, wod_result_db, async_db, location_db
 from utils import tz_util
 from utils import wod_util
+from utils.sub_util import send_wod_to_all_subscribers
 
 bot = Bot(token=os.environ['API_TOKEN'])
 
@@ -116,9 +117,14 @@ async def sys_reset_wod(message: types.Message):
 
         return await message.reply(info_msg + sub)
 
-    msg = await wod_util.reset_wod()
+    today = datetime.now().date()
 
-    await bot.send_message(message.chat.id, msg, parse_mode=ParseMode.MARKDOWN)
+    if await wod_util.reset_wod():
+        await bot.send_message(message.chat.id, "Today's(" + today.strftime("%d %B %Y") + ") WOD successfully updated!")
+        await send_wod_to_all_subscribers(bot)
+    else:
+        await bot.send_message(message.chat.id,"Error occurred while updating today's(" + today.strftime("%d %B %Y")
+                               + ") WOD!")
 
 
 @dp.message_handler(commands=['start'])
