@@ -894,17 +894,20 @@ async def wod_dispatch():
     # if result is equal to None or is empty, then True
     # there's no entry in DB for today
     if not result:
-        subscribers = await subscriber_db.get_all_subscribers()
+        await send_wod_to_all_subscribers(bot)
 
-        msg, wod_id = await wod_util.get_wod()
 
-        if wod_id:
-            msg += "\n\n/add - записать/изменить результат за СЕГОДНЯ\n" \
-                   "/results - посмотреть результаты за СЕГОДНЯ"
+@dp.message_handler(commands=['sys_dispatch_wod'])
+async def sys_dispatch_wod(message: types.Message):
+    if not await user_db.is_admin(message.from_user.id):
+        # send info
+        sub = "/subscribe - подписаться на ежедневную рассылку WOD"
+        if await subscriber_db.is_subscriber(message.from_user.id):
+            sub = "/unsubscribe - отписаться от ежедневной рассылки WOD"
 
-        print(f'Sending WOD to {len(subscribers)} subscribers')
-        for sub in subscribers:
-            await bot.send_message(sub.user_id, msg)
+        return await message.reply(info_msg + sub)
+
+    await send_wod_to_all_subscribers(bot)
 
 
 # Notify to add results for Today's WOD at 23:00 GMT+6
