@@ -3,6 +3,7 @@ import pytz
 from datetime import datetime
 from bsoup_spider import BSoupParser
 from db import user_db, wod_db, wod_result_db, location_db
+from utils.parser_util import parse_wod_date
 
 
 async def get_wod():
@@ -18,9 +19,7 @@ async def get_wod():
 
     parser = BSoupParser(url=os.environ['WEB_URL'])
 
-    # Remove anything other than digits
-    num = ''.join(c for c in parser.get_wod_date() if c.isdigit() or c == '.')
-    wod_date = datetime.strptime(num, '%m.%d.%Y')
+    wod_date = parse_wod_date(parser.get_wod_date())
 
     if wod_date.day.__eq__(today.day) and wod_date.month.__eq__(today.month) and wod_date.year.__eq__(today.year):
         title = parser.get_wod_date()
@@ -72,9 +71,7 @@ async def reset_wod():
 
     parser = BSoupParser(url=os.environ['WEB_URL'])
 
-    # Remove anything other than digits
-    num = ''.join(c for c in parser.get_wod_date() if c.isdigit() or c == '.')
-    wod_date = datetime.strptime(num, '%m.%d.%Y')
+    wod_date = parse_wod_date(parser.get_wod_date())
 
     # compare by day and month, while year on site is incorrect
     if wod_date.day.__eq__(today.day) and wod_date.month.__eq__(today.month):
