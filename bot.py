@@ -127,6 +127,19 @@ async def sys_reset_wod(message: types.Message):
                                + ") WOD!")
 
 
+@dp.message_handler(commands=['sys_dispatch_wod'])
+async def sys_dispatch_wod(message: types.Message):
+    if not await user_db.is_admin(message.from_user.id):
+        # send info
+        sub = "/subscribe - подписаться на ежедневную рассылку WOD"
+        if await subscriber_db.is_subscriber(message.from_user.id):
+            sub = "/unsubscribe - отписаться от ежедневной рассылки WOD"
+
+        return await message.reply(info_msg + sub)
+
+    await send_wod_to_all_subscribers(bot)
+
+
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
     user_id = message.from_user.id
@@ -895,19 +908,6 @@ async def wod_dispatch():
     # there's no entry in DB for today
     if not result:
         await send_wod_to_all_subscribers(bot)
-
-
-@dp.message_handler(commands=['sys_dispatch_wod'])
-async def sys_dispatch_wod(message: types.Message):
-    if not await user_db.is_admin(message.from_user.id):
-        # send info
-        sub = "/subscribe - подписаться на ежедневную рассылку WOD"
-        if await subscriber_db.is_subscriber(message.from_user.id):
-            sub = "/unsubscribe - отписаться от ежедневной рассылки WOD"
-
-        return await message.reply(info_msg + sub)
-
-    await send_wod_to_all_subscribers(bot)
 
 
 # Notify to add results for Today's WOD at 23:00 GMT+6
