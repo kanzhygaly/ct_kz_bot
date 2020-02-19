@@ -9,7 +9,7 @@ class BSoupParser:
         page = requests.get(url, headers=headers)
 
         soup = BeautifulSoup(page.text, 'html.parser')
-        post = soup.find('div', class_='wod-wrap aos-init aos-animate')
+        post = soup.find('div', class_='wod-wrap')
 
         header = post.find(class_='orange wod-date').find('h5').get_text()
         self.wod_date = " ".join(header.split())

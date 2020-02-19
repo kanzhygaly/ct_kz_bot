@@ -1,7 +1,6 @@
 import os
 import re
 from datetime import datetime, timedelta
-
 import pytz
 from aiogram import Bot, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
@@ -10,11 +9,12 @@ from aiogram.types import ParseMode
 from aiogram.utils import executor
 from aiogram.utils.emoji import emojize
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-
 from db import user_db, subscriber_db, wod_db, wod_result_db, async_db, location_db
 from utils import tz_util
-from utils import wod_util
-from utils.sub_util import send_wod_to_all_subscribers
+from service import wod_service
+from service import wod_res_service
+from service.sub_service import send_wod_to_all_subscribers
+
 
 bot = Bot(token=os.environ['API_TOKEN'])
 
@@ -119,11 +119,11 @@ async def sys_reset_wod(message: types.Message):
 
     today = datetime.now().date()
 
-    if await wod_util.reset_wod():
+    if await wod_service.reset_wod():
         await bot.send_message(message.chat.id, "Today's(" + today.strftime("%d %B %Y") + ") WOD successfully updated!")
         await send_wod_to_all_subscribers(bot)
     else:
-        await bot.send_message(message.chat.id,"Error occurred while updating today's(" + today.strftime("%d %B %Y")
+        await bot.send_message(message.chat.id, "Error occurred while updating today's(" + today.strftime("%d %B %Y")
                                + ") WOD!")
 
 
@@ -216,7 +216,7 @@ async def send_wod(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
 
-    msg, wod_id = await wod_util.get_wod()
+    msg, wod_id = await wod_service.get_wod()
 
     if wod_id:
         res_button = ADD_RESULT
@@ -364,7 +364,7 @@ async def show_wod_results(message: types.Message):
 
     wod_id = data['wod_id']
 
-    msg = await wod_util.get_wod_results(user_id, wod_id)
+    msg = await wod_res_service.get_wod_results(user_id, wod_id)
 
     if msg:
         # await bot.send_message(message.chat.id, msg, reply_markup=types.ReplyKeyboardRemove(),
@@ -400,7 +400,7 @@ async def refresh_wod_results_callback(callback_query: types.CallbackQuery):
 
     wod_id = data['refresh_wod_id'] if ('refresh_wod_id' in data.keys()) else None
 
-    msg = await wod_util.get_wod_results(user_id, wod_id) if wod_id else None
+    msg = await wod_res_service.get_wod_results(user_id, wod_id) if wod_id else None
 
     if msg:
         await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id,
@@ -423,7 +423,7 @@ async def view_wod_results_callback(callback_query: types.CallbackQuery):
 
     wod_id = data['view_wod_id'] if ('view_wod_id' in data.keys()) else None
 
-    msg = await wod_util.get_wod_results(user_id, wod_id) if wod_id else None
+    msg = await wod_res_service.get_wod_results(user_id, wod_id) if wod_id else None
 
     if msg:
         await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id,
@@ -656,9 +656,11 @@ async def view_results(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
 
+    wod_res_service.is_allowed_to_see_wod_results(user_id)
+
     wod = await wod_db.get_wod_by_date(datetime.now().date())
 
-    msg = await wod_util.get_wod_results(user_id, wod.id) if wod else None
+    msg = await wod_res_service.get_wod_results(user_id, wod.id) if wod else None
 
     if msg:
         await bot.send_message(chat_id, f'{wod.title}\n\n{msg}', parse_mode=ParseMode.MARKDOWN)
@@ -726,7 +728,7 @@ async def add_wod_by_btn(callback_query: types.CallbackQuery):
 
     # Saturday 4.20.2019
     title = wod_date.strftime("%A %m.%d.%Y")
-    wod_id = await wod_util.add_wod(wod_date, title, '')
+    wod_id = await wod_service.add_wod(wod_date, title, '')
 
     state = dp.current_state(chat=chat_id, user=user_id)
     await state.set_state(ADD_WOD_REQ)
@@ -749,7 +751,7 @@ async def add_wod_by_text(message: types.Message):
 
     # Saturday 4.20.2019
     title = wod_date.strftime("%A %m.%d.%Y")
-    wod_id = await wod_util.add_wod(wod_date, title, '')
+    wod_id = await wod_service.add_wod(wod_date, title, '')
 
     state = dp.current_state(chat=chat_id, user=user_id)
     await state.set_state(ADD_WOD_REQ)
@@ -913,7 +915,7 @@ async def wod_dispatch():
 # Notify to add results for Today's WOD at 23:00 GMT+6
 @scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=17, id='notify_to_add_result')
 async def notify_to_add_result():
-    msg, wod_id = await wod_util.get_wod()
+    msg, wod_id = await wod_service.get_wod()
 
     if wod_id:
         subscribers = await subscriber_db.get_all_subscribers()

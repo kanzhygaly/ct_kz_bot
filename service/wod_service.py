@@ -1,8 +1,7 @@
 import os
-import pytz
 from datetime import datetime
 from bsoup_spider import BSoupParser
-from db import user_db, wod_db, wod_result_db, location_db
+from db import wod_db
 from utils.parser_util import parse_wod_date
 
 
@@ -28,7 +27,8 @@ async def get_wod():
         open_part = parser.get_open_wod()
         description = reg_part + "\n" + open_part
 
-        if reg_part.find("Rest Day") != -1 or open_part.find("Rest Day") != -1:
+        if reg_part.find("Rest Day") != -1 and open_part.find("Rest Day") != -1:
+            # Rest Day on both parts
             wod_id = None
         else:
             wod_id = await wod_db.add_wod(today, title, description)
@@ -36,31 +36,6 @@ async def get_wod():
         return title + "\n\n" + description, wod_id
     else:
         return "Комплекс еще не вышел.\nСорян :(", None
-
-
-async def get_wod_results(user_id, wod_id):
-    location = await location_db.get_location(user_id)
-
-    wod_results = await wod_result_db.get_wod_results(wod_id)
-
-    if wod_results:
-        msg = ''
-        for res in wod_results:
-            u = await user_db.get_user(res.user_id)
-
-            dt = res.sys_date.astimezone(pytz.timezone(location.tz)) if location else res.sys_date
-            name = f'{u.name} {u.surname}' if u.surname else u.name
-
-            title = '_' + name + ', ' + dt.strftime("%H:%M:%S %d %B %Y") + '_'
-            msg += f'{title}\n' \
-                   f'{res.result}\n\n'
-
-        # replace * with x in text. if it has odd number of * then MARKDOWN will fail
-        msg = msg.replace('*','x')
-
-        return msg
-    else:
-        return None
 
 
 async def reset_wod():
