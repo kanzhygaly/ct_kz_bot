@@ -35,7 +35,7 @@ async def is_allowed_to_see_wod_results(user_id):
         print(datetime.now().date())
         print(datetime.now())
         print(wod_result.sys_date)
-        delta = datetime.now().date() - wod_result.sys_date
+        delta = datetime.now() - wod_result.sys_date
         print(delta.days)
         if delta.days > 7:
             return False
