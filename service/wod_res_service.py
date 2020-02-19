@@ -1,4 +1,5 @@
 import pytz
+from datetime import datetime
 from db import user_db, wod_result_db, location_db
 
 
@@ -30,4 +31,14 @@ async def get_wod_results(user_id, wod_id):
 async def is_allowed_to_see_wod_results(user_id):
     wod_result = await wod_result_db.get_last_wod_result(user_id)
 
-    print(wod_result.sys_date)
+    if wod_result:
+        print(datetime.now().date())
+        print(datetime.now())
+        print(wod_result.sys_date)
+        delta = datetime.now().date() - wod_result.sys_date
+        print(delta.days)
+        if delta.days > 7:
+            return False
+        return True
+
+    return False
