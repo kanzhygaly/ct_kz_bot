@@ -49,6 +49,6 @@ async def get_last_wod_result(user_id):
     result = await WodResult.get(records=False, user_id=user_id)
 
     if result:
-        return result[0]
+        return result[len(result) - 1]
 
     return None
