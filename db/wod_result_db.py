@@ -46,10 +46,9 @@ async def get_wod_result(wod_result_id):
 
 
 async def get_last_wod_result(user_id):
-    async with WodResult.connection() as conn:
-        async with conn.transaction():
-            stmt = select(WodResult)
-            where_str = 'wod_result.user_id = $1'
-            stmt.set_statement('where', f'WHERE {where_str} ORDER BY sys_date DESC LIMIT 1', user_id)
-            res = await conn.fetchrow(*stmt)
-            return None if res is None else WodResult.from_record(res)
+    result = await WodResult.get(records=False, user_id=user_id)
+
+    if result:
+        return result[0]
+
+    return None
