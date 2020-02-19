@@ -21,7 +21,7 @@ async def get_wod_results(user_id, wod_id):
                    f'{res.result}\n\n'
 
         # replace * with x in text. if it has odd number of * then MARKDOWN will fail
-        msg = msg.replace('*','x')
+        msg = msg.replace('*', 'x')
 
         return msg
     else:
@@ -32,13 +32,14 @@ async def is_allowed_to_see_wod_results(user_id):
     wod_result = await wod_result_db.get_last_wod_result(user_id)
 
     if wod_result:
-        print(datetime.now().date())
-        print(datetime.now())
-        print(wod_result.sys_date)
         delta = datetime.now() - wod_result.sys_date
-        print(delta.days)
-        if delta.days > 7:
+        if delta.days > 3:
+            # if user hasn't logged any results within 3 days
+            # then he is not allowed to see results
             return False
-        return True
-
-    return False
+        else:
+            # allowed to see results
+            return True
+    else:
+        # no results at all, not allowed
+        return False

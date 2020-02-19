@@ -367,8 +367,6 @@ async def show_wod_results(message: types.Message):
     msg = await wod_res_service.get_wod_results(user_id, wod_id)
 
     if msg:
-        # await bot.send_message(message.chat.id, msg, reply_markup=types.ReplyKeyboardRemove(),
-        #                        parse_mode=ParseMode.MARKDOWN)
         # Finish conversation, destroy all data in storage for current user
         await state.reset_state()
         await state.update_data(wod_id=None)
@@ -656,16 +654,17 @@ async def view_results(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
 
-    await wod_res_service.is_allowed_to_see_wod_results(user_id)
+    if await wod_res_service.is_allowed_to_see_wod_results(user_id):
+        wod = await wod_db.get_wod_by_date(datetime.now().date())
 
-    wod = await wod_db.get_wod_by_date(datetime.now().date())
+        msg = await wod_res_service.get_wod_results(user_id, wod.id) if wod else None
 
-    msg = await wod_res_service.get_wod_results(user_id, wod.id) if wod else None
-
-    if msg:
-        await bot.send_message(chat_id, f'{wod.title}\n\n{msg}', parse_mode=ParseMode.MARKDOWN)
+        if msg:
+            await bot.send_message(chat_id, f'{wod.title}\n\n{msg}', parse_mode=ParseMode.MARKDOWN)
+        else:
+            await bot.send_message(chat_id, emojize("На сегодня результатов пока что нет :disappointed:"))
     else:
-        await bot.send_message(chat_id, emojize("На сегодня результатов пока что нет :disappointed:"))
+        await bot.send_message(chat_id, emojize("На сегодня результатов нет :disappointed:"))
 
 
 @dp.message_handler(commands=['add'])
@@ -897,9 +896,9 @@ async def add_result_by_date(callback_query: types.CallbackQuery):
 
 
 # https://apscheduler.readthedocs.io/en/latest/modules/triggers/cron.html#module-apscheduler.triggers.cron
-# Daily WOD subscription at 06:30 GMT+6
+# Daily WOD subscription at 06:10 GMT+6
 # Second WOD dispatch 14:00 GMT+6, except Thursday and Sunday
-@scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=0, minute=30, id='wod_dispatch_1')
+@scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=0, minute=10, id='wod_dispatch_1')
 @scheduler.scheduled_job('cron', day_of_week='mon,tue,wed,fri,sat', hour=8, minute=00, id='wod_dispatch_2')
 async def wod_dispatch():
     print('wod_dispatch')
