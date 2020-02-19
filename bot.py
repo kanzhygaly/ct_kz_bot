@@ -656,7 +656,7 @@ async def view_results(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
 
-    wod_res_service.is_allowed_to_see_wod_results(user_id)
+    await wod_res_service.is_allowed_to_see_wod_results(user_id)
 
     wod = await wod_db.get_wod_by_date(datetime.now().date())
 
