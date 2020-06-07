@@ -97,10 +97,16 @@ async def search_by_text(str):
     async with WOD.connection() as conn:
         async with conn.transaction():
             col_str = "wod.id, wod.title"
-            stmt = Statement(WOD).set_statement('select', f'SELECT {col_str}');
+            stmt = Statement(WOD)
+            print(stmt)
+            stmt.set_statement('from_', f'FROM {WOD.__tablename__}')
+            print(stmt)
+            stmt.set_statement('select', f'SELECT {col_str}')
+            print(stmt)
             # stmt = select(WOD)
             where_str = "LOWER(wod.description) LIKE LOWER('%$1%')"
             stmt.set_statement('where', f'WHERE {where_str}', str)
+            print(stmt)
             res = await conn.fetch(*stmt)
             print(res)
             return list(map(WOD.from_record, res))
