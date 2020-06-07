@@ -97,6 +97,5 @@ async def search_by_text(str):
     async with WOD.connection() as conn:
         where_str = f'LOWER(description) LIKE LOWER(\'%{str}%\')'
         res = await conn.fetch(f'SELECT id, title FROM {WOD.__tablename__} WHERE {where_str}')
-        print(res)
         await conn.close()
         return list(map(WOD.from_record, res))
