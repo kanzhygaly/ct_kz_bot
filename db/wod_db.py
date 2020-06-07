@@ -95,7 +95,8 @@ async def get_warmup(wod_day):
 
 async def search_by_text(str):
     async with WOD.connection() as conn:
-        res = await conn.fetch(f'SELECT id, title FROM {WOD.__tablename__} WHERE LOWER(wod.description) LIKE LOWER(%$1%)', str)
+        where_str = 'LOWER(description) LIKE LOWER(\'%$1%\')'
+        res = await conn.fetch(f'SELECT id, title FROM {WOD.__tablename__} WHERE {where_str}', str)
         print(res)
         await conn.close()
         return list(map(WOD.from_record, res))
