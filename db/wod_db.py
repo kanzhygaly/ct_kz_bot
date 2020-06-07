@@ -95,18 +95,7 @@ async def get_warmup(wod_day):
 
 async def search_by_text(str):
     async with WOD.connection() as conn:
-        async with conn.transaction():
-            col_str = "wod.id, wod.title"
-            stmt = Statement(WOD)
-            print(stmt)
-            stmt.set_statement('from_', f'FROM {WOD.__tablename__}')
-            print(stmt)
-            stmt.set_statement('select', f'SELECT {col_str}')
-            print(stmt)
-            # stmt = select(WOD)
-            where_str = "LOWER(wod.description) LIKE LOWER('%$1%')"
-            stmt.set_statement('where', f'WHERE {where_str}', str)
-            print(stmt)
-            res = await conn.fetch(*stmt)
-            print(res)
-            return list(map(WOD.from_record, res))
+        res = await conn.fetch(f'SELECT id, title FROM {WOD.__tablename__} WHERE LOWER(wod.description) LIKE LOWER(%$1%)', str)
+        print(res)
+        await conn.close()
+        return list(map(WOD.from_record, res))
