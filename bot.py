@@ -442,7 +442,7 @@ async def search(message: types.Message):
     await bot.send_message(chat_id, msg)
 
 
-@dp.message_handler(state=FIND_WOD)
+@dp.message_handler(state=SEARCH_WOD)
 async def search_wod_by_text(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
