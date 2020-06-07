@@ -72,3 +72,7 @@ async def add_wod(wod_date, title, description):
         return wod.id
     else:
         return await wod_db.add_wod(wod_date, title, description)
+
+
+async def search_wods(str):
+    return await wod_db.search_by_text(str)

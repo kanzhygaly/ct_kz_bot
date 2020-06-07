@@ -1,6 +1,6 @@
 import uuid
 
-from asyncpg_simpleorm import Column
+from asyncpg_simpleorm import Column, select, Statement
 
 from db.async_db import Entity
 
@@ -91,3 +91,16 @@ async def get_warmup(wod_day):
     except Exception as e:
         print(e)
         return None
+
+
+async def search_by_text(str):
+    async with WOD.connection() as conn:
+        async with conn.transaction():
+            col_str = "wod.id, wod.title"
+            stmt = Statement(WOD).set_statement('select', f'SELECT {col_str}');
+            # stmt = select(WOD)
+            where_str = "LOWER(wod.description) LIKE LOWER('%$1%')"
+            stmt.set_statement('where', f'WHERE {where_str}', str)
+            res = await conn.fetch(*stmt)
+            print(res)
+            return list(map(WOD.from_record, res))

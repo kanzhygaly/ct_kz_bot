@@ -44,6 +44,7 @@ info_msg = 'CompTrainKZ BOT:\n\n' \
 WOD = 'wod'
 WOD_RESULT = 'wod_result'
 FIND_WOD = 'find_wod'
+SEARCH_WOD = 'search_wod'
 SET_TIMEZONE = 'set_timezone'
 WARM_UP = 'warm_up'
 ADD_WOD = 'add_wod'
@@ -427,6 +428,31 @@ async def view_wod_results_callback(callback_query: types.CallbackQuery):
         await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id,
                                     parse_mode=ParseMode.MARKDOWN)
         await state.update_data(view_wod_id=None)
+
+
+@dp.message_handler(commands=['search'])
+async def search(message: types.Message):
+    user_id = message.from_user.id
+    chat_id = message.chat.id
+
+    state = dp.current_state(chat=chat_id, user=user_id)
+    await state.set_state(SEARCH_WOD)
+
+    msg = 'Введите текст для поиска: '
+    await bot.send_message(chat_id, msg)
+
+
+@dp.message_handler(state=FIND_WOD)
+async def search_wod_by_text(message: types.Message):
+    user_id = message.from_user.id
+    chat_id = message.chat.id
+
+    result = await wod_service.search_wods(message.text)
+
+    if result:
+        await bot.send_message(chat_id, 'По вашему тексту что-то найдено')
+    else:
+        await bot.send_message(chat_id, 'По вашему тексту ничего не найдено')
 
 
 @dp.message_handler(commands=['find'])
@@ -826,7 +852,7 @@ async def echo(message: types.Message):
                 types.InlineKeyboardButton("Да", callback_data=CB_ADD_RESULT + '_' + now.strftime("%d%m%y"))
             )
 
-        reply_markup.add(types.InlineKeyboardButton("Нет!", callback_data=HELP))
+        reply_markup.add(types.InlineKeyboardButton("Отмена!", callback_data=HELP))
 
         state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
         await state.update_data(wod_result_txt=message.text)
