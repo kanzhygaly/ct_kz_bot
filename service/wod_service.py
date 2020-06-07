@@ -27,7 +27,7 @@ async def get_wod():
         open_part = parser.get_open_wod()
         description = reg_part + "\n" + open_part
 
-        if reg_part.find("Rest Day") != -1 and open_part.find("Rest Day") != -1:
+        if reg_part.lower().find("rest day") != -1 and open_part.lower().find("rest day") != -1:
             # Rest Day on both parts
             wod_id = None
         else:
