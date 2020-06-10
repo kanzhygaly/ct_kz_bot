@@ -69,6 +69,13 @@ async def get_wod(wod_id):
         return None
 
 
+async def get_wod_light(wod_id):
+    async with WOD.connection() as conn:
+        res = await conn.fetch(f'SELECT wod_day FROM {WOD.__tablename__} WHERE id={wod_id}')
+        await conn.close()
+        return WOD.from_record(res)
+
+
 async def add_warmup(wod_id, txt):
     try:
         entity = await WOD.get_one(record=False, id=wod_id)
@@ -99,3 +106,4 @@ async def search_by_text(str):
         res = await conn.fetch(f'SELECT id, wod_day FROM {WOD.__tablename__} WHERE {where_str}')
         await conn.close()
         return list(map(WOD.from_record, res))
+
