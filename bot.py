@@ -1,6 +1,7 @@
 import os
 import re
 from datetime import datetime, timedelta
+
 import pytz
 from aiogram import Bot, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
@@ -9,12 +10,12 @@ from aiogram.types import ParseMode
 from aiogram.utils import executor
 from aiogram.utils.emoji import emojize
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from db import user_db, subscriber_db, wod_db, wod_result_db, async_db, location_db
-from utils import tz_util
-from service import wod_service
-from service import wod_res_service
-from service.sub_service import send_wod_to_all_subscribers
 
+from db import user_db, subscriber_db, wod_db, wod_result_db, async_db, location_db
+from service import wod_res_service
+from service import wod_service
+from service.sub_service import send_wod_to_all_subscribers
+from utils import tz_util
 
 bot = Bot(token=os.environ['API_TOKEN'])
 
@@ -463,7 +464,7 @@ async def search_wod_by_text(message: types.Message):
             if len(row) < 3:
                 btn_name = wod.wod_day.strftime("%d %B %Y")
 
-                row.append(types.InlineKeyboardButton(btn_name, callback_data=CB_SEARCH_RESULT + wod.id))
+                row.append(types.InlineKeyboardButton(btn_name, callback_data=CB_SEARCH_RESULT + str(wod.id)))
             else:
                 reply_markup.row(*row)
                 row = []
@@ -480,9 +481,7 @@ async def show_search_result(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     chat_id = callback_query.message.chat.id
 
-    wod_id = callback_query.data[11:]
-    wod = await wod_db.get_wod(wod_id)
-    msg = wod.title + "\n\n" + wod.description
+    msg, wod_id = await wod_service.get_wod_by_str_id(callback_query.data[11:])
 
     st = dp.current_state(chat=chat_id, user=user_id)
     await st.update_data(view_wod_id=wod_id)

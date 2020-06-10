@@ -1,4 +1,5 @@
 import os
+import uuid
 from datetime import datetime
 from bsoup_spider import BSoupParser
 from db import wod_db
@@ -76,3 +77,9 @@ async def add_wod(wod_date, title, description):
 
 async def search_wods(str):
     return await wod_db.search_by_text(str)
+
+
+async def get_wod_by_str_id(wod_id_str):
+    wod_id = uuid.UUID(bytes=wod_id_str.bytes)
+    wod = await wod_db.get_wod(wod_id)
+    return wod.title + "\n\n" + wod.description, wod_id
