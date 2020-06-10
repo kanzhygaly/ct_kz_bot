@@ -414,32 +414,6 @@ async def refresh_wod_results_callback(callback_query: types.CallbackQuery):
                                             reply_markup=reply_markup)
 
 
-@dp.callback_query_handler(func=lambda callback_query: callback_query.data == VIEW_RESULT)
-async def view_wod_results_callback(callback_query: types.CallbackQuery):
-    user_id = callback_query.from_user.id
-    chat_id = callback_query.message.chat.id
-
-    state = dp.current_state(chat=chat_id, user=user_id)
-    data = await state.get_data()
-
-    wod_id = data['view_wod_id'] if ('view_wod_id' in data.keys()) else None
-    print(wod_id)
-
-    msg = await wod_res_service.get_wod_results(user_id, wod_id) if wod_id else None
-
-    if msg:
-        is_new_msg = data['new_msg'] if ('new_msg' in data.keys()) else False
-        print(is_new_msg)
-        await state.update_data(view_wod_id=None)
-
-        if (is_new_msg):
-            await bot.send_message(chat_id, msg, parse_mode=ParseMode.MARKDOWN)
-            await state.update_data(new_msg=None)
-        else:
-            await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id,
-                                        parse_mode=ParseMode.MARKDOWN)
-
-
 @dp.message_handler(commands=['search'])
 async def search(message: types.Message):
     user_id = message.from_user.id
@@ -499,6 +473,30 @@ async def show_search_result(callback_query: types.CallbackQuery):
     reply_markup.add(types.InlineKeyboardButton(VIEW_RESULT, callback_data=VIEW_RESULT))
 
     await bot.send_message(chat_id, msg, reply_markup=reply_markup)
+
+
+@dp.callback_query_handler(func=lambda callback_query: callback_query.data == VIEW_RESULT)
+async def view_wod_results_callback(callback_query: types.CallbackQuery):
+    user_id = callback_query.from_user.id
+    chat_id = callback_query.message.chat.id
+
+    state = dp.current_state(chat=chat_id, user=user_id)
+    data = await state.get_data()
+
+    wod_id = data['view_wod_id'] if ('view_wod_id' in data.keys()) else None
+
+    msg = await wod_res_service.get_wod_results(user_id, wod_id) if wod_id else None
+
+    if msg:
+        is_new_msg = data['new_msg'] if ('new_msg' in data.keys()) else False
+        await state.update_data(view_wod_id=None)
+
+        if (is_new_msg):
+            await bot.send_message(chat_id, msg, parse_mode=ParseMode.MARKDOWN)
+            await state.update_data(new_msg=None)
+        else:
+            await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id,
+                                        parse_mode=ParseMode.MARKDOWN)
 
 
 @dp.message_handler(commands=['find'])
