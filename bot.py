@@ -486,7 +486,9 @@ async def view_wod_results_callback(callback_query: types.CallbackQuery):
     wod_id = data['view_wod_id'] if ('view_wod_id' in data.keys()) else None
     await state.update_data(view_wod_id=None)
 
-    msg = await wod_res_service.get_wod_results(user_id, wod_id) if wod_id else "На этот день нет результатов"
+    msg = await wod_res_service.get_wod_results(user_id, wod_id) if wod_id else None
+    if not msg:
+        msg = "На этот день нет результатов"
 
     await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id,
                                 parse_mode=ParseMode.MARKDOWN)
