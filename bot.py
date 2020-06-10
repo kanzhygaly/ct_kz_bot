@@ -254,6 +254,7 @@ async def hide_keyboard(message: types.Message):
     await state.reset_state()
     await state.update_data(wod_id=None)
     await state.update_data(wod_result_id=None)
+    await state.update_data(refresh_wod_id=None)
 
     await bot.send_message(chat_id, emojize("Список команд :point_right: /help"),
                            reply_markup=types.ReplyKeyboardRemove())
@@ -467,7 +468,6 @@ async def show_search_result(callback_query: types.CallbackQuery):
 
     st = dp.current_state(chat=chat_id, user=user_id)
     await st.update_data(view_wod_id=wod_id)
-    await st.update_data(new_msg=True)
 
     reply_markup = types.InlineKeyboardMarkup()
     reply_markup.add(types.InlineKeyboardButton(VIEW_RESULT, callback_data=VIEW_RESULT))
@@ -484,21 +484,15 @@ async def view_wod_results_callback(callback_query: types.CallbackQuery):
     data = await state.get_data()
 
     wod_id = data['view_wod_id'] if ('view_wod_id' in data.keys()) else None
-    print(wod_id)
+    await state.update_data(view_wod_id=None)
 
     msg = await wod_res_service.get_wod_results(user_id, wod_id) if wod_id else None
 
     if msg:
-        is_new_msg = data['new_msg'] if ('new_msg' in data.keys()) else False
-        print(is_new_msg)
-        await state.update_data(view_wod_id=None)
-
-        if is_new_msg:
-            await bot.send_message(chat_id, msg, parse_mode=ParseMode.MARKDOWN)
-            await state.update_data(new_msg=None)
-        else:
-            await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id,
-                                        parse_mode=ParseMode.MARKDOWN)
+        await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id,
+                                    parse_mode=ParseMode.MARKDOWN)
+    else:
+        await bot.send_message(chat_id, "На этот день нет результатов")
 
 
 @dp.message_handler(commands=['find'])
