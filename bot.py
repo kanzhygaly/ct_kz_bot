@@ -56,7 +56,7 @@ EDIT_RESULT = 'Изменить'
 SHOW_RESULTS = 'Результаты'
 CANCEL = 'Отмена'
 REFRESH = 'Обновить'
-VIEW_RESULT = 'Посмотреть результат'
+VIEW_RESULT = 'Посмотреть результаты'
 # Commands
 HELP = 'help'
 # CALLBACK
