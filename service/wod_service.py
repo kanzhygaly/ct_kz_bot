@@ -80,8 +80,6 @@ async def search_wods(str):
 
 
 async def get_wod_by_str_id(wod_id_str):
-    print(wod_id_str)
     wod_id = uuid.UUID(bytes=wod_id_str.bytes)
-    print(wod_id)
     wod = await wod_db.get_wod(wod_id)
     return wod.title + "\n\n" + wod.description, wod_id
