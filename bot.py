@@ -491,7 +491,7 @@ async def view_wod_results_callback(callback_query: types.CallbackQuery):
         msg = "На этот день нет результатов"
 
     wod_day = await wod_db.get_wod_day(wod_id)
-    msg = wod_day.strftime("%d %B %Y") + "\n" + msg
+    msg = wod_day.strftime("%d %B %Y") + "\n\n" + msg
 
     await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id,
                                 parse_mode=ParseMode.MARKDOWN)
