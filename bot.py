@@ -62,7 +62,7 @@ HELP = 'help'
 # CALLBACK
 CB_CHOOSE_DAY = 'choose_day'
 CB_ADD_RESULT = 'add_result'
-CB_SEARCH_RES = 'search_res'
+CB_SEARCH_RESULT = 'search_res'
 
 
 @dp.message_handler(commands=['sys_all_users'])
@@ -446,7 +446,7 @@ async def search_wod_by_text(message: types.Message):
             if len(row) < 3:
                 btn_name = wod.wod_day.strftime("%d %B %Y")
 
-                row.append(types.InlineKeyboardButton(btn_name, callback_data=CB_SEARCH_RES + '_' + str(wod.id)))
+                row.append(types.InlineKeyboardButton(btn_name, callback_data=CB_SEARCH_RESULT + '_' + str(wod.id)))
             else:
                 reply_markup.row(*row)
                 row = []
@@ -458,12 +458,11 @@ async def search_wod_by_text(message: types.Message):
         await bot.send_message(chat_id, 'По вашему тексту ничего не найдено')
 
 
-@dp.callback_query_handler(state=FIND_WOD, func=lambda callback_query: callback_query.data[0:10] == CB_SEARCH_RES)
+@dp.callback_query_handler(func=lambda callback_query: callback_query.data[0:10] == CB_SEARCH_RESULT)
 async def show_search_result(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     chat_id = callback_query.message.chat.id
 
-    print(callback_query.data)
     msg, wod_id = await wod_service.get_wod_by_str_id(callback_query.data[11:])
 
     st = dp.current_state(chat=chat_id, user=user_id)
@@ -492,7 +491,7 @@ async def view_wod_results_callback(callback_query: types.CallbackQuery):
         is_new_msg = data['new_msg'] if ('new_msg' in data.keys()) else False
         await state.update_data(view_wod_id=None)
 
-        if (is_new_msg):
+        if is_new_msg:
             await bot.send_message(chat_id, msg, parse_mode=ParseMode.MARKDOWN)
             await state.update_data(new_msg=None)
         else:
