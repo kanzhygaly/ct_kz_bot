@@ -71,7 +71,7 @@ async def get_wod(wod_id):
 
 async def get_wod_day(wod_id):
     async with WOD.connection() as conn:
-        res = await conn.fetchval('SELECT wod_day FROM $1 WHERE id = $2', WOD.__tablename__, wod_id)
+        res = await conn.fetchval('SELECT wod_day FROM wod WHERE id = $1', wod_id)
         await conn.close()
         return res
 
