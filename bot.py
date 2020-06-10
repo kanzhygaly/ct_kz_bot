@@ -61,6 +61,7 @@ HELP = 'help'
 # CALLBACK
 CB_CHOOSE_DAY = 'choose_day'
 CB_ADD_RESULT = 'add_result'
+CB_SEARCH_RESULT = 'search_res'
 
 
 @dp.message_handler(commands=['sys_all_users'])
@@ -449,10 +450,47 @@ async def search_wod_by_text(message: types.Message):
 
     result = await wod_service.search_wods(message.text)
 
+    # Finish conversation, destroy all data in storage for current user
+    state = dp.current_state(chat=chat_id, user=user_id)
+    await state.reset_state()
+
     if result:
-        await bot.send_message(chat_id, 'По вашему тексту что-то найдено')
+        # Configure InlineKeyboardMarkup
+        reply_markup = types.InlineKeyboardMarkup()
+        row = []
+
+        for wod in result:
+            if len(row) < 3:
+                btn_name = wod.wod_day.strftime("%d %B %Y")
+
+                row.append(types.InlineKeyboardButton(btn_name, callback_data=CB_SEARCH_RESULT + wod.id))
+            else:
+                reply_markup.row(*row)
+                row = []
+
+        reply_markup.row(*row)
+
+        await bot.send_message(chat_id, 'Результат поиска:', reply_markup=reply_markup)
     else:
         await bot.send_message(chat_id, 'По вашему тексту ничего не найдено')
+
+
+@dp.callback_query_handler(state=FIND_WOD, func=lambda callback_query: callback_query.data[0:10] == CB_SEARCH_RESULT)
+async def show_search_result(callback_query: types.CallbackQuery):
+    user_id = callback_query.from_user.id
+    chat_id = callback_query.message.chat.id
+
+    wod_id = callback_query.data[11:]
+    wod = await wod_db.get_wod(wod_id)
+    msg = wod.title + "\n\n" + wod.description
+
+    st = dp.current_state(chat=chat_id, user=user_id)
+    await st.update_data(view_wod_id=wod_id)
+
+    reply_markup = types.InlineKeyboardMarkup()
+    reply_markup.add(types.InlineKeyboardButton(VIEW_RESULT, callback_data=VIEW_RESULT))
+
+    await bot.send_message(chat_id, msg, reply_markup=reply_markup)
 
 
 @dp.message_handler(commands=['find'])

@@ -75,6 +75,4 @@ async def add_wod(wod_date, title, description):
 
 
 async def search_wods(str):
-    wods = await wod_db.search_by_text(str)
-    print(wods)
-    return wods
+    return await wod_db.search_by_text(str)
