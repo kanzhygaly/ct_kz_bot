@@ -69,11 +69,11 @@ async def get_wod(wod_id):
         return None
 
 
-async def get_wod_light(wod_id):
+async def get_wod_day(wod_id):
     async with WOD.connection() as conn:
-        res = await conn.fetchrow(f'SELECT wod_day FROM {WOD.__tablename__} WHERE id={wod_id}')
+        res = await conn.fetchval(f'SELECT wod_day FROM {WOD.__tablename__} WHERE id={wod_id}')
         await conn.close()
-        return WOD.from_record(res)
+        return res
 
 
 async def add_warmup(wod_id, txt):

@@ -490,8 +490,8 @@ async def view_wod_results_callback(callback_query: types.CallbackQuery):
     if not msg:
         msg = "На этот день нет результатов"
 
-    wod = await wod_db.get_wod_light(wod_id)
-    msg = wod.wod_day + "\n" + msg
+    wod_day = await wod_db.get_wod_day(wod_id)
+    msg = wod_day + "\n" + msg
 
     await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id,
                                 parse_mode=ParseMode.MARKDOWN)
