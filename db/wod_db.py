@@ -71,7 +71,7 @@ async def get_wod(wod_id):
 
 async def get_wod_light(wod_id):
     async with WOD.connection() as conn:
-        res = await conn.fetch(f'SELECT wod_day FROM {WOD.__tablename__} WHERE id={wod_id}')
+        res = await conn.fetchrow(f'SELECT wod_day FROM {WOD.__tablename__} WHERE id={wod_id}')
         await conn.close()
         return WOD.from_record(res)
 
