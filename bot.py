@@ -423,11 +423,13 @@ async def view_wod_results_callback(callback_query: types.CallbackQuery):
     data = await state.get_data()
 
     wod_id = data['view_wod_id'] if ('view_wod_id' in data.keys()) else None
+    print(wod_id)
 
     msg = await wod_res_service.get_wod_results(user_id, wod_id) if wod_id else None
 
     if msg:
         is_new_msg = data['new_msg'] if ('new_msg' in data.keys()) else False
+        print(is_new_msg)
         await state.update_data(view_wod_id=None)
 
         if (is_new_msg):
