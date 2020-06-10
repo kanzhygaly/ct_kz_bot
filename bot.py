@@ -451,7 +451,7 @@ async def search_wod_by_text(message: types.Message):
                 reply_markup.row(*row)
                 row = []
 
-        # reply_markup.row(*row)
+        reply_markup.row(*row)
 
         await bot.send_message(chat_id, 'Результат поиска:', reply_markup=reply_markup)
     else:
