@@ -446,7 +446,7 @@ async def search_wod_by_text(message: types.Message):
             if len(row) < 3:
                 btn_name = wod.wod_day.strftime("%d %B %Y")
 
-                row.append(types.InlineKeyboardButton(btn_name, callback_data=CB_SEARCH_RESULT + '_' + str(wod.id)))
+                row.append(types.InlineKeyboardButton(btn_name, callback_data=CB_SEARCH_RESULT + '_' + wod.id.hex))
             else:
                 reply_markup.row(*row)
                 row = []
