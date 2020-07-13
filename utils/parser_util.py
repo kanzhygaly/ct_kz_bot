@@ -11,6 +11,8 @@ def parse_wod_content(content):
                 continue
             # Remove unnecessary repeated spaces
             text = " ".join(tag.get_text().split())
+            if not text:
+                continue
             result += text + '\n\n'
         else:
             for inner in tag.find_all('em'):
