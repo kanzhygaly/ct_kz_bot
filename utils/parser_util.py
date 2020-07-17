@@ -7,8 +7,6 @@ def parse_wod_content(content):
 
     for tag in content.find_all(["h3", "h2", "p"]):
         if tag.name in ('h3', 'h2'):
-            if not tag.has_attr("class"):
-                continue
             # Remove unnecessary repeated spaces
             text = " ".join(tag.get_text().split())
             if not text:
