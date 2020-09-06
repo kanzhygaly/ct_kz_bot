@@ -39,10 +39,20 @@ async def get_wod():
         return "Комплекс еще не вышел.\nСорян :(", None
 
 
+async def get_wod_id():
+    today = datetime.now().date()
+    result = await wod_db.get_wods(today)
+    if result:
+        return result[0].id
+
+
 async def reset_wod():
     today = datetime.now().date()
 
     result = await wod_db.get_wod_by_date(today)
+    if not result:
+        return False, "No data found in DB use /sys_dispatch_wod instead"
+
     wod_id = result.id
 
     parser = BSoupParser(url=os.environ['WEB_URL'])
@@ -60,10 +70,9 @@ async def reset_wod():
             await wod_db.edit_wod(id=wod_id, description=description, title=title)
             return True
         else:
-            print("Today is the rest day!")
-            return False
+            return False, "Today is the rest day!"
     else:
-        return False
+        return False, today + " is not equal to wod_date " + wod_date
 
 
 async def add_wod(wod_date, title, description):

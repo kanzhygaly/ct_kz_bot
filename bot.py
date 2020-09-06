@@ -14,7 +14,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from db import user_db, subscriber_db, wod_db, wod_result_db, async_db, location_db
 from service import wod_res_service
 from service import wod_service
-from service.sub_service import send_wod_to_all_subscribers
+from service.sub_service import send_wod_to_all_subscribers, notify_all_subscribers_to_add_result
 from utils import tz_util
 
 bot = Bot(token=os.environ['API_TOKEN'])
@@ -122,12 +122,13 @@ async def sys_reset_wod(message: types.Message):
 
     today = datetime.now().date()
 
-    if await wod_service.reset_wod():
+    done, msg = await wod_service.reset_wod()
+
+    if done:
         await bot.send_message(message.chat.id, "Today's(" + today.strftime("%d %B %Y") + ") WOD successfully updated!")
         await send_wod_to_all_subscribers(bot)
     else:
-        await bot.send_message(message.chat.id, "Error occurred while updating today's(" + today.strftime("%d %B %Y")
-                               + ") WOD!")
+        await bot.send_message(message.chat.id, msg)
 
 
 @dp.message_handler(commands=['sys_dispatch_wod'])
@@ -982,19 +983,7 @@ async def wod_dispatch():
 # Notify to add results for Today's WOD at 23:00 GMT+6
 @scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=17, id='notify_to_add_result')
 async def notify_to_add_result():
-    msg, wod_id = await wod_service.get_wod()
-
-    if wod_id:
-        subscribers = await subscriber_db.get_all_subscribers()
-
-        msg = "Не забудьте записать результат сегодняшней тренировки :grimacing:\n" \
-              "Для того чтобы записать результат за СЕГОДНЯ наберите команду /add"
-
-        for sub in subscribers:
-            if await wod_result_db.get_user_wod_result(wod_id=wod_id, user_id=sub.user_id):
-                continue
-
-            await bot.send_message(sub.user_id, emojize(msg), reply_markup=types.ReplyKeyboardRemove())
+    await notify_all_subscribers_to_add_result(bot)
 
 
 async def startup(dispatcher: Dispatcher):
