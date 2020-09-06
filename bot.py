@@ -323,27 +323,8 @@ async def update_wod_result(message: types.Message):
         await bot.send_message(chat_id, emojize(":white_check_mark: Ваш результат успешно добавлен!"),
                                reply_markup=types.ReplyKeyboardRemove())
 
-    # Notify other users that result for WOD was added/updated
     wod = await wod_db.get_wod(wod_id)
-    diff = datetime.now().date() - wod.wod_day
-
-    if diff.days < 2:
-        author = await user_db.get_user(user_id)
-        name = f'{author.name} {author.surname}' if author.surname else author.name
-        msg = f'{name} записал результат за {wod.title}'
-
-        wod_results = await wod_result_db.get_wod_results(wod_id)
-        for wr in wod_results:
-            if wr.user_id == user_id:
-                continue
-
-            st = dp.current_state(chat=wr.user_id, user=wr.user_id)
-            await st.update_data(view_wod_id=wod_id)
-
-            reply_markup = types.InlineKeyboardMarkup()
-            reply_markup.add(types.InlineKeyboardButton(VIEW_RESULT, callback_data=VIEW_RESULT))
-
-            await bot.send_message(wr.user_id, msg, reply_markup=reply_markup)
+    notify_users_about_new_wod_result(user_id, wod)
 
     # Finish conversation, destroy all data in storage for current user
     await state.reset_state()
@@ -919,25 +900,7 @@ async def add_result_by_date(callback_query: types.CallbackQuery):
             # Destroy all data in storage for current user
             await state.update_data(wod_result_txt=None)
 
-            # Notify other users that result for WOD was added/updated
-            diff = datetime.now().date() - wod.wod_day
-            if diff.days < 2:
-                author = await user_db.get_user(user_id)
-                name = f'{author.name} {author.surname}' if author.surname else author.name
-                msg = f'{name} записал результат за {wod.title}'
-
-                wod_results = await wod_result_db.get_wod_results(wod.id)
-                for wr in wod_results:
-                    if wr.user_id == user_id:
-                        continue
-
-                    st = dp.current_state(chat=wr.user_id, user=wr.user_id)
-                    await st.update_data(view_wod_id=wod.id)
-
-                    reply_markup = types.InlineKeyboardMarkup()
-                    reply_markup.add(types.InlineKeyboardButton(VIEW_RESULT, callback_data=VIEW_RESULT))
-
-                    await bot.send_message(wr.user_id, msg, reply_markup=reply_markup)
+            notify_users_about_new_wod_result(user_id, wod)
     else:
         await bot.edit_message_text(text=emojize("На сегодня тренировки пока что нет :disappointed:"),
                                     chat_id=chat_id, message_id=callback_query.message.message_id,
@@ -983,3 +946,25 @@ if __name__ == '__main__':
     scheduler.start()
 
     executor.start_polling(dp, on_startup=startup, on_shutdown=shutdown)
+
+
+async def notify_users_about_new_wod_result(user_id, wod):
+    diff = datetime.now().date() - wod.wod_day
+
+    if diff.days < 2:
+        author = await user_db.get_user(user_id)
+        name = f'{author.name} {author.surname}' if author.surname else author.name
+        msg = f'{name} записал результат за {wod.title}'
+
+        wod_results = await wod_result_db.get_wod_results(wod.id)
+        for wr in wod_results:
+            if wr.user_id == user_id:
+                continue
+
+            st = dp.current_state(chat=wr.user_id, user=wr.user_id)
+            await st.update_data(view_wod_id=wod.id)
+
+            reply_markup = types.InlineKeyboardMarkup()
+            reply_markup.add(types.InlineKeyboardButton(VIEW_RESULT, callback_data=VIEW_RESULT))
+
+            await bot.send_message(wr.user_id, msg, reply_markup=reply_markup)
