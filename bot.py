@@ -12,9 +12,9 @@ from aiogram.utils.emoji import emojize
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from db import user_db, subscriber_db, wod_db, wod_result_db, async_db, location_db
-from service import wod_res_service
+from service import wod_result_service
 from service import wod_service
-from service.sub_service import send_wod_to_all_subscribers, notify_all_subscribers_to_add_result
+from service.notification_service import send_wod_to_all_subscribers, notify_all_subscribers_to_add_result
 from service.user_service import add_user_if_not_exist
 from utils import tz_util
 
@@ -361,7 +361,7 @@ async def show_wod_results(message: types.Message):
 
     wod_id = data['wod_id']
 
-    msg = await wod_res_service.get_wod_results(user_id, wod_id)
+    msg = await wod_result_service.get_wod_results(user_id, wod_id)
 
     if msg:
         # Finish conversation, destroy all data in storage for current user
@@ -395,7 +395,7 @@ async def refresh_wod_results_callback(callback_query: types.CallbackQuery):
 
     wod_id = data['refresh_wod_id'] if ('refresh_wod_id' in data.keys()) else None
 
-    msg = await wod_res_service.get_wod_results(user_id, wod_id) if wod_id else None
+    msg = await wod_result_service.get_wod_results(user_id, wod_id) if wod_id else None
 
     if msg:
         await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id,
@@ -479,7 +479,7 @@ async def view_wod_results_callback(callback_query: types.CallbackQuery):
     wod_id = data['view_wod_id'] if ('view_wod_id' in data.keys()) else None
     await state.update_data(view_wod_id=None)
 
-    msg = await wod_res_service.get_wod_results(user_id, wod_id) if wod_id else None
+    msg = await wod_result_service.get_wod_results(user_id, wod_id) if wod_id else None
     if not msg:
         msg = "На этот день нет результатов"
 
@@ -705,10 +705,10 @@ async def view_results(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
 
-    if await wod_res_service.is_allowed_to_see_wod_results(user_id):
+    if await wod_result_service.is_allowed_to_see_wod_results(user_id):
         wod = await wod_db.get_wod_by_date(datetime.now().date())
 
-        msg = await wod_res_service.get_wod_results(user_id, wod.id) if wod else None
+        msg = await wod_result_service.get_wod_results(user_id, wod.id) if wod else None
 
         if msg:
             await bot.send_message(chat_id, f'{wod.title}\n\n{msg}', parse_mode=ParseMode.MARKDOWN)
