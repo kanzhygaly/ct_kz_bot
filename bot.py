@@ -433,7 +433,7 @@ async def search_wod_by_text(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
 
-    result = await wod_service.search_wods(message.text)
+    result = await wod_service.search_wod(message.text)
 
     # Finish conversation, destroy all data in storage for current user
     state = dp.current_state(chat=chat_id, user=user_id)
