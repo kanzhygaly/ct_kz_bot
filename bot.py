@@ -15,6 +15,7 @@ from db import user_db, subscriber_db, wod_db, wod_result_db, async_db, location
 from service import wod_res_service
 from service import wod_service
 from service.sub_service import send_wod_to_all_subscribers, notify_all_subscribers_to_add_result
+from service.user_service import add_user_if_not_exist
 from utils import tz_util
 
 bot = Bot(token=os.environ['API_TOKEN'])
@@ -148,10 +149,7 @@ async def sys_dispatch_wod(message: types.Message):
 async def start(message: types.Message):
     user_id = message.from_user.id
 
-    # Check if user exist. If not, then add
-    if not await user_db.is_user_exist(user_id):
-        await user_db.add_user(user_id, message.from_user.first_name, message.from_user.last_name,
-                               message.from_user.language_code)
+    add_user_if_not_exist(message)
 
     sub = "/subscribe - подписаться на ежедневную рассылку WOD"
     if await subscriber_db.is_subscriber(user_id):
@@ -191,10 +189,7 @@ async def subscribe(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
 
-    # Check if user exist. If not, then add
-    if not await user_db.is_user_exist(user_id):
-        await user_db.add_user(user_id, message.from_user.first_name, message.from_user.last_name,
-                               message.from_user.language_code)
+    add_user_if_not_exist(message)
 
     if await subscriber_db.is_subscriber(user_id):
         return await bot.send_message(chat_id, emojize("Вы уже подписаны на ежедневную рассылку WOD :alien:"))
@@ -304,10 +299,7 @@ async def update_wod_result(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
 
-    # Check if user exist. If not, then add
-    if not await user_db.is_user_exist(user_id):
-        await user_db.add_user(user_id, message.from_user.first_name, message.from_user.last_name,
-                               message.from_user.language_code)
+    add_user_if_not_exist(message)
 
     state = dp.current_state(chat=chat_id, user=user_id)
     data = await state.get_data()
@@ -632,34 +624,24 @@ async def set_timezone(message: types.Message):
 async def set_location(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
-
     latitude = message.location.latitude
     longitude = message.location.longitude
-    state = dp.current_state(chat=chat_id, user=user_id)
 
-    timezone_id = await tz_util.get_timezone_id(latitude=message.location.latitude,
-                                                longitude=message.location.longitude)
+    timezone_id = await tz_util.get_timezone_id(latitude, longitude)
 
     if not timezone_id:
         return await bot.send_message(chat_id, 'Убедитесь в том что Геолокация включена и у Телеграм '
                                                'есть права на ее использование и попробуйте снова')
 
-    now = datetime.now(pytz.timezone(timezone_id))
-    print(message.from_user.first_name, latitude, longitude, timezone_id, now)
+    print(message.from_user.first_name, latitude, longitude, timezone_id, datetime.now(pytz.timezone(timezone_id)))
 
-    # Check if user exist. If not, then add
-    if not await user_db.is_user_exist(user_id):
-        await user_db.add_user(user_id, message.from_user.first_name, message.from_user.last_name,
-                               message.from_user.language_code)
+    add_user_if_not_exist(message)
 
     await location_db.merge(user_id=user_id, latitude=latitude, longitude=longitude,
                             locale=message.from_user.language_code, timezone=timezone_id)
 
     await bot.send_message(chat_id, 'Ваш часовой пояс установлен как ' + timezone_id,
                            reply_markup=types.ReplyKeyboardRemove())
-
-    # Finish conversation, destroy all data in storage for current user
-    await state.reset_state()
 
 
 @dp.message_handler(commands=['warmup'])
