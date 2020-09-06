@@ -72,7 +72,7 @@ async def reset_wod():
         else:
             return False, "Today is the rest day!"
     else:
-        return False, today + " is not equal to wod_date " + wod_date
+        return False, f"{today} is not equal to wod_date {wod_date}"
 
 
 async def add_wod(wod_date, title, description):
