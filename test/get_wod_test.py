@@ -1,12 +1,16 @@
 import datetime
 from bsoup_spider import BSoupParser
+from utils.parser_util import parse_wod_date
 
 today = datetime.datetime.now().date()
 
 url = 'https://comptrain.co/wod'
 parser = BSoupParser(url=url)
 
-print(parser.get_wod_date())
+wod_string = parser.get_wod_date()
+print(wod_string)
+
+print(parse_wod_date(wod_string))
 
 open_part = parser.get_open_wod()
 print(open_part)

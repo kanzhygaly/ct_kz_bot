@@ -38,6 +38,7 @@ def parse_wod_content(content):
 
 
 def parse_wod_date(wod_date):
+    wod_date = wod_date.replace('//', '').replace('/', '.')
     # Remove anything other than digits
     num = ''.join(c for c in wod_date if c.isdigit() or c == '.')
     return datetime.strptime(num, '%m.%d.%Y')
