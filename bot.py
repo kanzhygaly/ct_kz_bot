@@ -11,11 +11,13 @@ from aiogram.utils import executor
 from aiogram.utils.emoji import emojize
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
+from constants.data_key import WOD_RESULT_TXT
 from db import user_db, subscriber_db, wod_db, wod_result_db, async_db, location_db
 from service import wod_result_service
 from service import wod_service
 from service.notification_service import send_wod_to_all_subscribers, notify_all_subscribers_to_add_result
 from service.user_service import add_user_if_not_exist
+from service.wod_result_service import persist_wod_result_and_get_message
 from utils import tz_util
 
 bot = Bot(token=os.environ['API_TOKEN'])
@@ -329,21 +331,11 @@ async def update_wod_result(message: types.Message):
     wod_result = await wod_result_db.get_wod_result(wod_result_id=data['wod_result_id']) \
         if ('wod_result_id' in data.keys()) else None
 
-    if wod_result:
-        wod_id = wod_result.wod_id
+    wod_id = wod_result.wod_id if wod_result else data['wod_id']
 
-        wod_result.sys_date = datetime.now()
-        wod_result.result = message.text
-        await wod_result.save()
+    msg = await persist_wod_result_and_get_message(user_id, wod_id, message.text)
 
-        await bot.send_message(chat_id, emojize(":white_check_mark: Ваш результат успешно обновлен!"),
-                               reply_markup=types.ReplyKeyboardRemove())
-    else:
-        wod_id = data['wod_id']
-        await wod_result_db.add_wod_result(wod_id, user_id, message.text, datetime.now())
-
-        await bot.send_message(chat_id, emojize(":white_check_mark: Ваш результат успешно добавлен!"),
-                               reply_markup=types.ReplyKeyboardRemove())
+    await bot.send_message(chat_id, msg, reply_markup=types.ReplyKeyboardRemove())
 
     wod = await wod_db.get_wod(wod_id)
     await notify_users_about_new_wod_result(user_id, wod)
@@ -900,24 +892,13 @@ async def add_result_by_date(callback_query: types.CallbackQuery):
     if wod:
         data = await state.get_data()
 
-        if 'wod_result_txt' in data.keys():
-            wod_result_txt = data['wod_result_txt']
-            wod_result = await wod_result_db.get_user_wod_result(wod_id=wod.id, user_id=user_id)
+        if WOD_RESULT_TXT in data.keys():
+            wod_result_txt = data[WOD_RESULT_TXT]
 
-            if wod_result:
-                wod_result.sys_date = datetime.now()
-                wod_result.result = wod_result_txt
-                await wod_result.save()
+            msg = await persist_wod_result_and_get_message(user_id, wod.id, wod_result_txt)
 
-                await bot.edit_message_text(text=emojize(":white_check_mark: Ваш результат успешно обновлен!"),
-                                            chat_id=chat_id, message_id=callback_query.message.message_id,
-                                            parse_mode=ParseMode.MARKDOWN)
-            else:
-                await wod_result_db.add_wod_result(wod.id, user_id, wod_result_txt, datetime.now())
-
-                await bot.edit_message_text(text=emojize(":white_check_mark: Ваш результат успешно добавлен!"),
-                                            chat_id=chat_id, message_id=callback_query.message.message_id,
-                                            parse_mode=ParseMode.MARKDOWN)
+            await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id,
+                                        parse_mode=ParseMode.MARKDOWN)
 
             # Destroy all data in storage for current user
             await state.update_data(wod_result_txt=None)
@@ -968,4 +949,3 @@ if __name__ == '__main__':
     scheduler.start()
 
     executor.start_polling(dp, on_startup=startup, on_shutdown=shutdown)
-

@@ -1,5 +1,8 @@
-import pytz
 from datetime import datetime
+
+import pytz
+from aiogram.utils.emoji import emojize
+
 from db import user_db, wod_result_db, location_db
 
 
@@ -43,3 +46,18 @@ async def is_allowed_to_see_wod_results(user_id):
     else:
         # no results at all, not allowed
         return False
+
+
+async def persist_wod_result_and_get_message(user_id, wod_id, wod_result_txt):
+    wod_result = await wod_result_db.get_user_wod_result(wod_id, user_id)
+
+    if wod_result:
+        wod_result.sys_date = datetime.now()
+        wod_result.result = wod_result_txt
+        await wod_result.save()
+
+        return emojize(":white_check_mark: Ваш результат успешно обновлен!")
+    else:
+        await wod_result_db.add_wod_result(wod_id, user_id, wod_result_txt, datetime.now())
+
+        return emojize(":white_check_mark: Ваш результат успешно добавлен!")
