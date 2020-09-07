@@ -66,6 +66,28 @@ CB_ADD_RESULT = 'add_result'
 CB_SEARCH_RESULT = 'search_res'
 
 
+async def notify_users_about_new_wod_result(user_id, wod):
+    diff = datetime.now().date() - wod.wod_day
+
+    if diff.days < 2:
+        author = await user_db.get_user(user_id)
+        name = f'{author.name} {author.surname}' if author.surname else author.name
+        msg = f'{name} записал результат за {wod.title}'
+
+        wod_results = await wod_result_db.get_wod_results(wod.id)
+        for wr in wod_results:
+            if wr.user_id == user_id:
+                continue
+
+            st = dp.current_state(chat=wr.user_id, user=wr.user_id)
+            await st.update_data(view_wod_id=wod.id)
+
+            reply_markup = types.InlineKeyboardMarkup()
+            reply_markup.add(types.InlineKeyboardButton(VIEW_RESULT, callback_data=VIEW_RESULT))
+
+            await bot.send_message(wr.user_id, msg, reply_markup=reply_markup)
+
+
 @dp.message_handler(commands=['sys_all_users'])
 async def sys_all_users(message: types.Message):
     if not await user_db.is_admin(message.from_user.id):
@@ -947,24 +969,3 @@ if __name__ == '__main__':
 
     executor.start_polling(dp, on_startup=startup, on_shutdown=shutdown)
 
-
-async def notify_users_about_new_wod_result(user_id, wod):
-    diff = datetime.now().date() - wod.wod_day
-
-    if diff.days < 2:
-        author = await user_db.get_user(user_id)
-        name = f'{author.name} {author.surname}' if author.surname else author.name
-        msg = f'{name} записал результат за {wod.title}'
-
-        wod_results = await wod_result_db.get_wod_results(wod.id)
-        for wr in wod_results:
-            if wr.user_id == user_id:
-                continue
-
-            st = dp.current_state(chat=wr.user_id, user=wr.user_id)
-            await st.update_data(view_wod_id=wod.id)
-
-            reply_markup = types.InlineKeyboardMarkup()
-            reply_markup.add(types.InlineKeyboardButton(VIEW_RESULT, callback_data=VIEW_RESULT))
-
-            await bot.send_message(wr.user_id, msg, reply_markup=reply_markup)
