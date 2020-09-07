@@ -346,7 +346,7 @@ async def update_wod_result(message: types.Message):
                                reply_markup=types.ReplyKeyboardRemove())
 
     wod = await wod_db.get_wod(wod_id)
-    notify_users_about_new_wod_result(user_id, wod)
+    await notify_users_about_new_wod_result(user_id, wod)
 
     # Finish conversation, destroy all data in storage for current user
     await state.reset_state()
@@ -922,7 +922,7 @@ async def add_result_by_date(callback_query: types.CallbackQuery):
             # Destroy all data in storage for current user
             await state.update_data(wod_result_txt=None)
 
-            notify_users_about_new_wod_result(user_id, wod)
+            await notify_users_about_new_wod_result(user_id, wod)
     else:
         await bot.edit_message_text(text=emojize("На сегодня тренировки пока что нет :disappointed:"),
                                     chat_id=chat_id, message_id=callback_query.message.message_id,
