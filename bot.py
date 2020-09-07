@@ -171,7 +171,7 @@ async def sys_dispatch_wod(message: types.Message):
 async def start(message: types.Message):
     user_id = message.from_user.id
 
-    add_user_if_not_exist(message)
+    await add_user_if_not_exist(message)
 
     sub = "/subscribe - подписаться на ежедневную рассылку WOD"
     if await subscriber_db.is_subscriber(user_id):
@@ -211,7 +211,7 @@ async def subscribe(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
 
-    add_user_if_not_exist(message)
+    await add_user_if_not_exist(message)
 
     if await subscriber_db.is_subscriber(user_id):
         return await bot.send_message(chat_id, emojize("Вы уже подписаны на ежедневную рассылку WOD :alien:"))
@@ -321,7 +321,7 @@ async def update_wod_result(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
 
-    add_user_if_not_exist(message)
+    await add_user_if_not_exist(message)
 
     state = dp.current_state(chat=chat_id, user=user_id)
     data = await state.get_data()
@@ -638,7 +638,7 @@ async def set_location(message: types.Message):
 
     print(message.from_user.first_name, latitude, longitude, timezone_id, datetime.now(pytz.timezone(timezone_id)))
 
-    add_user_if_not_exist(message)
+    await add_user_if_not_exist(message)
 
     await location_db.merge(user_id=user_id, latitude=latitude, longitude=longitude,
                             locale=message.from_user.language_code, timezone=timezone_id)
