@@ -147,10 +147,10 @@ async def sys_reset_wod(message: types.Message):
     done, msg = await wod_service.reset_wod()
 
     if done:
-        await bot.send_message(message.chat.id, "Today's(" + today.strftime("%d %B %Y") + ") WOD successfully updated!")
+        msg = f'WOD from {today.strftime("%d %B %Y")} successfully updated!'
         await send_wod_to_all_subscribers(bot)
-    else:
-        await bot.send_message(message.chat.id, msg)
+
+    await bot.send_message(message.chat.id, msg)
 
 
 @dp.message_handler(commands=['sys_dispatch_wod'])
@@ -303,11 +303,9 @@ async def request_result_for_edit(message: types.Message):
     msg = 'Пожалуйста введите ваш результат:'
 
     wod_result_id = data[WOD_RESULT_ID]
-    wod_result = await wod_result_db.get_wod_result(wod_result_id=wod_result_id)
+    wod_result = await wod_result_db.get_wod_result(wod_result_id)
     if wod_result:
-        msg = 'Ваш текущий результат:\n\n_' \
-              + wod_result.result + \
-              '_\n\nПожалуйста введите ваш новый результат:'
+        msg = f'Ваш текущий результат:\n\n_{wod_result.result}_\n\nПожалуйста введите ваш новый результат:'
 
     reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
     reply_markup.add(CANCEL)
@@ -386,19 +384,19 @@ async def refresh_wod_results_callback(callback_query: types.CallbackQuery):
     state = dp.current_state(chat=chat_id, user=user_id)
     data = await state.get_data()
 
-    wod_id = data[REFRESH_WOD_ID] if (REFRESH_WOD_ID in data.keys()) else None
+    if REFRESH_WOD_ID in data.keys():
+        wod_id = data[REFRESH_WOD_ID]
 
-    msg = await wod_result_service.get_wod_results(user_id, wod_id) if wod_id else None
+        msg = await wod_result_service.get_wod_results(user_id, wod_id)
+        if msg:
+            await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id,
+                                        parse_mode=ParseMode.MARKDOWN)
 
-    if msg:
-        await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id,
-                                    parse_mode=ParseMode.MARKDOWN)
+            reply_markup = types.InlineKeyboardMarkup()
+            reply_markup.add(types.InlineKeyboardButton(REFRESH, callback_data=REFRESH))
 
-        reply_markup = types.InlineKeyboardMarkup()
-        reply_markup.add(types.InlineKeyboardButton(REFRESH, callback_data=REFRESH))
-
-        await bot.edit_message_reply_markup(chat_id=chat_id, message_id=callback_query.message.message_id,
-                                            reply_markup=reply_markup)
+            await bot.edit_message_reply_markup(chat_id=chat_id, message_id=callback_query.message.message_id,
+                                                reply_markup=reply_markup)
 
 
 @dp.message_handler(commands=['search'])
@@ -644,16 +642,16 @@ async def set_location(message: types.Message):
 @dp.message_handler(func=lambda message: message.text.lower() in warmup_requests)
 async def view_warmup(message: types.Message):
     chat_id = message.chat.id
-
     today = datetime.now().date()
+
     result = await wod_db.get_warmup(today)
-    if result:
-        await bot.send_message(chat_id, result, parse_mode=ParseMode.MARKDOWN)
-    else:
-        await bot.send_message(chat_id, emojize("На сегодня разминки пока что нет :disappointed:"))
+    if not result:
+        result = emojize("На сегодня разминки пока что нет :disappointed:")
+
+    await bot.send_message(chat_id, result, parse_mode=ParseMode.MARKDOWN)
 
 
-@dp.message_handler(commands=['add_warmup'])
+@dp.message_handler(commands=['sys_add_warmup'])
 async def add_warmup_request(message: types.Message):
     if not await user_db.is_admin(message.from_user.id):
         # send info
@@ -685,10 +683,12 @@ async def update_warmup(message: types.Message):
     data = await state.get_data()
     wod_id = data[WOD_ID]
 
+    msg = emojize(":heavy_exclamation_mark: Ошибка при внесении данных!")
+
     if await wod_db.add_warmup(wod_id, message.text):
-        await bot.send_message(chat_id, emojize(":white_check_mark: Ваши изменения успешно выполнены!"))
-    else:
-        await bot.send_message(chat_id, emojize(":heavy_exclamation_mark: Ошибка при внесении данных!"))
+        msg = emojize(":white_check_mark: Ваши изменения успешно выполнены!")
+
+    await bot.send_message(chat_id, msg)
 
     # Finish conversation, destroy all data in storage for current user
     await state.reset_state()
@@ -734,7 +734,7 @@ async def add_result(message: types.Message):
         msg = 'Пожалуйста введите ваш результат:'
         if wod_result:
             await state.update_data(wod_result_id=wod_result.id)
-            msg = 'Ваш текущий результат:\n\n_' + wod_result.result + '_\n\nПожалуйста введите ваш новый результат'
+            msg = f'Ваш текущий результат:\n\n_{wod_result.result}_\n\nПожалуйста введите ваш новый результат'
 
         await bot.send_message(chat_id, msg, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
     else:
@@ -815,13 +815,13 @@ async def update_wod(message: types.Message):
     data = await state.get_data()
     wod_id = data[WOD_ID]
 
-    wod = await wod_db.edit_wod(wod_id, message.text)
+    msg = emojize(":heavy_exclamation_mark: Ошибка при внесении данных!")
 
+    wod = await wod_db.edit_wod(wod_id, message.text)
     if wod:
-        await bot.send_message(chat_id, emojize(":white_check_mark: WOD за " + wod.wod_day.strftime("%d %B %Y")
-                                                + " успешно добавлен"))
-    else:
-        await bot.send_message(chat_id, emojize(":heavy_exclamation_mark: Ошибка при внесении данных!"))
+        msg = emojize(f':white_check_mark: WOD за {wod.wod_day.strftime("%d %B %Y")} успешно добавлен')
+
+    await bot.send_message(chat_id, msg)
 
     # Finish conversation, destroy all data in storage for current user
     await state.reset_state()
@@ -888,8 +888,9 @@ async def add_result_by_date(callback_query: types.CallbackQuery):
     state = dp.current_state(chat=chat_id, user=user_id)
 
     wod_date = datetime.strptime(callback_query.data[11:], '%d%m%y')
-    wod = await wod_db.get_wod_by_date(wod_date.date())
+    msg = emojize("На сегодня тренировки пока что нет :disappointed:")
 
+    wod = await wod_db.get_wod_by_date(wod_date.date())
     if wod:
         data = await state.get_data()
 
@@ -898,19 +899,13 @@ async def add_result_by_date(callback_query: types.CallbackQuery):
 
             msg = await persist_wod_result_and_get_message(user_id, wod.id, wod_result_txt)
 
-            await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id,
-                                        parse_mode=ParseMode.MARKDOWN)
-
-            # Destroy all data in storage for current user
-            await state.update_data(wod_result_txt=None)
-
             await notify_users_about_new_wod_result(user_id, wod)
-    else:
-        await bot.edit_message_text(text=emojize("На сегодня тренировки пока что нет :disappointed:"),
-                                    chat_id=chat_id, message_id=callback_query.message.message_id,
-                                    parse_mode=ParseMode.MARKDOWN)
-        # Destroy all data in storage for current user
-        await state.update_data(wod_result_txt=None)
+
+    await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id,
+                                parse_mode=ParseMode.MARKDOWN)
+
+    # Destroy all data in storage for current user
+    await state.update_data(wod_result_txt=None)
 
 
 # https://apscheduler.readthedocs.io/en/latest/modules/triggers/cron.html#module-apscheduler.triggers.cron
