@@ -20,8 +20,10 @@ async def get_wod_results(user_id, wod_id):
             name = f'{u.name} {u.surname}' if u.surname else u.name
 
             title = '_' + name + ', ' + dt.strftime("%H:%M:%S %d %B %Y") + '_'
-            msg += f'{title}\n' \
-                   f'{res.result}\n\n'
+            msg += (
+                f'{title}\n'
+                f'{res.result}\n\n'
+            )
 
         # replace * with x in text. if it has odd number of * then MARKDOWN will fail
         msg = msg.replace('*', 'x')

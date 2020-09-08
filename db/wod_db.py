@@ -1,6 +1,6 @@
 import uuid
 
-from asyncpg_simpleorm import Column, select, Statement
+from asyncpg_simpleorm import Column
 
 from db.async_db import Entity
 
@@ -106,4 +106,3 @@ async def search_by_text(str):
         res = await conn.fetch(f'SELECT id, wod_day FROM {WOD.__tablename__} WHERE {where_str}')
         await conn.close()
         return list(map(WOD.from_record, res))
-

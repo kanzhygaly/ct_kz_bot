@@ -60,8 +60,10 @@ async def reset_wod():
 
     wod_date = parse_wod_date(parser.get_wod_date())
 
-    # compare by day and month, while year on site is incorrect
-    if wod_date.day.__eq__(today.day) and wod_date.month.__eq__(today.month):
+    if (wod_date.day == today.day
+            and wod_date.month == today.month
+            and wod_date.year == today.year):
+
         reg_part = parser.get_regional_wod()
         open_part = parser.get_open_wod()
 

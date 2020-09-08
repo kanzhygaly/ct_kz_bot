@@ -11,7 +11,8 @@ from aiogram.utils import executor
 from aiogram.utils.emoji import emojize
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from constants.data_key import WOD_RESULT_TXT
+from constants.callback import CB_SEARCH_RESULT, CB_CHOOSE_DAY, CB_ADD_RESULT
+from constants.data_key import WOD_RESULT_TXT, WOD_RESULT_ID, WOD_ID, REFRESH_WOD_ID, VIEW_WOD_ID
 from db import user_db, subscriber_db, wod_db, wod_result_db, async_db, location_db
 from service import wod_result_service
 from service import wod_service
@@ -62,10 +63,6 @@ REFRESH = 'Обновить'
 VIEW_RESULT = 'Посмотреть результаты'
 # Commands
 HELP = 'help'
-# CALLBACK
-CB_CHOOSE_DAY = 'choose_day'
-CB_ADD_RESULT = 'add_result'
-CB_SEARCH_RESULT = 'search_res'
 
 
 async def notify_users_about_new_wod_result(user_id, wod):
@@ -305,7 +302,7 @@ async def request_result_for_edit(message: types.Message):
 
     msg = 'Пожалуйста введите ваш результат:'
 
-    wod_result_id = data['wod_result_id']
+    wod_result_id = data[WOD_RESULT_ID]
     wod_result = await wod_result_db.get_wod_result(wod_result_id=wod_result_id)
     if wod_result:
         msg = 'Ваш текущий результат:\n\n_' \
@@ -328,10 +325,11 @@ async def update_wod_result(message: types.Message):
     state = dp.current_state(chat=chat_id, user=user_id)
     data = await state.get_data()
 
-    wod_result = await wod_result_db.get_wod_result(wod_result_id=data['wod_result_id']) \
-        if ('wod_result_id' in data.keys()) else None
-
-    wod_id = wod_result.wod_id if wod_result else data['wod_id']
+    if WOD_RESULT_ID in data.keys():
+        wod_result = await wod_result_db.get_wod_result(wod_result_id=data[WOD_RESULT_ID])
+        wod_id = wod_result.wod_id
+    else:
+        wod_id = data[WOD_ID]
 
     msg = await persist_wod_result_and_get_message(user_id, wod_id, message.text)
 
@@ -354,7 +352,7 @@ async def show_wod_results(message: types.Message):
     state = dp.current_state(chat=chat_id, user=user_id)
     data = await state.get_data()
 
-    wod_id = data['wod_id']
+    wod_id = data[WOD_ID]
 
     msg = await wod_result_service.get_wod_results(user_id, wod_id)
 
@@ -388,7 +386,7 @@ async def refresh_wod_results_callback(callback_query: types.CallbackQuery):
     state = dp.current_state(chat=chat_id, user=user_id)
     data = await state.get_data()
 
-    wod_id = data['refresh_wod_id'] if ('refresh_wod_id' in data.keys()) else None
+    wod_id = data[REFRESH_WOD_ID] if (REFRESH_WOD_ID in data.keys()) else None
 
     msg = await wod_result_service.get_wod_results(user_id, wod_id) if wod_id else None
 
@@ -471,7 +469,7 @@ async def view_wod_results_callback(callback_query: types.CallbackQuery):
     state = dp.current_state(chat=chat_id, user=user_id)
     data = await state.get_data()
 
-    wod_id = data['view_wod_id'] if ('view_wod_id' in data.keys()) else None
+    wod_id = data[VIEW_WOD_ID] if (VIEW_WOD_ID in data.keys()) else None
     await state.update_data(view_wod_id=None)
 
     msg = await wod_result_service.get_wod_results(user_id, wod_id) if wod_id else None
@@ -682,7 +680,7 @@ async def update_warmup(message: types.Message):
 
     state = dp.current_state(chat=chat_id, user=user_id)
     data = await state.get_data()
-    wod_id = data['wod_id']
+    wod_id = data[WOD_ID]
 
     if await wod_db.add_warmup(wod_id, message.text):
         await bot.send_message(chat_id, emojize(":white_check_mark: Ваши изменения успешно выполнены!"))
@@ -812,7 +810,7 @@ async def update_wod(message: types.Message):
 
     state = dp.current_state(chat=chat_id, user=user_id)
     data = await state.get_data()
-    wod_id = data['wod_id']
+    wod_id = data[WOD_ID]
 
     wod = await wod_db.edit_wod(wod_id, message.text)
 

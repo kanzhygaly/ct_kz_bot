@@ -1,7 +1,8 @@
 import codecs
-from bs4 import BeautifulSoup
-from utils.parser_util import parse_wod_content, parse_wod_date
 
+from bs4 import BeautifulSoup
+
+from utils.parser_util import parse_wod_content, parse_wod_date
 
 f = codecs.open("example10072020.html", 'r', 'utf-8')
 soup = BeautifulSoup(f.read(), 'html.parser')

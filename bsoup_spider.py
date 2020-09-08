@@ -1,5 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
+
 from utils.parser_util import parse_wod_content
 
 
