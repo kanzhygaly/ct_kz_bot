@@ -469,15 +469,18 @@ async def view_wod_results_callback(callback_query: types.CallbackQuery):
     state = dp.current_state(chat=chat_id, user=user_id)
     data = await state.get_data()
 
-    wod_id = data[VIEW_WOD_ID] if (VIEW_WOD_ID in data.keys()) else None
-    await state.update_data(view_wod_id=None)
+    if VIEW_WOD_ID in data.keys():
+        wod_id = data[VIEW_WOD_ID]
+        await state.update_data(view_wod_id=None)
 
-    msg = await wod_result_service.get_wod_results(user_id, wod_id) if wod_id else None
-    if not msg:
-        msg = "На этот день нет результатов"
+        msg = await wod_result_service.get_wod_results(user_id, wod_id)
+        if not msg:
+            msg = "На этот день нет результатов"
 
-    wod_day = await wod_db.get_wod_day(wod_id)
-    msg = wod_day.strftime("%d %B %Y") + "\n\n" + msg
+        wod_day = await wod_db.get_wod_day(wod_id)
+        msg = wod_day.strftime("%d %B %Y") + "\n\n" + msg
+    else:
+        msg = "Данные устарели"
 
     await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id,
                                 parse_mode=ParseMode.MARKDOWN)
