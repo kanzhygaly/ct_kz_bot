@@ -324,10 +324,10 @@ async def update_wod_result(message: types.Message):
     state = dp.current_state(chat=chat_id, user=user_id)
     data = await state.get_data()
 
-    if WOD_RESULT_ID in data.keys():
+    try:
         wod_result = await wod_result_db.get_wod_result(wod_result_id=data[WOD_RESULT_ID])
         wod_id = wod_result.wod_id
-    else:
+    except KeyError:
         wod_id = data[WOD_ID]
 
     msg = await persist_wod_result_and_get_message(user_id, wod_id, message.text)
@@ -893,14 +893,14 @@ async def add_result_by_date(callback_query: types.CallbackQuery):
     if wod:
         data = await state.get_data()
 
-        if WOD_RESULT_TXT in data.keys():
+        try:
             wod_result_txt = data[WOD_RESULT_TXT]
 
             msg = await persist_wod_result_and_get_message(user_id, wod.id, wod_result_txt)
             await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=msg_id, parse_mode=ParseMode.MARKDOWN)
 
             await notify_users_about_new_wod_result(user_id, wod)
-        else:
+        except KeyError:
             msg = emojize("Не удалось добавить ваш результат :disappointed:\n Попробуйте снова :smiley:")
             await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=msg_id,
                                         parse_mode=ParseMode.MARKDOWN)
