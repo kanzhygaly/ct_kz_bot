@@ -13,6 +13,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from constants.callback import CB_SEARCH_RESULT, CB_CHOOSE_DAY, CB_ADD_RESULT
 from constants.data_key import WOD_RESULT_TXT, WOD_RESULT_ID, WOD_ID, REFRESH_WOD_ID, VIEW_WOD_ID
+from constants.date_format import D_M_Y, D_B_Y, WEEKDAY, D_B, A_M_D_Y
 from db import user_db, subscriber_db, wod_db, wod_result_db, async_db, location_db
 from service import wod_result_service
 from service import wod_service
@@ -147,7 +148,7 @@ async def sys_reset_wod(message: types.Message):
     done, msg = await wod_service.reset_wod()
 
     if done:
-        msg = f'WOD from {today.strftime("%d %B %Y")} successfully updated!'
+        msg = f'WOD from {today.strftime(D_B_Y)} successfully updated!'
         await send_wod_to_all_subscribers(bot)
 
     await bot.send_message(message.chat.id, msg)
@@ -429,7 +430,7 @@ async def search_wod_by_text(message: types.Message):
 
         for wod in result:
             if len(row) < 3:
-                btn_name = wod.wod_day.strftime("%d %B %Y")
+                btn_name = wod.wod_day.strftime(D_B_Y)
 
                 row.append(types.InlineKeyboardButton(btn_name, callback_data=CB_SEARCH_RESULT + '_' + wod.id.hex))
             else:
@@ -476,7 +477,7 @@ async def view_wod_results_callback(callback_query: types.CallbackQuery):
             msg = "На этот день нет результатов"
 
         wod_day = await wod_db.get_wod_day(wod_id)
-        msg = wod_day.strftime("%d %B %Y") + "\n\n" + msg
+        msg = wod_day.strftime(D_B_Y) + "\n\n" + msg
     else:
         msg = "Данные устарели"
 
@@ -502,9 +503,9 @@ async def find(message: types.Message):
     while count > 0:
         if len(row) < 3:
             d = now - timedelta(days=count)
-            btn_name = d.strftime("%A") if d.weekday() in (3, 6) else d.strftime("%d %B")
+            btn_name = d.strftime(WEEKDAY) if d.weekday() in (3, 6) else d.strftime(D_B)
 
-            row.append(types.InlineKeyboardButton(btn_name, callback_data=CB_CHOOSE_DAY + '_' + d.strftime("%d%m%y")))
+            row.append(types.InlineKeyboardButton(btn_name, callback_data=CB_CHOOSE_DAY + '_' + d.strftime(D_M_Y)))
             count -= 1
         else:
             reply_markup.row(*row)
@@ -522,7 +523,7 @@ async def find_wod_by_btn(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     chat_id = callback_query.message.chat.id
 
-    search_date = datetime.strptime(callback_query.data[11:], '%d%m%y')
+    search_date = datetime.strptime(callback_query.data[11:], D_M_Y)
     msg, reply_markup = await find_and_get_wod(chat_id, user_id, search_date)
 
     if reply_markup:
@@ -546,7 +547,7 @@ async def find_wod_by_text(message: types.Message):
     chat_id = message.chat.id
 
     try:
-        search_date = datetime.strptime(message.text, '%d%m%y')
+        search_date = datetime.strptime(message.text, D_M_Y)
     except ValueError:
         msg = 'Пожалуйста введите дату в формате *ДеньМесяцГод* (_Пример: 170518_)'
         return await bot.send_message(chat_id, msg, parse_mode=ParseMode.MARKDOWN)
@@ -770,10 +771,9 @@ async def add_wod_by_btn(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     chat_id = callback_query.message.chat.id
 
-    wod_date = datetime.strptime(callback_query.data[11:], '%d%m%y')
+    wod_date = datetime.strptime(callback_query.data[11:], D_M_Y)
 
-    # Saturday 4.20.2019
-    title = wod_date.strftime("%A %m.%d.%Y")
+    title = wod_date.strftime(A_M_D_Y)
     wod_id = await wod_service.add_wod(wod_date, title, '')
 
     state = dp.current_state(chat=chat_id, user=user_id)
@@ -790,13 +790,12 @@ async def add_wod_by_text(message: types.Message):
     chat_id = message.chat.id
 
     try:
-        wod_date = datetime.strptime(message.text, '%d%m%y')
+        wod_date = datetime.strptime(message.text, D_M_Y)
     except ValueError:
         msg = 'Пожалуйста введите дату в формате *ДеньМесяцГод* (_Пример: 170518_)'
         return await bot.send_message(chat_id, msg, parse_mode=ParseMode.MARKDOWN)
 
-    # Saturday 4.20.2019
-    title = wod_date.strftime("%A %m.%d.%Y")
+    title = wod_date.strftime(A_M_D_Y)
     wod_id = await wod_service.add_wod(wod_date, title, '')
 
     state = dp.current_state(chat=chat_id, user=user_id)
@@ -819,7 +818,7 @@ async def update_wod(message: types.Message):
 
     wod = await wod_db.edit_wod(wod_id, message.text)
     if wod:
-        msg = emojize(f':white_check_mark: WOD за {wod.wod_day.strftime("%d %B %Y")} успешно добавлен')
+        msg = emojize(f':white_check_mark: WOD за {wod.wod_day.strftime(D_B_Y)} успешно добавлен')
 
     await bot.send_message(chat_id, msg)
 
@@ -864,13 +863,13 @@ async def echo(message: types.Message):
         if yesterday.weekday() not in (3, 6):
             msg = 'За какой день вы хотите добавить результат?'
             reply_markup.add(
-                types.InlineKeyboardButton("Вчера", callback_data=CB_ADD_RESULT + '_' + yesterday.strftime("%d%m%y")),
-                types.InlineKeyboardButton("Сегодня", callback_data=CB_ADD_RESULT + '_' + now.strftime("%d%m%y"))
+                types.InlineKeyboardButton("Вчера", callback_data=CB_ADD_RESULT + '_' + yesterday.strftime(D_M_Y)),
+                types.InlineKeyboardButton("Сегодня", callback_data=CB_ADD_RESULT + '_' + now.strftime(D_M_Y))
             )
         else:
             msg = 'Вы хотите добавить результат за СЕГОДНЯ?'
             reply_markup.add(
-                types.InlineKeyboardButton("Да", callback_data=CB_ADD_RESULT + '_' + now.strftime("%d%m%y"))
+                types.InlineKeyboardButton("Да", callback_data=CB_ADD_RESULT + '_' + now.strftime(D_M_Y))
             )
 
         reply_markup.add(types.InlineKeyboardButton("Отмена!", callback_data=HELP))
@@ -885,10 +884,10 @@ async def echo(message: types.Message):
 async def add_result_by_date(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     chat_id = callback_query.message.chat.id
+    msg_id = callback_query.message.message_id
     state = dp.current_state(chat=chat_id, user=user_id)
 
-    wod_date = datetime.strptime(callback_query.data[11:], '%d%m%y')
-    msg = emojize("На сегодня тренировки пока что нет :disappointed:")
+    wod_date = datetime.strptime(callback_query.data[11:], D_M_Y)
 
     wod = await wod_db.get_wod_by_date(wod_date.date())
     if wod:
@@ -898,11 +897,16 @@ async def add_result_by_date(callback_query: types.CallbackQuery):
             wod_result_txt = data[WOD_RESULT_TXT]
 
             msg = await persist_wod_result_and_get_message(user_id, wod.id, wod_result_txt)
+            await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=msg_id, parse_mode=ParseMode.MARKDOWN)
 
             await notify_users_about_new_wod_result(user_id, wod)
-
-    await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id,
-                                parse_mode=ParseMode.MARKDOWN)
+        else:
+            msg = emojize("Не удалось добавить ваш результат :disappointed:\n Попробуйте снова :smiley:")
+            await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=msg_id,
+                                        parse_mode=ParseMode.MARKDOWN)
+    else:
+        await bot.edit_message_text(text=emojize("На сегодня тренировки пока что нет :disappointed:"), chat_id=chat_id,
+                                    message_id=msg_id, parse_mode=ParseMode.MARKDOWN)
 
     # Destroy all data in storage for current user
     await state.update_data(wod_result_txt=None)

@@ -1,5 +1,7 @@
 import datetime
 
+from constants.date_format import D_M_Y, A_D_B, D_B, H_M_S_D_B_Y, M_D_Y, D_B_Y, WEEKDAY
+
 now = datetime.datetime.now()
 
 # test substring
@@ -8,19 +10,28 @@ print(msg[0:10])
 print(msg[11:])
 
 # test timedelta
-wod_day = datetime.datetime.strptime('060618', '%d%m%y').date()
+wod_day = datetime.datetime.strptime('060618', D_M_Y).date()
 timedelta = now.date() - wod_day
 print(timedelta.days)
 
+print('date_format')
+print(wod_day.strftime(D_M_Y))
+print(now.strftime(H_M_S_D_B_Y))
+print(now.strftime(M_D_Y))
+print(now.strftime(D_B_Y))
+print(now.strftime(WEEKDAY))
+
 
 def test_find_wod():
+    print('test_find_wod')
+
     row = []
     count = 5
     while count > 0:
         if len(row) < 3:
             d = now - datetime.timedelta(days=count)
             # 07 April
-            row.append(d.strftime("%d %B"))
+            row.append(d.strftime(D_B))
             count -= 1
         else:
             print(row)
@@ -31,6 +42,8 @@ def test_find_wod():
 
 
 def test_add_wod():
+    print('test_add_wod')
+
     keyboard = []
     row = []
     count = 9
@@ -39,7 +52,7 @@ def test_add_wod():
     # if today is Thursday then include it
     if date.weekday() == 3:
         count = 8
-        row.append(date.strftime("%a %d %b"))
+        row.append(date.strftime(A_D_B))
 
     while count >= 0:
         if len(row) < 3:
@@ -51,7 +64,7 @@ def test_add_wod():
                 date = date - datetime.timedelta(days=delta)
 
             # Thu 18 Apr
-            btn_name = date.strftime("%a %d %b")
+            btn_name = date.strftime(A_D_B)
             row.append(btn_name)
             count -= 1
         else:
@@ -61,4 +74,5 @@ def test_add_wod():
     print(keyboard)
 
 
+test_find_wod()
 test_add_wod()

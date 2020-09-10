@@ -3,6 +3,7 @@ from datetime import datetime
 import pytz
 from aiogram.utils.emoji import emojize
 
+from constants.date_format import H_M_S_D_B_Y
 from db import user_db, wod_result_db, location_db
 
 
@@ -19,7 +20,7 @@ async def get_wod_results(user_id, wod_id):
             dt = res.sys_date.astimezone(pytz.timezone(location.tz)) if location else res.sys_date
             name = f'{u.name} {u.surname}' if u.surname else u.name
 
-            title = '_' + name + ', ' + dt.strftime("%H:%M:%S %d %B %Y") + '_'
+            title = '_' + name + ', ' + dt.strftime(H_M_S_D_B_Y) + '_'
             msg += (
                 f'{title}\n'
                 f'{res.result}\n\n'

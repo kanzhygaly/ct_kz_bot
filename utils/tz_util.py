@@ -4,6 +4,7 @@ import requests
 from aiogram import types
 
 from constants.callback import CB_CHOOSE_DAY
+from constants.date_format import D_M_Y, A_D_B
 
 
 async def get_timezone_id(latitude, longitude):
@@ -42,8 +43,8 @@ async def get_add_rest_wod_kb():
     # if today is Thursday then include it
     if date.weekday() == 3:
         count = 8
-        btn_name = date.strftime("%a %d %b")
-        row.append(types.InlineKeyboardButton(btn_name, callback_data=CB_CHOOSE_DAY + '_' + date.strftime("%d%m%y")))
+        btn_name = date.strftime(A_D_B)
+        row.append(types.InlineKeyboardButton(btn_name, callback_data=CB_CHOOSE_DAY + '_' + date.strftime(D_M_Y)))
 
     while count >= 0:
         if len(row) < 3:
@@ -55,9 +56,9 @@ async def get_add_rest_wod_kb():
                 date = date - datetime.timedelta(days=delta)
 
             # Thu 18 Apr
-            btn_name = date.strftime("%a %d %b")
+            btn_name = date.strftime(A_D_B)
             row.append(types.InlineKeyboardButton(
-                btn_name, callback_data=CB_CHOOSE_DAY + '_' + date.strftime("%d%m%y")))
+                btn_name, callback_data=CB_CHOOSE_DAY + '_' + date.strftime(D_M_Y)))
 
             count -= 1
         else:
