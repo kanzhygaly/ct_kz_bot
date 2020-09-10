@@ -12,16 +12,16 @@ class Subscriber(Entity):
     user_id = Column()
 
 
-async def add_subscriber(user_id):
+async def add_subscriber(user_id) -> None:
     entity = Subscriber(user_id=user_id)
     await entity.save()
 
 
-async def is_subscriber(user_id):
+async def is_subscriber(user_id) -> bool:
     return bool(await Subscriber.get_one(user_id=user_id))
 
 
-async def unsubscribe(user_id):
+async def unsubscribe(user_id) -> None:
     try:
         entity = await Subscriber.get_one(record=False, user_id=user_id)
         await entity.delete()

@@ -6,7 +6,7 @@ from db import subscriber_db, wod_result_db
 from service import wod_service
 
 
-async def send_wod_to_all_subscribers(bot):
+async def send_wod_to_all_subscribers(bot) -> None:
     subscribers = await subscriber_db.get_all_subscribers()
 
     msg, wod_id = await wod_service.get_wod()
@@ -24,7 +24,7 @@ async def send_wod_to_all_subscribers(bot):
             await subscriber_db.unsubscribe(sub.user_id)
 
 
-async def notify_all_subscribers_to_add_result(bot):
+async def notify_all_subscribers_to_add_result(bot) -> None:
     wod_id = await wod_service.get_wod_id()
 
     if wod_id:

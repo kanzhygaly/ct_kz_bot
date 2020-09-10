@@ -66,7 +66,7 @@ VIEW_RESULT = 'Посмотреть результаты'
 HELP = 'help'
 
 
-async def notify_users_about_new_wod_result(user_id, wod):
+async def notify_users_about_new_wod_result(user_id, wod) -> None:
     diff = datetime.now().date() - wod.wod_day
 
     if diff.days < 2:

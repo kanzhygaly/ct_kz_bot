@@ -16,16 +16,16 @@ class User(Entity):
     admin = Column()
 
 
-async def add_user(user_id, name, surname, lang):
+async def add_user(user_id, name, surname, lang) -> None:
     entity = User(user_id=user_id, name=name, surname=surname, lang=lang)
     await entity.save()
 
 
-async def is_user_exist(user_id):
+async def is_user_exist(user_id) -> bool:
     return bool(await User.get_one(user_id=user_id))
 
 
-async def is_admin(user_id):
+async def is_admin(user_id) -> bool:
     async with User.connection() as conn:
         async with conn.transaction():
             stmt = select(User)
@@ -34,7 +34,7 @@ async def is_admin(user_id):
             stmt.set_statement('where', f'WHERE {where_str}', args)
             # print(stmt.query())
             res = await conn.fetchrow(*stmt)
-            return False if res is None else bool(User.from_record(res))
+            return bool(User.from_record(res)) if res else False
 
 
 async def get_user(user_id):

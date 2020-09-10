@@ -3,7 +3,7 @@ from datetime import datetime
 from constants.date_format import M_D_Y
 
 
-def parse_wod_content(content):
+def parse_wod_content(content) -> str:
     result = ''
     counter = 1
 
@@ -39,7 +39,7 @@ def parse_wod_content(content):
     return result
 
 
-def parse_wod_date(wod_string):
+def parse_wod_date(wod_string) -> datetime:
     wod_string = wod_string.replace('//', '').replace('/', '.')
     # Remove anything other than digits
     num = ''.join(c for c in wod_string if c.isdigit() or c == '.')

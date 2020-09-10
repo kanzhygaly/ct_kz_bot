@@ -13,7 +13,7 @@ class Location(Entity):
     tz = Column()
 
 
-async def merge(user_id, longitude, latitude, locale, timezone):
+async def merge(user_id, longitude, latitude, locale, timezone) -> None:
     entity = Location(user_id=user_id, longitude=longitude, latitude=latitude, locale=locale, tz=timezone)
     await entity.save()
 

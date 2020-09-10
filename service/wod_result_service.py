@@ -34,7 +34,7 @@ async def get_wod_results(user_id, wod_id):
         return None
 
 
-async def is_allowed_to_see_wod_results(user_id):
+async def is_allowed_to_see_wod_results(user_id) -> bool:
     wod_result = await wod_result_db.get_last_wod_result(user_id)
 
     if wod_result:
