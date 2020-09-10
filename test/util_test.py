@@ -1,6 +1,7 @@
 import datetime
 
 from constants.date_format import D_M_Y, A_D_B, D_B, H_M_S_D_B_Y, M_D_Y, D_B_Y, WEEKDAY
+from utils.db_util import database_url_parse
 
 now = datetime.datetime.now()
 
@@ -76,3 +77,7 @@ def test_add_wod():
 
 test_find_wod()
 test_add_wod()
+
+print('database_url_parse')
+credentials = database_url_parse('postgres://username:userpassword@hostname:5432/dbname')
+print(credentials)

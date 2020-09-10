@@ -1,4 +1,7 @@
-def database_url_parse(url):
+from typing import Dict
+
+
+def database_url_parse(url: str) -> Dict[str, str]:
     url = url.replace('postgres://', '').replace('@', ' ').replace(':', ' ').replace('/', ' ').split()
 
     database_url = {}
