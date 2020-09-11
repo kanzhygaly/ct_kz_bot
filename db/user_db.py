@@ -4,6 +4,7 @@ from typing import Iterable
 from asyncpg_simpleorm import Column, select
 
 from db.async_db import Entity
+from exception import UserNotFoundError
 
 
 class User(Entity):
@@ -38,14 +39,14 @@ async def is_admin(user_id) -> bool:
             return bool(User.from_record(res)) if res else False
 
 
-async def get_user(user_id):
+async def get_user(user_id) -> User:
     try:
         return await User.get_one(record=False, user_id=user_id)
     except TypeError:
-        return None
+        raise UserNotFoundError
     except Exception as e:
         print(e)
-        return None
+        raise UserNotFoundError
 
 
 async def get_all_users() -> Iterable[User]:

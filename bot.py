@@ -16,6 +16,7 @@ from constants.config_vars import API_TOKEN
 from constants.data_keys import WOD_RESULT_TXT, WOD_RESULT_ID, WOD_ID, REFRESH_WOD_ID, VIEW_WOD_ID
 from constants.date_format import D_M_Y, D_B_Y, WEEKDAY, D_B, A_M_D_Y
 from db import user_db, subscriber_db, wod_db, wod_result_db, async_db, location_db
+from exception import UserNotFoundError
 from service import wod_result_service
 from service import wod_service
 from service.notification_service import send_wod_to_all_subscribers, notify_all_subscribers_to_add_result
@@ -121,10 +122,10 @@ async def sys_all_subs(message: types.Message):
     str_list = []
 
     for i, sub in enumerate(subscribers, 1):
-        u = await user_db.get_user(sub.user_id)
-        if u:
+        try:
+            u = await user_db.get_user(sub.user_id)
             str_list.append(f'{i}. {u.name} {u.surname} [{u.user_id}]')
-        else:
+        except UserNotFoundError:
             await subscriber_db.unsubscribe(sub.user_id)
 
     msg = '\n'.join(str_list)
