@@ -101,7 +101,7 @@ async def sys_all_users(message: types.Message):
         return await message.reply(info_msg + sub)
 
     users = await user_db.get_all_users()
-    str_list = [f'{counter}. {u.name} {u.surname} [{u.user_id}]' for u in users]
+    str_list = [f'{i}. {u.name} {u.surname} [{u.user_id}]' for i, u in enumerate(users, 1)]
     msg = '\n'.join(str_list)
 
     await bot.send_message(message.chat.id, msg, parse_mode=ParseMode.MARKDOWN)
