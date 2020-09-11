@@ -1,7 +1,7 @@
 import datetime
 
 from bsoup_spider import BSoupParser
-from utils.parser_util import parse_wod_date
+from util.parser_util import parse_wod_date
 
 today = datetime.datetime.now().date()
 

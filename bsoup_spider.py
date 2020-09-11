@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 
-from utils.parser_util import parse_wod_content
+from util.parser_util import parse_wod_content
 
 
 class BSoupParser:

@@ -1,4 +1,5 @@
 import uuid
+from typing import Iterable
 
 from asyncpg_simpleorm import Column, select
 
@@ -47,5 +48,5 @@ async def get_user(user_id):
         return None
 
 
-async def get_all_users():
+async def get_all_users() -> Iterable[User]:
     return await User.get(records=False)

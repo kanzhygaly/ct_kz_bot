@@ -1,7 +1,7 @@
 import datetime
 
 from constants.date_format import D_M_Y, A_D_B, D_B, H_M_S_D_B_Y, M_D_Y, D_B_Y, WEEKDAY
-from utils.db_util import database_url_parse
+from util.db_util import database_url_parse
 
 now = datetime.datetime.now()
 

@@ -12,7 +12,8 @@ from aiogram.utils.emoji import emojize
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from constants.callback import CB_SEARCH_RESULT, CB_CHOOSE_DAY, CB_ADD_RESULT
-from constants.data_key import WOD_RESULT_TXT, WOD_RESULT_ID, WOD_ID, REFRESH_WOD_ID, VIEW_WOD_ID
+from constants.config_vars import API_TOKEN
+from constants.data_keys import WOD_RESULT_TXT, WOD_RESULT_ID, WOD_ID, REFRESH_WOD_ID, VIEW_WOD_ID
 from constants.date_format import D_M_Y, D_B_Y, WEEKDAY, D_B, A_M_D_Y
 from db import user_db, subscriber_db, wod_db, wod_result_db, async_db, location_db
 from service import wod_result_service
@@ -20,9 +21,9 @@ from service import wod_service
 from service.notification_service import send_wod_to_all_subscribers, notify_all_subscribers_to_add_result
 from service.user_service import add_user_if_not_exist
 from service.wod_result_service import persist_wod_result_and_get_message
-from utils import tz_util
+from util import tz_util
 
-bot = Bot(token=os.environ['API_TOKEN'])
+bot = Bot(token=os.environ[API_TOKEN])
 
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
