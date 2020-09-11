@@ -5,27 +5,29 @@ from aiogram.utils.emoji import emojize
 
 from constants.date_format import H_M_S_D_B_Y
 from db import user_db, wod_result_db, location_db
+from exception import LocationNotFoundError
 
 
 async def get_wod_results(user_id, wod_id):
-    location = await location_db.get_location(user_id)
+    try:
+        location = await location_db.get_location(user_id)
+        timezone = pytz.timezone(location.tz)
+    except LocationNotFoundError:
+        timezone = None
 
     wod_results = await wod_result_db.get_wod_results(wod_id)
-
     if wod_results:
-        msg = ''
+        str_list = []
         for res in wod_results:
             u = await user_db.get_user(res.user_id)
 
-            dt = res.sys_date.astimezone(pytz.timezone(location.tz)) if location else res.sys_date
+            dt = res.sys_date.astimezone(timezone) if timezone else res.sys_date
             name = f'{u.name} {u.surname}' if u.surname else u.name
 
             title = '_' + name + ', ' + dt.strftime(H_M_S_D_B_Y) + '_'
-            msg += (
-                f'{title}\n'
-                f'{res.result}\n\n'
-            )
+            str_list.append(f'{title}\n{res.result}')
 
+        msg = '\n\n'.join(str_list)
         # replace * with x in text. if it has odd number of * then MARKDOWN will fail
         msg = msg.replace('*', 'x')
 

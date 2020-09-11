@@ -1,4 +1,5 @@
 import uuid
+from typing import Iterable
 
 from asyncpg_simpleorm import Column
 
@@ -31,5 +32,5 @@ async def unsubscribe(user_id) -> None:
         print(e)
 
 
-async def get_all_subscribers():
+async def get_all_subscribers() -> Iterable[Subscriber]:
     return await Subscriber.get(records=False)

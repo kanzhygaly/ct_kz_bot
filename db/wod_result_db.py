@@ -1,4 +1,5 @@
 import uuid
+from typing import Iterable
 
 from asyncpg_simpleorm import Column, select
 
@@ -15,7 +16,7 @@ class WodResult(Entity):
     sys_date = Column()
 
 
-async def get_wod_results(wod_id):
+async def get_wod_results(wod_id) -> Iterable[WodResult]:
     return await WodResult.get(records=False, wod_id=wod_id)
 
 

@@ -1,6 +1,7 @@
 from asyncpg_simpleorm import Column
 
 from db.async_db import Entity
+from exception import LocationNotFoundError
 
 
 class Location(Entity):
@@ -18,11 +19,11 @@ async def merge(user_id, longitude, latitude, locale, timezone) -> None:
     await entity.save()
 
 
-async def get_location(user_id):
+async def get_location(user_id) -> Location:
     try:
         return await Location.get_one(record=False, user_id=user_id)
     except TypeError:
-        return None
+        raise LocationNotFoundError
     except Exception as e:
         print(e)
-        return None
+        raise LocationNotFoundError

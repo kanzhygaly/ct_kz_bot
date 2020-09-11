@@ -16,7 +16,7 @@ from constants.config_vars import API_TOKEN
 from constants.data_keys import WOD_RESULT_TXT, WOD_RESULT_ID, WOD_ID, REFRESH_WOD_ID, VIEW_WOD_ID
 from constants.date_format import D_M_Y, D_B_Y, WEEKDAY, D_B, A_M_D_Y
 from db import user_db, subscriber_db, wod_db, wod_result_db, async_db, location_db
-from exception import UserNotFoundError
+from exception import UserNotFoundError, LocationNotFoundError
 from service import wod_result_service
 from service import wod_service
 from service.notification_service import send_wod_to_all_subscribers, notify_all_subscribers_to_add_result
@@ -416,12 +416,11 @@ async def search_wod_by_text(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
 
-    result = await wod_service.search_wod(message.text)
-
     # Finish conversation, destroy all data in storage for current user
     state = dp.current_state(chat=chat_id, user=user_id)
     await state.reset_state()
 
+    result = await wod_service.search_wod(message.text)
     if result:
         # Configure InlineKeyboardMarkup
         reply_markup = types.InlineKeyboardMarkup()
@@ -832,8 +831,11 @@ async def echo(message: types.Message):
 
     if msg in greetings:
         # send hi
-        location = await location_db.get_location(message.from_user.id)
-        now = datetime.now(pytz.timezone(location.tz)) if location else datetime.now()
+        try:
+            location = await location_db.get_location(message.from_user.id)
+            now = datetime.now(pytz.timezone(location.tz))
+        except LocationNotFoundError:
+            now = datetime.now()
 
         if 4 <= now.hour < 12:
             await message.reply('Доброе утро, {}!'.format(message.from_user.first_name))

@@ -1,4 +1,5 @@
 import uuid
+from typing import Iterable
 
 from asyncpg_simpleorm import Column
 
@@ -19,7 +20,6 @@ async def get_wods(wod_day):
     try:
         return await WOD.get(records=False, wod_day=wod_day)
     except TypeError as e:
-        print(e)
         return None
     except Exception as e:
         print(e)
@@ -100,9 +100,9 @@ async def get_warmup(wod_day):
         return None
 
 
-async def search_by_text(str):
+async def search_by_text(text: str) -> Iterable[WOD]:
     async with WOD.connection() as conn:
-        where_str = f'LOWER(description) LIKE LOWER(\'%{str}%\')'
+        where_str = f'LOWER(description) LIKE LOWER(\'%{text}%\')'
         res = await conn.fetch(f'SELECT id, wod_day FROM {WOD.__tablename__} WHERE {where_str}')
         await conn.close()
         return list(map(WOD.from_record, res))
