@@ -1,9 +1,11 @@
 import uuid
+from datetime import date
 from typing import Iterable
 
 from asyncpg_simpleorm import Column
 
 from db.async_db import Entity
+from exception import WodNotFoundError
 
 
 class WOD(Entity):
@@ -76,28 +78,27 @@ async def get_wod_day(wod_id):
         return res
 
 
-async def add_warmup(wod_id, txt):
+async def add_warmup(wod_id, text: str) -> None:
     try:
         entity = await WOD.get_one(record=False, id=wod_id)
-        entity.warmup = txt
+        entity.warmup = text
         await entity.save()
-        return entity.warmup
     except TypeError:
-        return None
+        raise WodNotFoundError
     except Exception as e:
         print(e)
-        return None
+        raise WodNotFoundError
 
 
-async def get_warmup(wod_day):
+async def get_warmup(wod_day: date) -> str:
     try:
         entity = await WOD.get_one(record=False, wod_day=wod_day)
         return entity.warmup
     except TypeError:
-        return None
+        raise WodNotFoundError
     except Exception as e:
         print(e)
-        return None
+        raise WodNotFoundError
 
 
 async def search_by_text(text: str) -> Iterable[WOD]:

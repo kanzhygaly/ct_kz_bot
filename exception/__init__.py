@@ -4,15 +4,20 @@ class Error(Exception):
 
 
 class UserNotFoundError(Error):
-    """Raised when user was not found"""
+    """Raised when User was not found"""
     pass
 
 
 class LocationNotFoundError(Error):
-    """Raised when location was not found"""
+    """Raised when Location was not found"""
     pass
 
 
 class WodResultNotFoundError(Error):
-    """Raised when wod result was not found"""
+    """Raised when WOD result was not found"""
+    pass
+
+
+class WodNotFoundError(Error):
+    """Raised when WOD was not found"""
     pass

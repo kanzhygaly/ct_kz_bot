@@ -16,7 +16,7 @@ from constants.config_vars import API_TOKEN
 from constants.data_keys import WOD_RESULT_TXT, WOD_RESULT_ID, WOD_ID, REFRESH_WOD_ID, VIEW_WOD_ID
 from constants.date_format import D_M_Y, sD_B_Y, WEEKDAY, D_B, A_M_D_Y, sD_sB_Y
 from db import user_db, subscriber_db, wod_db, wod_result_db, async_db, location_db
-from exception import UserNotFoundError, LocationNotFoundError, WodResultNotFoundError
+from exception import UserNotFoundError, LocationNotFoundError, WodResultNotFoundError, WodNotFoundError
 from service import wod_result_service
 from service import wod_service
 from service.notification_service import send_wod_to_all_subscribers, notify_all_subscribers_to_add_result
@@ -646,8 +646,9 @@ async def view_warmup(message: types.Message):
     chat_id = message.chat.id
     today = datetime.now().date()
 
-    result = await wod_db.get_warmup(today)
-    if not result:
+    try:
+        result = await wod_db.get_warmup(today)
+    except WodNotFoundError:
         result = emojize("На сегодня разминки пока что нет :disappointed:")
 
     await bot.send_message(chat_id, result, parse_mode=ParseMode.MARKDOWN)
@@ -685,10 +686,11 @@ async def update_warmup(message: types.Message):
     data = await state.get_data()
     wod_id = data[WOD_ID]
 
-    msg = emojize(":heavy_exclamation_mark: Ошибка при внесении данных!")
-
-    if await wod_db.add_warmup(wod_id, message.text):
+    try:
+        await wod_db.add_warmup(wod_id, message.text)
         msg = emojize(":white_check_mark: Ваши изменения успешно выполнены!")
+    except WodNotFoundError:
+        msg = emojize(":heavy_exclamation_mark: Ошибка при внесении данных!")
 
     await bot.send_message(chat_id, msg)
 
