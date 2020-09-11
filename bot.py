@@ -118,16 +118,16 @@ async def sys_all_subs(message: types.Message):
         return await message.reply(info_msg + sub)
 
     subscribers = await subscriber_db.get_all_subscribers()
-    msg = ''
-    counter = 1
-    for sub in subscribers:
-        u = await user_db.get_user(sub.user_id)
-        if not u:
-            await subscriber_db.unsubscribe(sub.user_id)
-        else:
-            msg += f'{counter}. {u.name} {u.surname} [{u.user_id}]\n'
-            counter += 1
+    str_list = []
 
+    for i, sub in enumerate(subscribers, 1):
+        u = await user_db.get_user(sub.user_id)
+        if u:
+            str_list.append(f'{i}. {u.name} {u.surname} [{u.user_id}]')
+        else:
+            await subscriber_db.unsubscribe(sub.user_id)
+
+    msg = '\n'.join(str_list)
     await bot.send_message(message.chat.id, msg, parse_mode=ParseMode.MARKDOWN)
 
 
