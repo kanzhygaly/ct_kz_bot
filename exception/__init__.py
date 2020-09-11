@@ -4,10 +4,15 @@ class Error(Exception):
 
 
 class UserNotFoundError(Error):
-    """Raised when the input value is too small"""
+    """Raised when user was not found"""
     pass
 
 
 class LocationNotFoundError(Error):
-    """Raised when the input value is too small"""
+    """Raised when location was not found"""
+    pass
+
+
+class WodResultNotFoundError(Error):
+    """Raised when wod result was not found"""
     pass

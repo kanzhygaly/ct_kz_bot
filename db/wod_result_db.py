@@ -4,6 +4,7 @@ from typing import Iterable
 from asyncpg_simpleorm import Column, select
 
 from db.async_db import Entity
+from exception import WodResultNotFoundError
 
 
 class WodResult(Entity):
@@ -25,7 +26,7 @@ async def add_wod_result(wod_id, user_id, result, sys_date) -> None:
     await entity.save()
 
 
-async def get_user_wod_result(wod_id, user_id):
+async def get_user_wod_result(wod_id, user_id) -> WodResult:
     async with WodResult.connection() as conn:
         async with conn.transaction():
             stmt = select(WodResult)
@@ -33,23 +34,25 @@ async def get_user_wod_result(wod_id, user_id):
             args = (wod_id, user_id)
             stmt.set_statement('where', f'WHERE {where_str}', args)
             res = await conn.fetchrow(*stmt)
-            return WodResult.from_record(res) if res else None
+            if not res:
+                raise WodResultNotFoundError
+
+            return WodResult.from_record(res)
 
 
-async def get_wod_result(wod_result_id):
+async def get_wod_result(wod_result_id) -> WodResult:
     try:
         return await WodResult.get_one(record=False, id=wod_result_id)
     except TypeError:
-        return None
+        raise WodResultNotFoundError
     except Exception as e:
         print(e)
-        return None
+        raise WodResultNotFoundError
 
 
-async def get_last_wod_result(user_id):
+async def get_last_wod_result(user_id) -> WodResult:
     result = await WodResult.get(records=False, user_id=user_id)
+    if not result:
+        raise WodResultNotFoundError
 
-    if result:
-        return result[len(result) - 1]
-
-    return None
+    return list(result)[-1]

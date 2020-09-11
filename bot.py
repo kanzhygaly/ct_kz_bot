@@ -16,7 +16,7 @@ from constants.config_vars import API_TOKEN
 from constants.data_keys import WOD_RESULT_TXT, WOD_RESULT_ID, WOD_ID, REFRESH_WOD_ID, VIEW_WOD_ID
 from constants.date_format import D_M_Y, sD_B_Y, WEEKDAY, D_B, A_M_D_Y, sD_sB_Y
 from db import user_db, subscriber_db, wod_db, wod_result_db, async_db, location_db
-from exception import UserNotFoundError, LocationNotFoundError
+from exception import UserNotFoundError, LocationNotFoundError, WodResultNotFoundError
 from service import wod_result_service
 from service import wod_service
 from service.notification_service import send_wod_to_all_subscribers, notify_all_subscribers_to_add_result
@@ -239,16 +239,17 @@ async def send_wod(message: types.Message):
     msg, wod_id = await wod_service.get_wod()
 
     if wod_id:
-        res_button = ADD_RESULT
-
         state = dp.current_state(chat=chat_id, user=user_id)
-        await state.update_data(wod_id=wod_id)
         await state.set_state(WOD)
+        # for SHOW_RESULTS
+        await state.update_data(wod_id=wod_id)
 
-        wod_result = await wod_result_db.get_user_wod_result(wod_id=wod_id, user_id=user_id)
-        if wod_result:
+        try:
+            wod_result = await wod_result_db.get_user_wod_result(wod_id=wod_id, user_id=user_id)
             res_button = EDIT_RESULT
             await state.update_data(wod_result_id=wod_result.id)
+        except WodResultNotFoundError:
+            res_button = ADD_RESULT
 
         # Configure ReplyKeyboardMarkup
         reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
@@ -300,12 +301,12 @@ async def request_result_for_edit(message: types.Message):
     await state.set_state(WOD_RESULT)
     data = await state.get_data()
 
-    msg = 'Пожалуйста введите ваш результат:'
-
     wod_result_id = data[WOD_RESULT_ID]
-    wod_result = await wod_result_db.get_wod_result(wod_result_id)
-    if wod_result:
+    try:
+        wod_result = await wod_result_db.get_wod_result(wod_result_id)
         msg = f'Ваш текущий результат:\n\n_{wod_result.result}_\n\nПожалуйста введите ваш новый результат:'
+    except WodResultNotFoundError:
+        msg = 'Пожалуйста введите ваш результат:'
 
     reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
     reply_markup.add(CANCEL)
@@ -326,7 +327,7 @@ async def update_wod_result(message: types.Message):
     try:
         wod_result = await wod_result_db.get_wod_result(wod_result_id=data[WOD_RESULT_ID])
         wod_id = wod_result.wod_id
-    except KeyError:
+    except (KeyError, WodResultNotFoundError):
         wod_id = data[WOD_ID]
 
     msg = await persist_wod_result_and_get_message(user_id, wod_id, message.text)
@@ -567,15 +568,17 @@ async def find_and_get_wod(chat_id, user_id, search_date):
         wod_id = wods[0].id
         title = wods[0].title
         description = wods[0].description
-        res_button = ADD_RESULT
 
-        await state.update_data(wod_id=wod_id)
         await state.set_state(WOD)
+        # for SHOW_RESULTS
+        await state.update_data(wod_id=wod_id)
 
-        wod_result = await wod_result_db.get_user_wod_result(wod_id=wod_id, user_id=user_id)
-        if wod_result:
+        try:
+            wod_result = await wod_result_db.get_user_wod_result(wod_id=wod_id, user_id=user_id)
             res_button = EDIT_RESULT
             await state.update_data(wod_result_id=wod_result.id)
+        except WodResultNotFoundError:
+            res_button = ADD_RESULT
 
         # Configure ReplyKeyboardMarkup
         reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
@@ -728,12 +731,13 @@ async def add_result(message: types.Message):
         reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
         reply_markup.add(CANCEL)
 
-        wod_result = await wod_result_db.get_user_wod_result(wod_id=wod.id, user_id=user_id)
-
-        msg = 'Пожалуйста введите ваш результат:'
-        if wod_result:
+        try:
+            wod_result = await wod_result_db.get_user_wod_result(wod_id=wod.id, user_id=user_id)
             await state.update_data(wod_result_id=wod_result.id)
+
             msg = f'Ваш текущий результат:\n\n_{wod_result.result}_\n\nПожалуйста введите ваш новый результат'
+        except WodResultNotFoundError:
+            msg = 'Пожалуйста введите ваш результат:'
 
         await bot.send_message(chat_id, msg, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
     else:

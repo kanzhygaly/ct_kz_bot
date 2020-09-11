@@ -81,3 +81,7 @@ test_add_wod()
 print('database_url_parse')
 credentials = database_url_parse('postgres://username:userpassword@hostname:5432/dbname')
 print(credentials)
+
+print('list tests')
+result = [1, 2, 3, 4, 5]
+print(result[-1])

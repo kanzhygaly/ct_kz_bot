@@ -2,14 +2,15 @@ from aiogram import types
 from aiogram.utils.emoji import emojize
 from aiogram.utils.exceptions import UserDeactivated
 
-from db import subscriber_db, wod_result_db
-from service import wod_service
+from db import subscriber_db
+from service.wod_result_service import has_wod_result
+from service.wod_service import get_wod, get_wod_id
 
 
 async def send_wod_to_all_subscribers(bot) -> None:
     subscribers = await subscriber_db.get_all_subscribers()
 
-    msg, wod_id = await wod_service.get_wod()
+    msg, wod_id = await get_wod()
 
     if wod_id:
         msg += "\n\n/add - записать/изменить результат за СЕГОДНЯ\n" \
@@ -25,7 +26,7 @@ async def send_wod_to_all_subscribers(bot) -> None:
 
 
 async def notify_all_subscribers_to_add_result(bot) -> None:
-    wod_id = await wod_service.get_wod_id()
+    wod_id = await get_wod_id()
 
     if wod_id:
         subscribers = await subscriber_db.get_all_subscribers()
@@ -34,7 +35,7 @@ async def notify_all_subscribers_to_add_result(bot) -> None:
               "Для того чтобы записать результат за СЕГОДНЯ наберите команду /add"
 
         for sub in subscribers:
-            if await wod_result_db.get_user_wod_result(wod_id=wod_id, user_id=sub.user_id):
+            if has_wod_result(sub.user_id, wod_id):
                 continue
 
             try:
