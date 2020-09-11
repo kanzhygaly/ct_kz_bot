@@ -16,7 +16,8 @@ from constants.config_vars import API_TOKEN
 from constants.data_keys import WOD_RESULT_TXT, WOD_RESULT_ID, WOD_ID, REFRESH_WOD_ID, VIEW_WOD_ID
 from constants.date_format import D_M_Y, sD_B_Y, WEEKDAY, D_B, A_M_D_Y, sD_sB_Y
 from db import user_db, subscriber_db, wod_db, wod_result_db, async_db, location_db
-from exception import UserNotFoundError, LocationNotFoundError, WodResultNotFoundError, WodNotFoundError
+from exception import UserNotFoundError, LocationNotFoundError, WodResultNotFoundError, WodNotFoundError, \
+    ValueIsEmptyError
 from service import wod_result_service
 from service import wod_service
 from service.notification_service import send_wod_to_all_subscribers, notify_all_subscribers_to_add_result
@@ -648,7 +649,7 @@ async def view_warmup(message: types.Message):
 
     try:
         result = await wod_db.get_warmup(today)
-    except WodNotFoundError:
+    except (WodNotFoundError, ValueIsEmptyError):
         result = emojize("На сегодня разминки пока что нет :disappointed:")
 
     await bot.send_message(chat_id, result, parse_mode=ParseMode.MARKDOWN)

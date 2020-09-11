@@ -21,3 +21,8 @@ class WodResultNotFoundError(Error):
 class WodNotFoundError(Error):
     """Raised when WOD was not found"""
     pass
+
+
+class ValueIsEmptyError(Error):
+    """Raised when value is empty"""
+    pass

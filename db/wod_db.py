@@ -5,7 +5,7 @@ from typing import Iterable
 from asyncpg_simpleorm import Column
 
 from db.async_db import Entity
-from exception import WodNotFoundError
+from exception import WodNotFoundError, ValueIsEmptyError
 
 
 class WOD(Entity):
@@ -93,7 +93,11 @@ async def add_warmup(wod_id, text: str) -> None:
 async def get_warmup(wod_day: date) -> str:
     try:
         entity = await WOD.get_one(record=False, wod_day=wod_day)
-        return entity.warmup
+        warmup = entity.warmup
+        if warmup:
+            return warmup
+
+        raise ValueIsEmptyError
     except TypeError:
         raise WodNotFoundError
     except Exception as e:
