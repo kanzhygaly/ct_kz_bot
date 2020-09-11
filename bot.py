@@ -14,7 +14,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from constants.callback import CB_SEARCH_RESULT, CB_CHOOSE_DAY, CB_ADD_RESULT
 from constants.config_vars import API_TOKEN
 from constants.data_keys import WOD_RESULT_TXT, WOD_RESULT_ID, WOD_ID, REFRESH_WOD_ID, VIEW_WOD_ID
-from constants.date_format import D_M_Y, D_B_Y, WEEKDAY, D_B, A_M_D_Y
+from constants.date_format import D_M_Y, sD_B_Y, WEEKDAY, D_B, A_M_D_Y, sD_sB_Y
 from db import user_db, subscriber_db, wod_db, wod_result_db, async_db, location_db
 from exception import UserNotFoundError, LocationNotFoundError
 from service import wod_result_service
@@ -147,7 +147,7 @@ async def sys_reset_wod(message: types.Message):
     done, msg = await wod_service.reset_wod()
 
     if done:
-        msg = f'WOD from {today.strftime(D_B_Y)} successfully updated!'
+        msg = f'WOD from {today.strftime(sD_B_Y)} successfully updated!'
         await send_wod_to_all_subscribers(bot)
 
     await bot.send_message(message.chat.id, msg)
@@ -428,7 +428,7 @@ async def search_wod_by_text(message: types.Message):
 
         for wod in result:
             if len(row) < 3:
-                btn_name = wod.wod_day.strftime(D_B_Y)
+                btn_name = wod.wod_day.strftime(sD_sB_Y)
 
                 row.append(types.InlineKeyboardButton(btn_name, callback_data=CB_SEARCH_RESULT + '_' + wod.id.hex))
             else:
@@ -475,7 +475,7 @@ async def view_wod_results_callback(callback_query: types.CallbackQuery):
             msg = "На этот день нет результатов"
 
         wod_day = await wod_db.get_wod_day(wod_id)
-        msg = wod_day.strftime(D_B_Y) + "\n\n" + msg
+        msg = wod_day.strftime(sD_B_Y) + "\n\n" + msg
     else:
         msg = "Данные устарели"
 
@@ -816,7 +816,7 @@ async def update_wod(message: types.Message):
 
     wod = await wod_db.edit_wod(wod_id, message.text)
     if wod:
-        msg = emojize(f':white_check_mark: WOD за {wod.wod_day.strftime(D_B_Y)} успешно добавлен')
+        msg = emojize(f':white_check_mark: WOD за {wod.wod_day.strftime(sD_B_Y)} успешно добавлен')
 
     await bot.send_message(chat_id, msg)
 

@@ -1,6 +1,6 @@
 import datetime
 
-from constants.date_format import D_M_Y, A_D_B, D_B, H_M_S_D_B_Y, M_D_Y, D_B_Y, WEEKDAY
+from constants.date_format import D_M_Y, A_D_B, D_B, H_M_S_D_B_Y, M_D_Y, sD_B_Y, WEEKDAY
 from util.db_util import database_url_parse
 
 now = datetime.datetime.now()
@@ -19,7 +19,7 @@ print('date_format')
 print(wod_day.strftime(D_M_Y))
 print(now.strftime(H_M_S_D_B_Y))
 print(now.strftime(M_D_Y))
-print(now.strftime(D_B_Y))
+print(now.strftime(sD_B_Y))
 print(now.strftime(WEEKDAY))
 
 
