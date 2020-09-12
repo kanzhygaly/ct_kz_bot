@@ -634,8 +634,6 @@ async def set_location(message: types.Message):
     try:
         timezone_id = await tz_util.get_timezone_id(latitude, longitude)
 
-        print(message.from_user.first_name, latitude, longitude, timezone_id, datetime.now(pytz.timezone(timezone_id)))
-
         await location_db.add_location(user_id=user_id, latitude=latitude, longitude=longitude,
                                        locale=message.from_user.language_code, timezone=timezone_id)
 
