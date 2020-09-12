@@ -5,7 +5,7 @@ from util.parser_util import parse_wod_content
 
 
 class BSoupParser:
-    def __init__(self, url):
+    def __init__(self, url: str):
         headers = {'User-Agent': 'Mozilla/5.0'}
         page = requests.get(url, headers=headers)
 

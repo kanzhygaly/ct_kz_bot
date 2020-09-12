@@ -4,6 +4,7 @@ from datetime import datetime, date
 from typing import Iterable
 
 from bsoup_spider import BSoupParser
+from constants.config_vars import WEB_URL
 from db import wod_db
 from exception import WodNotFoundError
 from util.parser_util import parse_wod_date
@@ -29,7 +30,7 @@ async def get_today_wod():
 
         return f'{title}\n\n{description}', wod_id
     except WodNotFoundError:
-        parser = BSoupParser(url=os.environ['WEB_URL'])
+        parser = BSoupParser(url=os.environ[WEB_URL])
 
         wod_date = parse_wod_date(parser.get_wod_date())
 
@@ -64,7 +65,7 @@ async def reset_today_wod() -> (bool, str):
     except WodNotFoundError:
         return False, "No data found in DB use /sys_dispatch_wod instead"
 
-    parser = BSoupParser(url=os.environ['WEB_URL'])
+    parser = BSoupParser(url=os.environ[WEB_URL])
 
     wod_date = parse_wod_date(parser.get_wod_date())
 
