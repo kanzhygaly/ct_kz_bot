@@ -5,10 +5,10 @@ from aiogram.utils.emoji import emojize
 
 from constants.date_format import H_M_S_D_B_Y
 from db import user_db, wod_result_db, location_db
-from exception import LocationNotFoundError, WodResultNotFoundError
+from exception import LocationNotFoundError, WodResultNotFoundError, NoWodResultsError
 
 
-async def get_wod_results(user_id, wod_id):
+async def get_wod_results(user_id, wod_id) -> str:
     try:
         location = await location_db.get_location(user_id)
         timezone = pytz.timezone(location.tz)
@@ -32,8 +32,8 @@ async def get_wod_results(user_id, wod_id):
         msg = msg.replace('*', 'x')
 
         return msg
-    else:
-        return None
+
+    raise NoWodResultsError
 
 
 async def is_allowed_to_see_wod_results(user_id) -> bool:

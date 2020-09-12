@@ -17,7 +17,7 @@ from constants.data_keys import WOD_RESULT_TXT, WOD_RESULT_ID, WOD_ID, REFRESH_W
 from constants.date_format import D_M_Y, sD_B_Y, WEEKDAY, D_B, A_M_D_Y, sD_sB_Y
 from db import user_db, subscriber_db, wod_db, wod_result_db, async_db, location_db
 from exception import UserNotFoundError, LocationNotFoundError, WodResultNotFoundError, WodNotFoundError, \
-    ValueIsEmptyError
+    ValueIsEmptyError, NoWodResultsError
 from service import wod_result_service
 from service import wod_service
 from service.notification_service import send_wod_to_all_subscribers, notify_all_subscribers_to_add_result
@@ -354,9 +354,9 @@ async def show_wod_results(message: types.Message):
 
     wod_id = data[WOD_ID]
 
-    msg = await wod_result_service.get_wod_results(user_id, wod_id)
+    try:
+        msg = await wod_result_service.get_wod_results(user_id, wod_id)
 
-    if msg:
         # Finish conversation, destroy all data in storage for current user
         await state.reset_state()
         await state.update_data(wod_id=None)
@@ -372,7 +372,7 @@ async def show_wod_results(message: types.Message):
         reply_markup.add(types.InlineKeyboardButton(REFRESH, callback_data=REFRESH))
 
         await bot.send_message(chat_id, msg, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
-    else:
+    except NoWodResultsError:
         return await bot.send_message(chat_id, emojize("На сегодня результатов пока что нет :crying_cat_face:"
                                                        "\nСтаньте первым кто внесет свой результат :smiley_cat:"
                                                        "\n/add"))
@@ -389,8 +389,8 @@ async def refresh_wod_results_callback(callback_query: types.CallbackQuery):
     if REFRESH_WOD_ID in data.keys():
         wod_id = data[REFRESH_WOD_ID]
 
-        msg = await wod_result_service.get_wod_results(user_id, wod_id)
-        if msg:
+        try:
+            msg = await wod_result_service.get_wod_results(user_id, wod_id)
             await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=callback_query.message.message_id,
                                         parse_mode=ParseMode.MARKDOWN)
 
@@ -399,6 +399,8 @@ async def refresh_wod_results_callback(callback_query: types.CallbackQuery):
 
             await bot.edit_message_reply_markup(chat_id=chat_id, message_id=callback_query.message.message_id,
                                                 reply_markup=reply_markup)
+        except NoWodResultsError:
+            print(f'No wod results found for WOD with id {wod_id}')
 
 
 @dp.message_handler(commands=['search'])
@@ -472,12 +474,12 @@ async def view_wod_results_callback(callback_query: types.CallbackQuery):
         wod_id = data[VIEW_WOD_ID]
         await state.update_data(view_wod_id=None)
 
-        msg = await wod_result_service.get_wod_results(user_id, wod_id)
-        if not msg:
+        try:
+            msg = await wod_result_service.get_wod_results(user_id, wod_id)
+            wod_day = await wod_db.get_wod_day(wod_id)
+            msg = wod_day.strftime(sD_B_Y) + "\n\n" + msg
+        except NoWodResultsError:
             msg = "На этот день нет результатов"
-
-        wod_day = await wod_db.get_wod_day(wod_id)
-        msg = wod_day.strftime(sD_B_Y) + "\n\n" + msg
     else:
         msg = "Данные устарели"
 
@@ -711,7 +713,7 @@ async def view_results(message: types.Message):
             wod = await wod_db.get_wod_by_date(datetime.now().date())
             wod_res_msg = await wod_result_service.get_wod_results(user_id, wod.id)
             msg = f'{wod.title}\n\n{wod_res_msg}'
-        except WodNotFoundError:
+        except (WodNotFoundError, NoWodResultsError):
             msg = emojize("На сегодня результатов пока что нет :disappointed:")
     else:
         msg = emojize("На сегодня результатов нет :disappointed:")

@@ -26,3 +26,8 @@ class WodNotFoundError(Error):
 class ValueIsEmptyError(Error):
     """Raised when value is empty"""
     pass
+
+
+class NoWodResultsError(Error):
+    """Raised when value is empty"""
+    pass
