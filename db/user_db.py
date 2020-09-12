@@ -18,7 +18,7 @@ class User(Entity):
     admin = Column()
 
 
-async def add_user(user_id, name, surname, lang) -> None:
+async def add_user(user_id, name: str, surname: str, lang: str) -> None:
     entity = User(user_id=user_id, name=name, surname=surname, lang=lang)
     await entity.save()
 

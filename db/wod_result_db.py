@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from typing import Iterable
 
 from asyncpg_simpleorm import Column, select
@@ -21,7 +22,7 @@ async def get_wod_results(wod_id) -> Iterable[WodResult]:
     return await WodResult.get(records=False, wod_id=wod_id)
 
 
-async def add_wod_result(wod_id, user_id, result, sys_date) -> None:
+async def add_wod_result(wod_id, user_id, result: str, sys_date: datetime) -> None:
     entity = WodResult(wod_id=wod_id, user_id=user_id, result=result, sys_date=sys_date)
     await entity.save()
 

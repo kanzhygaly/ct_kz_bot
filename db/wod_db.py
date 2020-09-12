@@ -18,14 +18,14 @@ class WOD(Entity):
     warmup = Column()
 
 
-async def get_wods(wod_day):
+async def get_wods(wod_day: date) -> Iterable[WOD]:
     try:
         return await WOD.get(records=False, wod_day=wod_day)
-    except TypeError as e:
-        return None
+    except TypeError:
+        raise WodNotFoundError
     except Exception as e:
         print(e)
-        return None
+        raise WodNotFoundError
 
 
 async def get_wod_by_date(wod_day: date) -> WOD:
@@ -76,7 +76,7 @@ async def get_wod(wod_id) -> WOD:
         raise WodNotFoundError
 
 
-async def get_wod_day(wod_id):
+async def get_wod_day(wod_id) -> date:
     async with WOD.connection() as conn:
         res = await conn.fetchval('SELECT wod_day FROM wod WHERE id = $1', wod_id)
         await conn.close()

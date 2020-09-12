@@ -9,47 +9,53 @@ from exception import WodNotFoundError
 from util.parser_util import parse_wod_date
 
 
-async def get_wod():
+def the_wod_is_for_today(wod_date: date, today: date) -> bool:
+    return wod_date.day == today.day and wod_date.month == today.month and wod_date.year == today.year
+
+
+def today_is_not_a_rest_day(parser: BSoupParser) -> bool:
+    return (parser.get_regional_wod().lower().find("rest day") == -1
+            and parser.get_open_wod().lower().find("rest day") == -1)
+
+
+async def get_today_wod():
     today = datetime.now().date()
 
-    result = await wod_db.get_wods(today)
-    if result:
-        wod_id = result[0].id
-        title = result[0].title
-        description = result[0].description
+    try:
+        result = await wod_db.get_wod_by_date(today)
+        wod_id = result.id
+        title = result.title
+        description = result.description
 
-        return title + "\n\n" + description, wod_id
+        return f'{title}\n\n{description}', wod_id
+    except WodNotFoundError:
+        parser = BSoupParser(url=os.environ['WEB_URL'])
 
-    parser = BSoupParser(url=os.environ['WEB_URL'])
+        wod_date = parse_wod_date(parser.get_wod_date())
 
-    wod_date = parse_wod_date(parser.get_wod_date())
+        if the_wod_is_for_today(wod_date=wod_date, today=today):
+            title = parser.get_wod_date()
+            description = parser.get_regional_wod() + "\n" + parser.get_open_wod()
 
-    if wod_date.day.__eq__(today.day) and wod_date.month.__eq__(today.month) and wod_date.year.__eq__(today.year):
-        title = parser.get_wod_date()
-
-        reg_part = parser.get_regional_wod()
-        open_part = parser.get_open_wod()
-        description = reg_part + "\n" + open_part
-
-        if reg_part.lower().find("rest day") != -1 and open_part.lower().find("rest day") != -1:
-            # Rest Day on both parts
             wod_id = None
+            if today_is_not_a_rest_day(parser):
+                wod_id = await wod_db.add_wod(today, title, description)
+
+            return f'{title}\n\n{description}', wod_id
         else:
-            wod_id = await wod_db.add_wod(today, title, description)
-
-        return title + "\n\n" + description, wod_id
-    else:
-        return "Комплекс еще не вышел.\nСорян :(", None
+            return "Комплекс еще не вышел.\nСорян :(", None
 
 
-async def get_wod_id():
+async def get_today_wod_id():
     today = datetime.now().date()
-    result = await wod_db.get_wods(today)
-    if result:
-        return result[0].id
+    try:
+        result = await wod_db.get_wod_by_date(today)
+        return result.id
+    except WodNotFoundError as e:
+        raise e
 
 
-async def reset_wod():
+async def reset_today_wod() -> (bool, str):
     today = datetime.now().date()
 
     try:
@@ -62,22 +68,15 @@ async def reset_wod():
 
     wod_date = parse_wod_date(parser.get_wod_date())
 
-    if (wod_date.day == today.day
-            and wod_date.month == today.month
-            and wod_date.year == today.year):
-
-        reg_part = parser.get_regional_wod()
-        open_part = parser.get_open_wod()
-
-        if reg_part.find("Rest Day") == -1 or open_part.find("Rest Day") == -1:
-            title = parser.get_wod_date()
-            description = reg_part + "\n" + open_part
-            await wod_db.edit_wod(id=wod_id, title=title, description=description)
+    if the_wod_is_for_today(wod_date=wod_date, today=today):
+        if today_is_not_a_rest_day(parser):
+            description = parser.get_regional_wod() + '\n' + parser.get_open_wod()
+            await wod_db.edit_wod(id=wod_id, title=parser.get_wod_date(), description=description)
             return True
-        else:
-            return False, "Today is the rest day!"
+
+        return False, 'Today is a rest day!'
     else:
-        return False, f"{today} is not equal to wod_date {wod_date}"
+        return False, f'{today} is not equal to wod_date {wod_date}'
 
 
 async def add_wod(wod_date: date, title: str, description: str = None):
@@ -96,4 +95,4 @@ async def search_wod(text: str) -> Iterable[wod_db.WOD]:
 async def get_wod_by_str_id(wod_id_str):
     wod_id = uuid.UUID(wod_id_str)
     wod = await wod_db.get_wod(wod_id)
-    return wod.title + "\n\n" + wod.description, wod_id
+    return f'{wod.title}\n\n{wod.description}', wod_id

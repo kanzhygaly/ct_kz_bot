@@ -1,6 +1,6 @@
 import os
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 import pytz
 from aiogram import Bot, types
@@ -145,7 +145,7 @@ async def sys_reset_wod(message: types.Message):
 
     today = datetime.now().date()
 
-    done, msg = await wod_service.reset_wod()
+    done, msg = await wod_service.reset_today_wod()
 
     if done:
         msg = f'WOD from {today.strftime(sD_B_Y)} successfully updated!'
@@ -237,7 +237,7 @@ async def send_wod(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
 
-    msg, wod_id = await wod_service.get_wod()
+    msg, wod_id = await wod_service.get_today_wod()
 
     if wod_id:
         state = dp.current_state(chat=chat_id, user=user_id)
@@ -530,8 +530,8 @@ async def find_wod_by_btn(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     chat_id = callback_query.message.chat.id
 
-    search_date = datetime.strptime(callback_query.data[11:], D_M_Y)
-    msg, reply_markup = await find_and_get_wod(chat_id, user_id, search_date)
+    search_date = datetime.strptime(callback_query.data[11:], D_M_Y).date()
+    msg, reply_markup = await find_and_get_wod(chat_id=chat_id, user_id=user_id, search_date=search_date)
 
     if reply_markup:
         await bot.edit_message_text(text=emojize("Результат поиска :calendar:"), chat_id=chat_id,
@@ -554,12 +554,12 @@ async def find_wod_by_text(message: types.Message):
     chat_id = message.chat.id
 
     try:
-        search_date = datetime.strptime(message.text, D_M_Y)
+        search_date = datetime.strptime(message.text, D_M_Y).date()
     except ValueError:
         msg = 'Пожалуйста введите дату в формате *ДеньМесяцГод* (_Пример: 170518_)'
         return await bot.send_message(chat_id, msg, parse_mode=ParseMode.MARKDOWN)
 
-    msg, reply_markup = await find_and_get_wod(chat_id, user_id, search_date)
+    msg, reply_markup = await find_and_get_wod(chat_id=chat_id, user_id=user_id, search_date=search_date)
 
     if reply_markup:
         await bot.send_message(chat_id, msg, reply_markup=reply_markup)
@@ -567,15 +567,12 @@ async def find_wod_by_text(message: types.Message):
         await bot.send_message(chat_id, msg)
 
 
-async def find_and_get_wod(chat_id, user_id, search_date):
-    time_between = datetime.now() - search_date
+async def find_and_get_wod(chat_id, user_id, search_date: date):
     state = dp.current_state(chat=chat_id, user=user_id)
 
-    wods = await wod_db.get_wods(search_date)
-    if wods:
-        wod_id = wods[0].id
-        title = wods[0].title
-        description = wods[0].description
+    try:
+        result = await wod_db.get_wod_by_date(search_date)
+        wod_id = result.id
 
         await state.set_state(WOD)
         # for SHOW_RESULTS
@@ -591,6 +588,7 @@ async def find_and_get_wod(chat_id, user_id, search_date):
         # Configure ReplyKeyboardMarkup
         reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
 
+        time_between = datetime.now().date() - search_date
         if time_between.days > 30 and res_button == EDIT_RESULT:
             # if wod result older than month, then disable edit
             reply_markup.add(SHOW_RESULTS)
@@ -599,8 +597,8 @@ async def find_and_get_wod(chat_id, user_id, search_date):
 
         reply_markup.add(CANCEL)
 
-        return title + "\n\n" + description, reply_markup
-    else:
+        return f'{result.title}\n\n{result.description}', reply_markup
+    except WodNotFoundError:
         # Finish conversation, destroy all data in storage for current user
         await state.reset_state()
 
@@ -641,8 +639,8 @@ async def set_location(message: types.Message):
 
     await add_user_if_not_exist(message)
 
-    await location_db.merge(user_id=user_id, latitude=latitude, longitude=longitude,
-                            locale=message.from_user.language_code, timezone=timezone_id)
+    await location_db.add_location(user_id=user_id, latitude=latitude, longitude=longitude,
+                                   locale=message.from_user.language_code, timezone=timezone_id)
 
     await bot.send_message(chat_id, 'Ваш часовой пояс установлен как ' + timezone_id,
                            reply_markup=types.ReplyKeyboardRemove())
@@ -674,15 +672,18 @@ async def add_warmup_request(message: types.Message):
 
     chat_id = message.chat.id
 
-    result = await wod_db.get_wods(datetime.now().date())
-    if result:
-        wod_id = result[0].id
+    try:
+        wod_id = await wod_service.get_today_wod_id()
 
         state = dp.current_state(chat=chat_id, user=message.from_user.id)
         await state.set_state(WARM_UP)
         await state.update_data(wod_id=wod_id)
 
-    await bot.send_message(chat_id, 'Пожалуйста введите текст:')
+        msg = 'Пожалуйста введите текст:'
+    except WodNotFoundError:
+        msg = 'No WOD for today in DB'
+
+    await bot.send_message(chat_id, msg)
 
 
 @dp.message_handler(state=WARM_UP)
@@ -934,12 +935,11 @@ async def add_result_by_date(callback_query: types.CallbackQuery):
 @scheduler.scheduled_job('cron', day_of_week='mon,tue,wed,fri,sat', hour=8, minute=00, id='wod_dispatch_2')
 async def wod_dispatch():
     print('wod_dispatch')
-    now = datetime.now()
-    result = await wod_db.get_wods(now.date())
-
-    # if result is equal to None or is empty, then True
-    # there's no entry in DB for today
-    if not result:
+    try:
+        await wod_service.get_today_wod_id()
+    except WodNotFoundError:
+        # send WOD only if it is not in DB
+        print('send_wod_to_all_subscribers')
         await send_wod_to_all_subscribers(bot)
 
 

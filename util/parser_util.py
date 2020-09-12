@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 
 from constants.date_format import M_D_Y
 
@@ -39,8 +39,8 @@ def parse_wod_content(content) -> str:
     return result
 
 
-def parse_wod_date(wod_string) -> datetime:
+def parse_wod_date(wod_string: str) -> date:
     wod_string = wod_string.replace('//', '').replace('/', '.')
     # Remove anything other than digits
     num = ''.join(c for c in wod_string if c.isdigit() or c == '.')
-    return datetime.strptime(num, M_D_Y)
+    return datetime.strptime(num, M_D_Y).date()
