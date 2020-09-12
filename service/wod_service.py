@@ -1,10 +1,11 @@
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, date
 from typing import Iterable
 
 from bsoup_spider import BSoupParser
 from db import wod_db
+from exception import WodNotFoundError
 from util.parser_util import parse_wod_date
 
 
@@ -51,11 +52,11 @@ async def get_wod_id():
 async def reset_wod():
     today = datetime.now().date()
 
-    result = await wod_db.get_wod_by_date(today)
-    if not result:
+    try:
+        result = await wod_db.get_wod_by_date(today)
+        wod_id = result.id
+    except WodNotFoundError:
         return False, "No data found in DB use /sys_dispatch_wod instead"
-
-    wod_id = result.id
 
     parser = BSoupParser(url=os.environ['WEB_URL'])
 
@@ -71,7 +72,7 @@ async def reset_wod():
         if reg_part.find("Rest Day") == -1 or open_part.find("Rest Day") == -1:
             title = parser.get_wod_date()
             description = reg_part + "\n" + open_part
-            await wod_db.edit_wod(id=wod_id, description=description, title=title)
+            await wod_db.edit_wod(id=wod_id, title=title, description=description)
             return True
         else:
             return False, "Today is the rest day!"
@@ -79,13 +80,13 @@ async def reset_wod():
         return False, f"{today} is not equal to wod_date {wod_date}"
 
 
-async def add_wod(wod_date, title, description):
-    wod = await wod_db.get_wod_by_date(wod_date)
-    if wod:
-        await wod_db.edit_wod(id=wod.id, description=description, title=title)
+async def add_wod(wod_date: date, title: str, description: str = None):
+    try:
+        wod = await wod_db.get_wod_by_date(wod_date)
+        await wod_db.edit_wod(id=wod.id, title=title, description=description)
         return wod.id
-    else:
-        return await wod_db.add_wod(wod_date, title, description)
+    except WodNotFoundError:
+        return await wod_db.add_wod(wod_day=wod_date, title=title, description=description)
 
 
 async def search_wod(text: str) -> Iterable[wod_db.WOD]:

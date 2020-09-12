@@ -707,16 +707,16 @@ async def view_results(message: types.Message):
     chat_id = message.chat.id
 
     if await wod_result_service.is_allowed_to_see_wod_results(user_id):
-        wod = await wod_db.get_wod_by_date(datetime.now().date())
-
-        msg = await wod_result_service.get_wod_results(user_id, wod.id) if wod else None
-
-        if msg:
-            await bot.send_message(chat_id, f'{wod.title}\n\n{msg}', parse_mode=ParseMode.MARKDOWN)
-        else:
-            await bot.send_message(chat_id, emojize("На сегодня результатов пока что нет :disappointed:"))
+        try:
+            wod = await wod_db.get_wod_by_date(datetime.now().date())
+            wod_res_msg = await wod_result_service.get_wod_results(user_id, wod.id)
+            msg = f'{wod.title}\n\n{wod_res_msg}'
+        except WodNotFoundError:
+            msg = emojize("На сегодня результатов пока что нет :disappointed:")
     else:
-        await bot.send_message(chat_id, emojize("На сегодня результатов нет :disappointed:"))
+        msg = emojize("На сегодня результатов нет :disappointed:")
+
+    await bot.send_message(chat_id, msg, parse_mode=ParseMode.MARKDOWN)
 
 
 @dp.message_handler(commands=['add'])
@@ -725,8 +725,9 @@ async def add_result(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
 
-    wod = await wod_db.get_wod_by_date(datetime.now().date())
-    if wod:
+    try:
+        wod = await wod_db.get_wod_by_date(datetime.now().date())
+
         state = dp.current_state(chat=chat_id, user=user_id)
         await state.set_state(WOD_RESULT)
         await state.update_data(wod_id=wod.id)
@@ -743,7 +744,7 @@ async def add_result(message: types.Message):
             msg = 'Пожалуйста введите ваш результат:'
 
         await bot.send_message(chat_id, msg, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
-    else:
+    except WodNotFoundError:
         await bot.send_message(chat_id, emojize("На сегодня тренировки пока что нет :disappointed:"))
 
 
@@ -776,10 +777,10 @@ async def add_wod_by_btn(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     chat_id = callback_query.message.chat.id
 
-    wod_date = datetime.strptime(callback_query.data[11:], D_M_Y)
+    wod_date = datetime.strptime(callback_query.data[11:], D_M_Y).date()
 
     title = wod_date.strftime(A_M_D_Y)
-    wod_id = await wod_service.add_wod(wod_date, title, '')
+    wod_id = await wod_service.add_wod(wod_date=wod_date, title=title)
 
     state = dp.current_state(chat=chat_id, user=user_id)
     await state.set_state(ADD_WOD_REQ)
@@ -795,13 +796,13 @@ async def add_wod_by_text(message: types.Message):
     chat_id = message.chat.id
 
     try:
-        wod_date = datetime.strptime(message.text, D_M_Y)
+        wod_date = datetime.strptime(message.text, D_M_Y).date()
     except ValueError:
         msg = 'Пожалуйста введите дату в формате *ДеньМесяцГод* (_Пример: 170518_)'
         return await bot.send_message(chat_id, msg, parse_mode=ParseMode.MARKDOWN)
 
     title = wod_date.strftime(A_M_D_Y)
-    wod_id = await wod_service.add_wod(wod_date, title, '')
+    wod_id = await wod_service.add_wod(wod_date=wod_date, title=title)
 
     state = dp.current_state(chat=chat_id, user=user_id)
     await state.set_state(ADD_WOD_REQ)
@@ -819,11 +820,11 @@ async def update_wod(message: types.Message):
     data = await state.get_data()
     wod_id = data[WOD_ID]
 
-    msg = emojize(":heavy_exclamation_mark: Ошибка при внесении данных!")
-
-    wod = await wod_db.edit_wod(wod_id, message.text)
-    if wod:
+    try:
+        wod = await wod_db.edit_wod(id=wod_id, description=message.text)
         msg = emojize(f':white_check_mark: WOD за {wod.wod_day.strftime(sD_B_Y)} успешно добавлен')
+    except WodNotFoundError:
+        msg = emojize(":heavy_exclamation_mark: Ошибка при внесении данных!")
 
     await bot.send_message(chat_id, msg)
 
@@ -897,27 +898,26 @@ async def add_result_by_date(callback_query: types.CallbackQuery):
 
     wod_date = datetime.strptime(callback_query.data[11:], D_M_Y)
 
-    wod = await wod_db.get_wod_by_date(wod_date.date())
-    if wod:
+    try:
+        # WodNotFoundError
+        wod = await wod_db.get_wod_by_date(wod_date.date())
+
         data = await state.get_data()
+        # KeyError
+        wod_result_txt = data[WOD_RESULT_TXT]
+        # Destroy all data in storage for current user
+        await state.update_data(wod_result_txt=None)
 
-        try:
-            wod_result_txt = data[WOD_RESULT_TXT]
+        msg = await persist_wod_result_and_get_message(user_id, wod.id, wod_result_txt)
+        await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=msg_id, parse_mode=ParseMode.MARKDOWN)
 
-            msg = await persist_wod_result_and_get_message(user_id, wod.id, wod_result_txt)
-            await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=msg_id, parse_mode=ParseMode.MARKDOWN)
-
-            await notify_users_about_new_wod_result(user_id, wod)
-        except KeyError:
-            msg = emojize("Не удалось добавить ваш результат :disappointed:\n Попробуйте снова :smiley:")
-            await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=msg_id,
-                                        parse_mode=ParseMode.MARKDOWN)
-    else:
-        await bot.edit_message_text(text=emojize("На сегодня тренировки пока что нет :disappointed:"), chat_id=chat_id,
-                                    message_id=msg_id, parse_mode=ParseMode.MARKDOWN)
-
-    # Destroy all data in storage for current user
-    await state.update_data(wod_result_txt=None)
+        await notify_users_about_new_wod_result(user_id, wod)
+    except KeyError:
+        msg = emojize("Не удалось добавить ваш результат :disappointed:\n Попробуйте снова :smiley:")
+        await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=msg_id, parse_mode=ParseMode.MARKDOWN)
+    except WodNotFoundError:
+        msg = emojize("На сегодня тренировки пока что нет :disappointed:")
+        await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=msg_id, parse_mode=ParseMode.MARKDOWN)
 
 
 # https://apscheduler.readthedocs.io/en/latest/modules/triggers/cron.html#module-apscheduler.triggers.cron

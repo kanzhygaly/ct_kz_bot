@@ -28,26 +28,31 @@ async def get_wods(wod_day):
         return None
 
 
-async def get_wod_by_date(wod_day):
+async def get_wod_by_date(wod_day: date) -> WOD:
     try:
         return await WOD.get_one(record=False, wod_day=wod_day)
     except TypeError:
-        return None
+        raise WodNotFoundError
     except Exception as e:
         print(e)
-        return None
+        raise WodNotFoundError
 
 
-async def add_wod(wod_day, title, description):
-    entity = WOD(wod_day=wod_day, title=title, description=description)
+async def add_wod(wod_day: date, title: str, description: str = None):
+    if description:
+        entity = WOD(wod_day=wod_day, title=title, description=description)
+    else:
+        entity = WOD(wod_day=wod_day, title=title)
     await entity.save()
     return entity.id
 
 
-async def edit_wod(id, description, title=None):
+async def edit_wod(id, title: str = None, description: str = None) -> WOD:
     try:
         entity = await WOD.get_one(record=False, id=id)
-        entity.description = description
+
+        if description:
+            entity.description = description
 
         if title:
             entity.title = title
@@ -55,20 +60,20 @@ async def edit_wod(id, description, title=None):
         await entity.save()
         return entity
     except TypeError:
-        return None
+        raise WodNotFoundError
     except Exception as e:
         print(e)
-        return None
+        raise WodNotFoundError
 
 
-async def get_wod(wod_id):
+async def get_wod(wod_id) -> WOD:
     try:
         return await WOD.get_one(record=False, id=wod_id)
     except TypeError:
-        return None
+        raise WodNotFoundError
     except Exception as e:
         print(e)
-        return None
+        raise WodNotFoundError
 
 
 async def get_wod_day(wod_id):
