@@ -93,7 +93,7 @@ async def search_wod(text: str) -> Iterable[wod_db.WOD]:
     return await wod_db.search_by_text(text)
 
 
-async def get_wod_by_str_id(wod_id_str):
+async def get_wod_by_str_id(wod_id_str: str):
     wod_id = uuid.UUID(wod_id_str)
     wod = await wod_db.get_wod(wod_id)
     return f'{wod.title}\n\n{wod.description}', wod_id
