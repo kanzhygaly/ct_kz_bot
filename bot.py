@@ -331,7 +331,7 @@ async def update_wod_result(message: types.Message):
     except (KeyError, WodResultNotFoundError):
         wod_id = data[WOD_ID]
 
-    msg = await persist_wod_result_and_get_message(user_id, wod_id, message.text)
+    msg = await persist_wod_result_and_get_message(user_id=user_id, wod_id=wod_id, wod_result_txt=message.text)
 
     await bot.send_message(chat_id, msg, reply_markup=types.ReplyKeyboardRemove())
 
@@ -355,7 +355,7 @@ async def show_wod_results(message: types.Message):
     wod_id = data[WOD_ID]
 
     try:
-        msg = await wod_result_service.get_wod_results(user_id, wod_id)
+        msg = await wod_result_service.get_wod_results(user_id=user_id, wod_id=wod_id)
 
         # Finish conversation, destroy all data in storage for current user
         await state.reset_state()
@@ -392,7 +392,7 @@ async def refresh_wod_results_callback(callback_query: types.CallbackQuery):
         wod_id = data[REFRESH_WOD_ID]
 
         # NoWodResultsError
-        msg = await wod_result_service.get_wod_results(user_id, wod_id)
+        msg = await wod_result_service.get_wod_results(user_id=user_id, wod_id=wod_id)
 
         await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=msg_id, parse_mode=ParseMode.MARKDOWN)
 
@@ -480,7 +480,7 @@ async def view_wod_results_callback(callback_query: types.CallbackQuery):
         wod_id = data[VIEW_WOD_ID]
         await state.update_data(view_wod_id=None)
 
-        msg = await wod_result_service.get_wod_results(user_id, wod_id)
+        msg = await wod_result_service.get_wod_results(user_id=user_id, wod_id=wod_id)
 
         wod_day = await wod_db.get_wod_day(wod_id)
         msg = f'{wod_day.strftime(sD_B_Y)}\n\n{msg}'
@@ -716,7 +716,7 @@ async def view_results(message: types.Message):
     if await wod_result_service.is_allowed_to_see_wod_results(user_id):
         try:
             wod = await wod_db.get_wod_by_date(datetime.now().date())
-            wod_res_msg = await wod_result_service.get_wod_results(user_id, wod.id)
+            wod_res_msg = await wod_result_service.get_wod_results(user_id=user_id, wod_id=wod.id)
             msg = f'{wod.title}\n\n{wod_res_msg}'
         except (WodNotFoundError, NoWodResultsError):
             msg = emojize("На сегодня результатов пока что нет :disappointed:")
@@ -915,7 +915,7 @@ async def add_result_by_date(callback_query: types.CallbackQuery):
         # Destroy all data in storage for current user
         await state.update_data(wod_result_txt=None)
 
-        msg = await persist_wod_result_and_get_message(user_id, wod.id, wod_result_txt)
+        msg = await persist_wod_result_and_get_message(user_id=user_id, wod_id=wod.id, wod_result_txt=wod_result_txt)
         await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=msg_id, parse_mode=ParseMode.MARKDOWN)
 
         await notify_users_about_new_wod_result(user_id, wod)

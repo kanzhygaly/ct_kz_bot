@@ -53,7 +53,7 @@ async def is_allowed_to_see_wod_results(user_id) -> bool:
         return False
 
 
-async def persist_wod_result_and_get_message(user_id, wod_id, wod_result_txt):
+async def persist_wod_result_and_get_message(user_id, wod_id, wod_result_txt: str):
     try:
         wod_result = await wod_result_db.get_user_wod_result(wod_id, user_id)
 
@@ -63,7 +63,8 @@ async def persist_wod_result_and_get_message(user_id, wod_id, wod_result_txt):
 
         return emojize(":white_check_mark: Ваш результат успешно обновлен!")
     except WodResultNotFoundError:
-        await wod_result_db.add_wod_result(wod_id, user_id, wod_result_txt, datetime.now())
+        await wod_result_db.add_wod_result(wod_id=wod_id, user_id=user_id, result=wod_result_txt,
+                                           sys_date=datetime.now())
 
         return emojize(":white_check_mark: Ваш результат успешно добавлен!")
 
