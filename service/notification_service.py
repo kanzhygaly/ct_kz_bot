@@ -35,7 +35,7 @@ async def notify_all_subscribers_to_add_result(bot) -> None:
               "Для того чтобы записать результат за СЕГОДНЯ наберите команду /add"
 
         for sub in subscribers:
-            if has_wod_result(sub.user_id, wod_id):
+            if has_wod_result(user_id=sub.user_id, wod_id=wod_id):
                 continue
 
             try:
