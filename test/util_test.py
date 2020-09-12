@@ -42,9 +42,7 @@ def test_find_wod():
     print(row)
 
 
-def test_add_wod():
-    print('test_add_wod')
-
+def test_add_wod() -> list:
     keyboard = []
     row = []
     count = 9
@@ -72,11 +70,13 @@ def test_add_wod():
             keyboard.append(row)
             row = []
 
-    print(keyboard)
+    return keyboard
 
 
 test_find_wod()
-test_add_wod()
+
+print('test_add_wod')
+print(test_add_wod())
 
 print('database_url_parse')
 credentials = database_url_parse('postgres://username:userpassword@hostname:5432/dbname')

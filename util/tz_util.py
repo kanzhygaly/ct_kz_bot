@@ -5,9 +5,10 @@ from aiogram import types
 
 from constants.callback import CB_CHOOSE_DAY
 from constants.date_format import D_M_Y, A_D_B
+from exception import TimezoneRequestError
 
 
-async def get_timezone_id(latitude, longitude):
+async def get_timezone_id(latitude: float, longitude: float) -> str:
     try:
         payload = {'username': 'atareao', 'lng': longitude, 'lat': latitude}
         response = requests.get(url='http://api.geonames.org/timezoneJSON', params=payload)
@@ -31,10 +32,10 @@ async def get_timezone_id(latitude, longitude):
         except Exception as e:
             print('Error requesting timezone identification: %s' % (str(e)))
 
-    return None
+    raise TimezoneRequestError
 
 
-async def get_add_rest_wod_kb():
+async def get_add_rest_wod_kb() -> list:
     keyboard = []
     row = []
     count = 9

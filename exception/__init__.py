@@ -31,3 +31,8 @@ class ValueIsEmptyError(Error):
 class NoWodResultsError(Error):
     """Raised when value is empty"""
     pass
+
+
+class TimezoneRequestError(Error):
+    """Raised when value is empty"""
+    pass

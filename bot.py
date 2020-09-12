@@ -17,7 +17,7 @@ from constants.data_keys import WOD_RESULT_TXT, WOD_RESULT_ID, WOD_ID, REFRESH_W
 from constants.date_format import D_M_Y, sD_B_Y, WEEKDAY, D_B, A_M_D_Y, sD_sB_Y
 from db import user_db, subscriber_db, wod_db, wod_result_db, async_db, location_db
 from exception import UserNotFoundError, LocationNotFoundError, WodResultNotFoundError, WodNotFoundError, \
-    ValueIsEmptyError, NoWodResultsError
+    ValueIsEmptyError, NoWodResultsError, TimezoneRequestError
 from service import wod_result_service
 from service import wod_service
 from service.notification_service import send_wod_to_all_subscribers, notify_all_subscribers_to_add_result
@@ -629,21 +629,21 @@ async def set_location(message: types.Message):
     latitude = message.location.latitude
     longitude = message.location.longitude
 
-    timezone_id = await tz_util.get_timezone_id(latitude, longitude)
-
-    if not timezone_id:
-        return await bot.send_message(chat_id, 'Убедитесь в том что Геолокация включена и у Телеграм '
-                                               'есть права на ее использование и попробуйте снова')
-
-    print(message.from_user.first_name, latitude, longitude, timezone_id, datetime.now(pytz.timezone(timezone_id)))
-
     await add_user_if_not_exist(message)
 
-    await location_db.add_location(user_id=user_id, latitude=latitude, longitude=longitude,
-                                   locale=message.from_user.language_code, timezone=timezone_id)
+    try:
+        timezone_id = await tz_util.get_timezone_id(latitude, longitude)
 
-    await bot.send_message(chat_id, 'Ваш часовой пояс установлен как ' + timezone_id,
-                           reply_markup=types.ReplyKeyboardRemove())
+        print(message.from_user.first_name, latitude, longitude, timezone_id, datetime.now(pytz.timezone(timezone_id)))
+
+        await location_db.add_location(user_id=user_id, latitude=latitude, longitude=longitude,
+                                       locale=message.from_user.language_code, timezone=timezone_id)
+
+        await bot.send_message(chat_id, 'Ваш часовой пояс установлен как ' + timezone_id,
+                               reply_markup=types.ReplyKeyboardRemove())
+    except TimezoneRequestError:
+        msg = 'Убедитесь в том что Геолокация включена и у Телеграм есть права на ее использование и попробуйте снова'
+        await bot.send_message(chat_id, msg)
 
 
 @dp.message_handler(commands=['warmup'])
