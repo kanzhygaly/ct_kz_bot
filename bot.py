@@ -936,8 +936,7 @@ async def wod_dispatch():
     try:
         await wod_service.get_today_wod_id()
     except WodNotFoundError:
-        # send WOD only if it is not in DB
-        print('send_wod_to_all_subscribers')
+        # save WOD in DB and send it to all subscribers
         await send_wod_to_all_subscribers(bot)
 
 
