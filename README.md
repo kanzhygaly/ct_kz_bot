@@ -1,2 +1,4 @@
-# CompTrainKZ Bot [@CompTrainKZBot](https://t.me/CompTrainKZBot)
-**CompTrainKZ Bot** is a Telegram Bot built on Python.
+# CompTrainKZ Bot
+Telegram Bot built on Python.
+
+[@CompTrainKZBot](https://t.me/CompTrainKZBot)
