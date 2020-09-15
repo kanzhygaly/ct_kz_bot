@@ -11,19 +11,18 @@ from aiogram.utils import executor
 from aiogram.utils.emoji import emojize
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from constants.callback import CB_SEARCH_RESULT, CB_CHOOSE_DAY, CB_ADD_RESULT
-from constants.config_vars import API_TOKEN
-from constants.data_keys import WOD_RESULT_TXT, WOD_RESULT_ID, WOD_ID, REFRESH_WOD_ID, VIEW_WOD_ID
-from constants.date_format import D_M_Y, sD_B_Y, WEEKDAY, D_B, A_M_D_Y, sD_sB_Y
-from db import user_db, subscriber_db, wod_db, wod_result_db, async_db, location_db
-from exception import UserNotFoundError, LocationNotFoundError, WodResultNotFoundError, WodNotFoundError, \
+from bot.constants import CB_SEARCH_RESULT, CB_CHOOSE_DAY, CB_ADD_RESULT
+from bot.constants.config_vars import API_TOKEN
+from bot.constants.data_keys import WOD_RESULT_TXT, WOD_RESULT_ID, WOD_ID, REFRESH_WOD_ID, VIEW_WOD_ID
+from bot.constants.date_format import D_M_Y, sD_B_Y, WEEKDAY, D_B, A_M_D_Y, sD_sB_Y
+from bot.db import user_db, wod_db, location_db, async_db, subscriber_db, wod_result_db
+from bot.exception import UserNotFoundError, LocationNotFoundError, WodResultNotFoundError, WodNotFoundError, \
     ValueIsEmptyError, NoWodResultsError, TimezoneRequestError
-from service import wod_result_service
-from service import wod_service
-from service.notification_service import send_wod_to_all_subscribers, notify_all_subscribers_to_add_result
-from service.user_service import add_user_if_not_exist
-from service.wod_result_service import persist_wod_result_and_get_message
-from util import tz_util
+from bot.service import wod_result_service, wod_service
+from bot.service.notification_service import send_wod_to_all_subscribers, notify_all_subscribers_to_add_result
+from bot.service.user_service import add_user_if_not_exist
+from bot.service.wod_result_service import persist_wod_result_and_get_message
+from bot.util import get_add_rest_wod_kb, get_timezone_id
 
 bot = Bot(token=os.environ[API_TOKEN])
 
@@ -192,7 +191,7 @@ async def help_cbq(callback_query: types.CallbackQuery):
     await bot.edit_message_text(text=info_msg + sub, chat_id=chat_id, message_id=callback_query.message.message_id,
                                 parse_mode=ParseMode.MARKDOWN)
 
-    # Destroy all data in storage for current user
+    # Destroy all resource in storage for current user
     state = dp.current_state(chat=chat_id, user=user_id)
     await state.update_data(wod_result_txt=None)
 
@@ -338,7 +337,7 @@ async def update_wod_result(message: types.Message):
     wod = await wod_db.get_wod(wod_id)
     await notify_users_about_new_wod_result(user_id, wod)
 
-    # Finish conversation, destroy all data in storage for current user
+    # Finish conversation, destroy all resource in storage for current user
     await state.reset_state()
     await state.update_data(wod_id=None)
     await state.update_data(wod_result_id=None)
@@ -357,7 +356,7 @@ async def show_wod_results(message: types.Message):
     try:
         msg = await wod_result_service.get_wod_results(user_id=user_id, wod_id=wod_id)
 
-        # Finish conversation, destroy all data in storage for current user
+        # Finish conversation, destroy all resource in storage for current user
         await state.reset_state()
         await state.update_data(wod_id=None)
         await state.update_data(wod_result_id=None)
@@ -425,7 +424,7 @@ async def search_wod_by_text(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
 
-    # Finish conversation, destroy all data in storage for current user
+    # Finish conversation, destroy all resource in storage for current user
     state = dp.current_state(chat=chat_id, user=user_id)
     await state.reset_state()
 
@@ -599,7 +598,7 @@ async def find_and_get_wod(chat_id, user_id, search_date: date):
 
         return f'{result.title}\n\n{result.description}', reply_markup
     except WodNotFoundError:
-        # Finish conversation, destroy all data in storage for current user
+        # Finish conversation, destroy all resource in storage for current user
         await state.reset_state()
 
         return emojize(":squirrel: На указанную дату тренировка не найдена!"), None
@@ -632,7 +631,7 @@ async def set_location(message: types.Message):
     await add_user_if_not_exist(message)
 
     try:
-        timezone_id = await tz_util.get_timezone_id(latitude, longitude)
+        timezone_id = await get_timezone_id(latitude, longitude)
 
         await location_db.add_location(user_id=user_id, latitude=latitude, longitude=longitude,
                                        locale=message.from_user.language_code, timezone=timezone_id)
@@ -701,7 +700,7 @@ async def update_warmup(message: types.Message):
 
     await bot.send_message(chat_id, msg)
 
-    # Finish conversation, destroy all data in storage for current user
+    # Finish conversation, destroy all resource in storage for current user
     await state.reset_state()
     await state.update_data(wod_id=None)
 
@@ -771,7 +770,7 @@ async def sys_add_wod(message: types.Message):
     await state.set_state(ADD_WOD)
 
     # Configure InlineKeyboardMarkup
-    keyboard = await tz_util.get_add_rest_wod_kb()
+    keyboard = await get_add_rest_wod_kb()
     reply_markup = types.InlineKeyboardMarkup(inline_keyboard=keyboard)
 
     msg = 'Выберите день из списка либо введите дату в формате *ДеньМесяцГод* (_Пример: 170518_)'
@@ -834,7 +833,7 @@ async def update_wod(message: types.Message):
 
     await bot.send_message(chat_id, msg)
 
-    # Finish conversation, destroy all data in storage for current user
+    # Finish conversation, destroy all resource in storage for current user
     await state.reset_state()
     await state.update_data(wod_id=None)
 
@@ -911,7 +910,7 @@ async def add_result_by_date(callback_query: types.CallbackQuery):
         data = await state.get_data()
         # KeyError
         wod_result_txt = data[WOD_RESULT_TXT]
-        # Destroy all data in storage for current user
+        # Destroy all resource in storage for current user
         await state.update_data(wod_result_txt=None)
 
         msg = await persist_wod_result_and_get_message(user_id=user_id, wod_id=wod.id, wod_result_txt=wod_result_txt)
@@ -957,7 +956,10 @@ async def shutdown(dispatcher: Dispatcher):
     await dispatcher.storage.wait_closed()
 
 
-if __name__ == '__main__':
+def run():
     scheduler.start()
-
     executor.start_polling(dp, on_startup=startup, on_shutdown=shutdown)
+
+
+if __name__ == '__main__':
+    run()

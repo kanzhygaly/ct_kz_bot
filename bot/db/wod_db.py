@@ -4,8 +4,8 @@ from typing import Iterable
 
 from asyncpg_simpleorm import Column
 
-from db.async_db import Entity
-from exception import WodNotFoundError, ValueIsEmptyError
+from bot.db.async_db import Entity
+from bot.exception import WodNotFoundError, ValueIsEmptyError
 
 
 class WOD(Entity):

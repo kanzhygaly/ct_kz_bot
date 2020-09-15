@@ -3,9 +3,9 @@ import datetime
 import requests
 from aiogram import types
 
-from constants.callback import CB_CHOOSE_DAY
-from constants.date_format import D_M_Y, A_D_B
-from exception import TimezoneRequestError
+from bot.constants import CB_CHOOSE_DAY
+from bot.constants.date_format import D_M_Y, A_D_B
+from bot.exception import TimezoneRequestError
 
 
 async def get_timezone_id(latitude: float, longitude: float) -> str:

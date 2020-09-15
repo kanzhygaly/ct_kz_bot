@@ -3,8 +3,8 @@ from typing import Iterable
 
 from asyncpg_simpleorm import Column, select
 
-from db.async_db import Entity
-from exception import UserNotFoundError
+from bot.db.async_db import Entity
+from bot.exception import UserNotFoundError
 
 
 class User(Entity):

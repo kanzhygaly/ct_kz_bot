@@ -1,6 +1,7 @@
 from datetime import datetime, date
+from typing import Dict
 
-from constants.date_format import M_D_Y
+from bot.constants.date_format import M_D_Y
 
 
 def parse_wod_content(content) -> str:
@@ -44,3 +45,14 @@ def parse_wod_date(wod_string: str) -> date:
     # Remove anything other than digits
     num = ''.join(c for c in wod_string if c.isdigit() or c == '.')
     return datetime.strptime(num, M_D_Y).date()
+
+
+def database_url_parse(url: str) -> Dict[str, str]:
+    url = url.replace('postgres://', '').replace('@', ' ').replace(':', ' ').replace('/', ' ').split()
+
+    database_url = {}
+
+    for part, credential in zip(range(len(url)), ['user', 'password', 'host', 'post', 'database']):
+        database_url[credential] = url[part]
+
+    return database_url

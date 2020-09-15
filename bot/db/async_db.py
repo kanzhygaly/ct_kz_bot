@@ -2,10 +2,10 @@ import os
 
 from asyncpg_simpleorm import PoolManager, AsyncModel
 
-from constants.config_vars import DATABASE_URL
-from util import db_util
+from bot.constants.config_vars import DATABASE_URL
+from bot.util.parser_util import database_url_parse
 
-credentials = db_util.database_url_parse(os.environ[DATABASE_URL])
+credentials = database_url_parse(os.environ[DATABASE_URL])
 
 manager = PoolManager(
     user=credentials['user'],

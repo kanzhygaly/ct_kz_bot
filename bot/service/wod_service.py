@@ -3,11 +3,11 @@ import uuid
 from datetime import datetime, date
 from typing import Iterable
 
-from bsoup_spider import BSoupParser
-from constants.config_vars import WEB_URL
-from db import wod_db
-from exception import WodNotFoundError
-from util.parser_util import parse_wod_date
+from bot.util.bsoup_spider import BSoupParser
+from bot.constants.config_vars import WEB_URL
+from bot.db import wod_db
+from bot.exception import WodNotFoundError
+from bot.util.parser_util import parse_wod_date
 
 
 def the_wod_is_for_today(wod_date: date, today: date) -> bool:
@@ -63,7 +63,7 @@ async def reset_today_wod() -> (bool, str):
         result = await wod_db.get_wod_by_date(today)
         wod_id = result.id
     except WodNotFoundError:
-        return False, "No data found in DB use /sys_dispatch_wod instead"
+        return False, "No resource found in DB use /sys_dispatch_wod instead"
 
     parser = BSoupParser(url=os.environ[WEB_URL])
 

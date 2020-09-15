@@ -1,6 +1,6 @@
 from aiogram import types
 
-from db import user_db
+from bot.db import user_db
 
 
 async def add_user_if_not_exist(message: types.Message) -> None:

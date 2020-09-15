@@ -3,9 +3,9 @@ from datetime import datetime
 import pytz
 from aiogram.utils.emoji import emojize
 
-from constants.date_format import H_M_S_D_B_Y
-from db import user_db, wod_result_db, location_db
-from exception import LocationNotFoundError, WodResultNotFoundError, NoWodResultsError
+from bot.constants.date_format import H_M_S_D_B_Y
+from bot.db import user_db, location_db, wod_result_db
+from bot.exception import LocationNotFoundError, WodResultNotFoundError, NoWodResultsError
 
 
 async def get_wod_results(user_id, wod_id) -> str:

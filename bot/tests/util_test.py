@@ -1,16 +1,16 @@
 import datetime
 
-from constants.date_format import D_M_Y, A_D_B, D_B, H_M_S_D_B_Y, M_D_Y, sD_B_Y, WEEKDAY
-from util.db_util import database_url_parse
+from bot.constants.date_format import D_M_Y, A_D_B, D_B, H_M_S_D_B_Y, M_D_Y, sD_B_Y, WEEKDAY
+from bot.util.parser_util import database_url_parse
 
 now = datetime.datetime.now()
 
-# test substring
+# tests substring
 msg = 'CHOOSE_DAY_120318'
 print(msg[0:10])
 print(msg[11:])
 
-# test timedelta
+# tests timedelta
 wod_day = datetime.datetime.strptime('060618', D_M_Y).date()
 timedelta = now.date() - wod_day
 print(timedelta.days)

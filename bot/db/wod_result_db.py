@@ -4,8 +4,8 @@ from typing import Iterable
 
 from asyncpg_simpleorm import Column, select
 
-from db.async_db import Entity
-from exception import WodResultNotFoundError
+from bot.db.async_db import Entity
+from bot.exception import WodResultNotFoundError
 
 
 class WodResult(Entity):

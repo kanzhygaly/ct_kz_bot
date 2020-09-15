@@ -2,10 +2,10 @@ from aiogram import types
 from aiogram.utils.emoji import emojize
 from aiogram.utils.exceptions import UserDeactivated
 
-from db import subscriber_db
-from exception import WodNotFoundError
-from service.wod_result_service import has_wod_result
-from service.wod_service import get_today_wod, get_today_wod_id
+from bot.db import subscriber_db
+from bot.exception import WodNotFoundError
+from bot.service.wod_result_service import has_wod_result
+from bot.service.wod_service import get_today_wod, get_today_wod_id
 
 
 async def send_wod_to_all_subscribers(bot) -> None:

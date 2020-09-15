@@ -1,7 +1,7 @@
 from asyncpg_simpleorm import Column
 
-from db.async_db import Entity
-from exception import LocationNotFoundError
+from bot.db.async_db import Entity
+from bot.exception import LocationNotFoundError
 
 
 class Location(Entity):

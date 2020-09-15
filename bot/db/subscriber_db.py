@@ -3,7 +3,7 @@ from typing import Iterable
 
 from asyncpg_simpleorm import Column
 
-from db.async_db import Entity
+from bot.db.async_db import Entity
 
 
 class Subscriber(Entity):
