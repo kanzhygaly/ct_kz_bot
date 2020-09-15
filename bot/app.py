@@ -239,21 +239,11 @@ async def send_wod(message: types.Message):
     msg, wod_id = await wod_service.get_today_wod()
 
     if wod_id:
-        state = dp.current_state(chat=chat_id, user=user_id)
-        await state.set_state(WOD)
-        # for SHOW_RESULTS
-        await state.update_data(wod_id=wod_id)
-
-        try:
-            wod_result = await wod_result_db.get_user_wod_result(wod_id=wod_id, user_id=user_id)
-            res_button = EDIT_RESULT
-            await state.update_data(wod_result_id=wod_result.id)
-        except WodResultNotFoundError:
-            res_button = ADD_RESULT
+        result_button = await get_result_button(chat_id=chat_id, user_id=user_id, wod_id=wod_id)
 
         # Configure ReplyKeyboardMarkup
         reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
-        reply_markup.add(res_button, SHOW_RESULTS)
+        reply_markup.add(result_button, SHOW_RESULTS)
         reply_markup.add(CANCEL)
 
         await bot.send_message(chat_id, msg, reply_markup=reply_markup)
@@ -566,38 +556,43 @@ async def find_wod_by_text(message: types.Message):
         await bot.send_message(chat_id, msg)
 
 
-async def find_and_get_wod(chat_id, user_id, search_date: date):
+async def get_result_button(chat_id, user_id, wod_id) -> str:
     state = dp.current_state(chat=chat_id, user=user_id)
+    await state.set_state(WOD)
+    # for SHOW_RESULTS
+    await state.update_data(wod_id=wod_id)
 
     try:
+        wod_result = await wod_result_db.get_user_wod_result(wod_id=wod_id, user_id=user_id)
+        button = EDIT_RESULT
+        await state.update_data(wod_result_id=wod_result.id)
+    except WodResultNotFoundError:
+        button = ADD_RESULT
+
+    return button
+
+
+async def find_and_get_wod(chat_id, user_id, search_date: date):
+    try:
         result = await wod_db.get_wod_by_date(search_date)
-        wod_id = result.id
 
-        await state.set_state(WOD)
-        # for SHOW_RESULTS
-        await state.update_data(wod_id=wod_id)
-
-        try:
-            wod_result = await wod_result_db.get_user_wod_result(wod_id=wod_id, user_id=user_id)
-            res_button = EDIT_RESULT
-            await state.update_data(wod_result_id=wod_result.id)
-        except WodResultNotFoundError:
-            res_button = ADD_RESULT
+        result_button = await get_result_button(chat_id=chat_id, user_id=user_id, wod_id=result.id)
 
         # Configure ReplyKeyboardMarkup
         reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
 
         time_between = datetime.now().date() - search_date
-        if time_between.days > 30 and res_button == EDIT_RESULT:
+        if time_between.days > 30 and result_button == EDIT_RESULT:
             # if wod result older than month, then disable edit
             reply_markup.add(SHOW_RESULTS)
         else:
-            reply_markup.add(res_button, SHOW_RESULTS)
+            reply_markup.add(result_button, SHOW_RESULTS)
 
         reply_markup.add(CANCEL)
 
         return f'{result.title}\n\n{result.description}', reply_markup
     except WodNotFoundError:
+        state = dp.current_state(chat=chat_id, user=user_id)
         # Finish conversation, destroy all resource in storage for current user
         await state.reset_state()
 
