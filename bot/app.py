@@ -926,7 +926,6 @@ async def add_result_by_date(callback_query: types.CallbackQuery):
 @scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=0, minute=10, id='wod_dispatch_1')
 @scheduler.scheduled_job('cron', day_of_week='mon,tue,wed,fri,sat', hour=8, minute=00, id='wod_dispatch_2')
 async def wod_dispatch():
-    print('wod_dispatch')
     try:
         await wod_service.get_today_wod_id()
     except WodNotFoundError:

@@ -1,5 +1,7 @@
 import datetime
 
+from aiogram.utils.emoji import emojize
+
 from bot.constants.date_format import D_M_Y, A_D_B, D_B, H_M_S_D_B_Y, M_D_Y, sD_B_Y, WEEKDAY
 from bot.util.parser_util import database_url_parse
 
@@ -75,7 +77,7 @@ def test_add_wod() -> list:
 
 test_find_wod()
 
-print('test_add_wod')
+print(emojize('test_add_wod :alien:'))
 print(test_add_wod())
 
 print('database_url_parse')
