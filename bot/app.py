@@ -179,7 +179,7 @@ async def start(message: types.Message):
     await bot.send_message(message.chat.id, info_msg + sub)
 
 
-@dp.callback_query_handler(func=lambda callback_query: callback_query.data == HELP)
+@dp.callback_query_handler(lambda callback_query: callback_query.data == HELP)
 async def help_cbq(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     chat_id = callback_query.message.chat.id
