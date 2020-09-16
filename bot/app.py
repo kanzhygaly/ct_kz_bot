@@ -91,7 +91,7 @@ async def notify_users_about_new_wod_result(user_id, wod) -> None:
             await bot.send_message(wr.user_id, msg, reply_markup=reply_markup)
 
 
-@dp.message_handler(commands=['sys_all_users'])
+@dp.message_handler(commands='sys_all_users')
 async def sys_all_users(message: types.Message):
     if not await user_db.is_admin(message.from_user.id):
         print(message.from_user.id)
@@ -109,7 +109,7 @@ async def sys_all_users(message: types.Message):
     await bot.send_message(message.chat.id, msg, parse_mode=ParseMode.MARKDOWN)
 
 
-@dp.message_handler(commands=['sys_all_subs'])
+@dp.message_handler(commands='sys_all_subs')
 async def sys_all_subs(message: types.Message):
     if not await user_db.is_admin(message.from_user.id):
         # send info
@@ -133,7 +133,7 @@ async def sys_all_subs(message: types.Message):
     await bot.send_message(message.chat.id, msg, parse_mode=ParseMode.MARKDOWN)
 
 
-@dp.message_handler(commands=['sys_reset_wod'])
+@dp.message_handler(commands='sys_reset_wod')
 async def sys_reset_wod(message: types.Message):
     if not await user_db.is_admin(message.from_user.id):
         # send info
@@ -154,7 +154,7 @@ async def sys_reset_wod(message: types.Message):
     await bot.send_message(message.chat.id, msg)
 
 
-@dp.message_handler(commands=['sys_dispatch_wod'])
+@dp.message_handler(commands='sys_dispatch_wod')
 async def sys_dispatch_wod(message: types.Message):
     if not await user_db.is_admin(message.from_user.id):
         # send info
@@ -167,7 +167,7 @@ async def sys_dispatch_wod(message: types.Message):
     await send_wod_to_all_subscribers(bot)
 
 
-@dp.message_handler(commands=['start'])
+@dp.message_handler(commands='start')
 async def start(message: types.Message):
     user_id = message.from_user.id
 
@@ -197,7 +197,7 @@ async def help_cbq(callback_query: types.CallbackQuery):
     await state.update_data(wod_result_txt=None)
 
 
-@dp.message_handler(commands=[HELP])
+@dp.message_handler(commands=HELP)
 async def help_msg(message: types.Message):
     sub = "/subscribe - подписаться на ежедневную рассылку WOD"
     if await subscriber_db.is_subscriber(message.from_user.id):
@@ -206,7 +206,7 @@ async def help_msg(message: types.Message):
     await bot.send_message(message.chat.id, info_msg + sub)
 
 
-@dp.message_handler(commands=['subscribe'])
+@dp.message_handler(commands='subscribe')
 async def subscribe(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -221,7 +221,7 @@ async def subscribe(message: types.Message):
     await bot.send_message(chat_id, emojize("Вы подписались на ежедневную рассылку WOD :+1:"))
 
 
-@dp.message_handler(commands=['unsubscribe'])
+@dp.message_handler(commands='unsubscribe')
 async def unsubscribe(message: types.Message):
     if not (await subscriber_db.is_subscriber(message.from_user.id)):
         return await bot.send_message(message.chat.id, emojize("Вы уже отписаны от ежедневной рассылки WOD :alien:"))
@@ -231,7 +231,7 @@ async def unsubscribe(message: types.Message):
     await bot.send_message(message.chat.id, emojize("Вы отписались от ежедневной рассылки WOD :-1:"))
 
 
-@dp.message_handler(commands=['wod'])
+@dp.message_handler(commands='wod')
 @dp.message_handler(lambda message: message.text.lower() in wod_requests)
 async def send_wod(message: types.Message):
     user_id = message.from_user.id
@@ -398,7 +398,7 @@ async def refresh_wod_results_callback(callback_query: types.CallbackQuery):
                                     parse_mode=ParseMode.MARKDOWN)
 
 
-@dp.message_handler(commands=['search'])
+@dp.message_handler(commands='search')
 async def search(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -482,7 +482,7 @@ async def view_wod_results_callback(callback_query: types.CallbackQuery):
     await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=msg_id, parse_mode=ParseMode.MARKDOWN)
 
 
-@dp.message_handler(commands=['find'])
+@dp.message_handler(commands='find')
 async def find(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -600,7 +600,7 @@ async def find_and_get_wod(chat_id, user_id, search_date: date):
         return emojize(":squirrel: На указанную дату тренировка не найдена!"), None
 
 
-@dp.message_handler(commands=['timezone'])
+@dp.message_handler(commands='timezone')
 async def set_timezone(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -639,7 +639,7 @@ async def set_location(message: types.Message):
         await bot.send_message(chat_id, msg)
 
 
-@dp.message_handler(commands=['warmup'])
+@dp.message_handler(commands='warmup')
 @dp.message_handler(lambda message: message.text.lower() in warmup_requests)
 async def view_warmup(message: types.Message):
     chat_id = message.chat.id
@@ -653,7 +653,7 @@ async def view_warmup(message: types.Message):
     await bot.send_message(chat_id, result, parse_mode=ParseMode.MARKDOWN)
 
 
-@dp.message_handler(commands=['sys_add_warmup'])
+@dp.message_handler(commands='sys_add_warmup')
 async def add_warmup_request(message: types.Message):
     if not await user_db.is_admin(message.from_user.id):
         # send info
@@ -701,7 +701,7 @@ async def update_warmup(message: types.Message):
     await state.update_data(wod_id=None)
 
 
-@dp.message_handler(commands=['results'])
+@dp.message_handler(commands='results')
 @dp.message_handler(lambda message: message.text.lower() in result_requests)
 async def view_results(message: types.Message):
     user_id = message.from_user.id
@@ -720,7 +720,7 @@ async def view_results(message: types.Message):
     await bot.send_message(chat_id, msg, parse_mode=ParseMode.MARKDOWN)
 
 
-@dp.message_handler(commands=['add'])
+@dp.message_handler(commands='add')
 @dp.message_handler(lambda message: message.text.lower() in add_requests)
 async def add_result(message: types.Message):
     user_id = message.from_user.id
@@ -749,7 +749,7 @@ async def add_result(message: types.Message):
         await bot.send_message(chat_id, emojize("На сегодня тренировки пока что нет :disappointed:"))
 
 
-@dp.message_handler(commands=['sys_add_wod'])
+@dp.message_handler(commands='sys_add_wod')
 async def sys_add_wod(message: types.Message):
     if not await user_db.is_admin(message.from_user.id):
         # send info
