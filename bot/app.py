@@ -231,7 +231,7 @@ async def unsubscribe(message: types.Message):
 
 
 @dp.message_handler(commands=['wod'])
-@dp.message_handler(func=lambda message: message.text.lower() in wod_requests)
+@dp.message_handler(lambda message: message.text.lower() in wod_requests)
 async def send_wod(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -251,8 +251,8 @@ async def send_wod(message: types.Message):
         await bot.send_message(chat_id, msg)
 
 
-@dp.message_handler(state='*', func=lambda message: message.text.lower() == CANCEL.lower())
-@dp.message_handler(state=WOD, func=lambda message: message.text not in [ADD_RESULT, EDIT_RESULT, SHOW_RESULTS])
+@dp.message_handler(state='*', lambda message: message.text.lower() == CANCEL.lower())
+@dp.message_handler(state=WOD, lambda message: message.text not in [ADD_RESULT, EDIT_RESULT, SHOW_RESULTS])
 async def hide_keyboard(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -268,7 +268,7 @@ async def hide_keyboard(message: types.Message):
                            reply_markup=types.ReplyKeyboardRemove())
 
 
-@dp.message_handler(state=WOD, func=lambda message: message.text == ADD_RESULT)
+@dp.message_handler(state=WOD, lambda message: message.text == ADD_RESULT)
 async def request_result_for_add(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -282,7 +282,7 @@ async def request_result_for_add(message: types.Message):
     await bot.send_message(chat_id, 'Пожалуйста введите ваш результат:', reply_markup=reply_markup)
 
 
-@dp.message_handler(state=WOD, func=lambda message: message.text == EDIT_RESULT)
+@dp.message_handler(state=WOD, lambda message: message.text == EDIT_RESULT)
 async def request_result_for_edit(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -333,7 +333,7 @@ async def update_wod_result(message: types.Message):
     await state.update_data(wod_result_id=None)
 
 
-@dp.message_handler(state=WOD, func=lambda message: message.text == SHOW_RESULTS)
+@dp.message_handler(state=WOD, lambda message: message.text == SHOW_RESULTS)
 async def show_wod_results(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -367,7 +367,7 @@ async def show_wod_results(message: types.Message):
                                                        "\n/add"))
 
 
-@dp.callback_query_handler(func=lambda callback_query: callback_query.data == REFRESH)
+@dp.callback_query_handler(lambda callback_query: callback_query.data == REFRESH)
 async def refresh_wod_results_callback(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     chat_id = callback_query.message.chat.id
@@ -440,7 +440,7 @@ async def search_wod_by_text(message: types.Message):
         await bot.send_message(chat_id, 'По вашему тексту ничего не найдено')
 
 
-@dp.callback_query_handler(func=lambda callback_query: callback_query.data[0:10] == CB_SEARCH_RESULT)
+@dp.callback_query_handler(lambda callback_query: callback_query.data[0:10] == CB_SEARCH_RESULT)
 async def show_search_result(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     chat_id = callback_query.message.chat.id
@@ -456,7 +456,7 @@ async def show_search_result(callback_query: types.CallbackQuery):
     await bot.send_message(chat_id, msg, reply_markup=reply_markup)
 
 
-@dp.callback_query_handler(func=lambda callback_query: callback_query.data == VIEW_RESULT)
+@dp.callback_query_handler(lambda callback_query: callback_query.data == VIEW_RESULT)
 async def view_wod_results_callback(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     chat_id = callback_query.message.chat.id
@@ -514,7 +514,7 @@ async def find(message: types.Message):
     await bot.send_message(chat_id, msg, parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
 
 
-@dp.callback_query_handler(state=FIND_WOD, func=lambda callback_query: callback_query.data[0:10] == CB_CHOOSE_DAY)
+@dp.callback_query_handler(state=FIND_WOD, lambda callback_query: callback_query.data[0:10] == CB_CHOOSE_DAY)
 async def find_wod_by_btn(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     chat_id = callback_query.message.chat.id
@@ -532,7 +532,7 @@ async def find_wod_by_btn(callback_query: types.CallbackQuery):
                                     parse_mode=ParseMode.MARKDOWN)
 
 
-@dp.callback_query_handler(func=lambda callback_query: callback_query.data == 'ignore')
+@dp.callback_query_handler(lambda callback_query: callback_query.data == 'ignore')
 async def ignore(callback_query):
     await bot.answer_callback_query(callback_query.id, text="")
 
@@ -639,7 +639,7 @@ async def set_location(message: types.Message):
 
 
 @dp.message_handler(commands=['warmup'])
-@dp.message_handler(func=lambda message: message.text.lower() in warmup_requests)
+@dp.message_handler(lambda message: message.text.lower() in warmup_requests)
 async def view_warmup(message: types.Message):
     chat_id = message.chat.id
     today = datetime.now().date()
@@ -701,7 +701,7 @@ async def update_warmup(message: types.Message):
 
 
 @dp.message_handler(commands=['results'])
-@dp.message_handler(func=lambda message: message.text.lower() in result_requests)
+@dp.message_handler(lambda message: message.text.lower() in result_requests)
 async def view_results(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -720,7 +720,7 @@ async def view_results(message: types.Message):
 
 
 @dp.message_handler(commands=['add'])
-@dp.message_handler(func=lambda message: message.text.lower() in add_requests)
+@dp.message_handler(lambda message: message.text.lower() in add_requests)
 async def add_result(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -772,7 +772,7 @@ async def sys_add_wod(message: types.Message):
     await bot.send_message(chat_id, msg, parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
 
 
-@dp.callback_query_handler(state=ADD_WOD, func=lambda callback_query: callback_query.data[0:10] == CB_CHOOSE_DAY)
+@dp.callback_query_handler(state=ADD_WOD, lambda callback_query: callback_query.data[0:10] == CB_CHOOSE_DAY)
 async def add_wod_by_btn(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     chat_id = callback_query.message.chat.id
@@ -889,7 +889,7 @@ async def echo(message: types.Message):
         await bot.send_message(message.chat.id, msg, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
 
 
-@dp.callback_query_handler(func=lambda callback_query: callback_query.data[0:10] == CB_ADD_RESULT)
+@dp.callback_query_handler(lambda callback_query: callback_query.data[0:10] == CB_ADD_RESULT)
 async def add_result_by_date(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     chat_id = callback_query.message.chat.id
