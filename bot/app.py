@@ -12,7 +12,10 @@ from aiogram.utils import executor
 from aiogram.utils.emoji import emojize
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from bot.constants import CB_SEARCH_RESULT, CB_CHOOSE_DAY, CB_ADD_RESULT
+from bot.constants import CB_SEARCH_RESULT, CB_CHOOSE_DAY, CB_ADD_RESULT, CMD_SHOW_ALL_USERS, CMD_SHOW_ALL_SUBS, \
+    CMD_RESET_WOD, CMD_DISPATCH_WOD, CMD_START, CMD_HELP, CMD_SUBSCRIBE, CMD_UNSUBSCRIBE, CMD_VIEW_WOD, CMD_SEARCH, \
+    CMD_FIND_WOD, CB_IGNORE, CMD_SET_TIMEZONE, CMD_VIEW_WARM_UP, CMD_ADD_WARM_UP, CMD_VIEW_RESULTS, CMD_ADD_RESULT, \
+    CMD_ADD_WOD
 from bot.constants.config_vars import API_TOKEN
 from bot.constants.data_keys import WOD_RESULT_TXT, WOD_RESULT_ID, WOD_ID, REFRESH_WOD_ID, VIEW_WOD_ID
 from bot.constants.date_format import D_M_Y, sD_B_Y, WEEKDAY, D_B, A_M_D_Y, sD_sB_Y
@@ -47,7 +50,8 @@ info_msg = 'CompTrainKZ BOT:\n\n' \
            '/results - результаты за сегодня\n\n' \
            '/add - записать результат тренировки за сегодня\n\n' \
            '/find - найти тренировку по дате\n\n' \
-           '/timezone - установить часовой пояс\n\n'
+           '/timezone - установить часовой пояс\n\n' \
+           '/search - поиск результатов по тексту комплекса\n\n'
 
 # States
 WOD = 'wod'
@@ -65,8 +69,6 @@ SHOW_RESULTS = 'Результаты'
 CANCEL = 'Отмена'
 REFRESH = 'Обновить'
 VIEW_RESULT = 'Посмотреть результаты'
-# Commands
-HELP = 'help'
 
 
 async def notify_users_about_new_wod_result(user_id, wod) -> None:
@@ -91,7 +93,7 @@ async def notify_users_about_new_wod_result(user_id, wod) -> None:
             await bot.send_message(wr.user_id, msg, reply_markup=reply_markup)
 
 
-@dp.message_handler(commands='sys_all_users')
+@dp.message_handler(commands=CMD_SHOW_ALL_USERS)
 async def sys_all_users(message: types.Message):
     if not await user_db.is_admin(message.from_user.id):
         print(message.from_user.id)
@@ -109,7 +111,7 @@ async def sys_all_users(message: types.Message):
     await bot.send_message(message.chat.id, msg, parse_mode=ParseMode.MARKDOWN)
 
 
-@dp.message_handler(commands='sys_all_subs')
+@dp.message_handler(commands=CMD_SHOW_ALL_SUBS)
 async def sys_all_subs(message: types.Message):
     if not await user_db.is_admin(message.from_user.id):
         # send info
@@ -133,7 +135,7 @@ async def sys_all_subs(message: types.Message):
     await bot.send_message(message.chat.id, msg, parse_mode=ParseMode.MARKDOWN)
 
 
-@dp.message_handler(commands='sys_reset_wod')
+@dp.message_handler(commands=CMD_RESET_WOD)
 async def sys_reset_wod(message: types.Message):
     if not await user_db.is_admin(message.from_user.id):
         # send info
@@ -154,7 +156,7 @@ async def sys_reset_wod(message: types.Message):
     await bot.send_message(message.chat.id, msg)
 
 
-@dp.message_handler(commands='sys_dispatch_wod')
+@dp.message_handler(commands=CMD_DISPATCH_WOD)
 async def sys_dispatch_wod(message: types.Message):
     if not await user_db.is_admin(message.from_user.id):
         # send info
@@ -167,7 +169,7 @@ async def sys_dispatch_wod(message: types.Message):
     await send_wod_to_all_subscribers(bot)
 
 
-@dp.message_handler(commands='start')
+@dp.message_handler(commands=CMD_START)
 async def start(message: types.Message):
     user_id = message.from_user.id
 
@@ -180,7 +182,7 @@ async def start(message: types.Message):
     await bot.send_message(message.chat.id, info_msg + sub)
 
 
-@dp.callback_query_handler(lambda callback_query: callback_query.data == HELP)
+@dp.callback_query_handler(lambda callback_query: callback_query.data == CMD_HELP)
 async def help_cbq(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     chat_id = callback_query.message.chat.id
@@ -197,7 +199,7 @@ async def help_cbq(callback_query: types.CallbackQuery):
     await state.update_data(wod_result_txt=None)
 
 
-@dp.message_handler(commands=HELP)
+@dp.message_handler(commands=CMD_HELP)
 async def help_msg(message: types.Message):
     sub = "/subscribe - подписаться на ежедневную рассылку WOD"
     if await subscriber_db.is_subscriber(message.from_user.id):
@@ -206,7 +208,7 @@ async def help_msg(message: types.Message):
     await bot.send_message(message.chat.id, info_msg + sub)
 
 
-@dp.message_handler(commands='subscribe')
+@dp.message_handler(commands=CMD_SUBSCRIBE)
 async def subscribe(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -221,7 +223,7 @@ async def subscribe(message: types.Message):
     await bot.send_message(chat_id, emojize("Вы подписались на ежедневную рассылку WOD :+1:"))
 
 
-@dp.message_handler(commands='unsubscribe')
+@dp.message_handler(commands=CMD_UNSUBSCRIBE)
 async def unsubscribe(message: types.Message):
     if not (await subscriber_db.is_subscriber(message.from_user.id)):
         return await bot.send_message(message.chat.id, emojize("Вы уже отписаны от ежедневной рассылки WOD :alien:"))
@@ -231,7 +233,7 @@ async def unsubscribe(message: types.Message):
     await bot.send_message(message.chat.id, emojize("Вы отписались от ежедневной рассылки WOD :-1:"))
 
 
-@dp.message_handler(commands='wod')
+@dp.message_handler(commands=CMD_VIEW_WOD)
 @dp.message_handler(lambda message: message.text.lower() in wod_requests)
 async def send_wod(message: types.Message):
     user_id = message.from_user.id
@@ -269,7 +271,7 @@ async def hide_keyboard(message: types.Message):
                            reply_markup=types.ReplyKeyboardRemove())
 
 
-@dp.message_handler(lambda message: message.text == ADD_RESULT, state=WOD)
+@dp.message_handler(Text(equals=ADD_RESULT), state=WOD)
 async def request_result_for_add(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -283,7 +285,7 @@ async def request_result_for_add(message: types.Message):
     await bot.send_message(chat_id, 'Пожалуйста введите ваш результат:', reply_markup=reply_markup)
 
 
-@dp.message_handler(lambda message: message.text == EDIT_RESULT, state=WOD)
+@dp.message_handler(Text(equals=EDIT_RESULT), state=WOD)
 async def request_result_for_edit(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -334,7 +336,7 @@ async def update_wod_result(message: types.Message):
     await state.update_data(wod_result_id=None)
 
 
-@dp.message_handler(lambda message: message.text == SHOW_RESULTS, state=WOD)
+@dp.message_handler(Text(equals=SHOW_RESULTS), state=WOD)
 async def show_wod_results(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -398,7 +400,7 @@ async def refresh_wod_results_callback(callback_query: types.CallbackQuery):
                                     parse_mode=ParseMode.MARKDOWN)
 
 
-@dp.message_handler(commands='search')
+@dp.message_handler(commands=CMD_SEARCH)
 async def search(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -482,7 +484,7 @@ async def view_wod_results_callback(callback_query: types.CallbackQuery):
     await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=msg_id, parse_mode=ParseMode.MARKDOWN)
 
 
-@dp.message_handler(commands='find')
+@dp.message_handler(commands=CMD_FIND_WOD)
 async def find(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -533,7 +535,7 @@ async def find_wod_by_btn(callback_query: types.CallbackQuery):
                                     parse_mode=ParseMode.MARKDOWN)
 
 
-@dp.callback_query_handler(lambda callback_query: callback_query.data == 'ignore')
+@dp.callback_query_handler(lambda callback_query: callback_query.data == CB_IGNORE)
 async def ignore(callback_query):
     await bot.answer_callback_query(callback_query.id, text="")
 
@@ -600,7 +602,7 @@ async def find_and_get_wod(chat_id, user_id, search_date: date):
         return emojize(":squirrel: На указанную дату тренировка не найдена!"), None
 
 
-@dp.message_handler(commands='timezone')
+@dp.message_handler(commands=CMD_SET_TIMEZONE)
 async def set_timezone(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -639,9 +641,9 @@ async def set_location(message: types.Message):
         await bot.send_message(chat_id, msg)
 
 
-@dp.message_handler(commands='warmup')
+@dp.message_handler(commands=CMD_VIEW_WARM_UP)
 @dp.message_handler(lambda message: message.text.lower() in warmup_requests)
-async def view_warmup(message: types.Message):
+async def view_warm_up(message: types.Message):
     chat_id = message.chat.id
     today = datetime.now().date()
 
@@ -653,8 +655,8 @@ async def view_warmup(message: types.Message):
     await bot.send_message(chat_id, result, parse_mode=ParseMode.MARKDOWN)
 
 
-@dp.message_handler(commands='sys_add_warmup')
-async def add_warmup_request(message: types.Message):
+@dp.message_handler(commands=CMD_ADD_WARM_UP)
+async def add_warm_up_request(message: types.Message):
     if not await user_db.is_admin(message.from_user.id):
         # send info
         sub = "/subscribe - подписаться на ежедневную рассылку WOD"
@@ -680,7 +682,7 @@ async def add_warmup_request(message: types.Message):
 
 
 @dp.message_handler(state=WARM_UP)
-async def update_warmup(message: types.Message):
+async def update_warm_up(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
 
@@ -701,7 +703,7 @@ async def update_warmup(message: types.Message):
     await state.update_data(wod_id=None)
 
 
-@dp.message_handler(commands='results')
+@dp.message_handler(commands=CMD_VIEW_RESULTS)
 @dp.message_handler(lambda message: message.text.lower() in result_requests)
 async def view_results(message: types.Message):
     user_id = message.from_user.id
@@ -720,7 +722,7 @@ async def view_results(message: types.Message):
     await bot.send_message(chat_id, msg, parse_mode=ParseMode.MARKDOWN)
 
 
-@dp.message_handler(commands='add')
+@dp.message_handler(commands=CMD_ADD_RESULT)
 @dp.message_handler(lambda message: message.text.lower() in add_requests)
 async def add_result(message: types.Message):
     user_id = message.from_user.id
@@ -749,7 +751,7 @@ async def add_result(message: types.Message):
         await bot.send_message(chat_id, emojize("На сегодня тренировки пока что нет :disappointed:"))
 
 
-@dp.message_handler(commands='sys_add_wod')
+@dp.message_handler(commands=CMD_ADD_WOD)
 async def sys_add_wod(message: types.Message):
     if not await user_db.is_admin(message.from_user.id):
         # send info
@@ -882,7 +884,7 @@ async def echo(message: types.Message):
                 types.InlineKeyboardButton("Да", callback_data=CB_ADD_RESULT + '_' + now.strftime(D_M_Y))
             )
 
-        reply_markup.add(types.InlineKeyboardButton("Отмена!", callback_data=HELP))
+        reply_markup.add(types.InlineKeyboardButton("Отмена!", callback_data=CMD_HELP))
 
         state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
         await state.update_data(wod_result_txt=message.text)
