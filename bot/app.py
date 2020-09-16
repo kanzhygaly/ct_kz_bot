@@ -6,6 +6,7 @@ import pytz
 from aiogram import Bot, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import Dispatcher
+from aiogram.dispatcher.filters import Text
 from aiogram.types import ParseMode
 from aiogram.utils import executor
 from aiogram.utils.emoji import emojize
@@ -251,8 +252,8 @@ async def send_wod(message: types.Message):
         await bot.send_message(chat_id, msg)
 
 
-@dp.message_handler(state='*', lambda message: message.text.lower() == CANCEL.lower())
-@dp.message_handler(state=WOD, lambda message: message.text not in [ADD_RESULT, EDIT_RESULT, SHOW_RESULTS])
+@dp.message_handler(Text(equals=CANCEL, ignore_case=True), state='*')
+@dp.message_handler(lambda message: message.text not in [ADD_RESULT, EDIT_RESULT, SHOW_RESULTS], state=WOD)
 async def hide_keyboard(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -268,7 +269,7 @@ async def hide_keyboard(message: types.Message):
                            reply_markup=types.ReplyKeyboardRemove())
 
 
-@dp.message_handler(state=WOD, lambda message: message.text == ADD_RESULT)
+@dp.message_handler(lambda message: message.text == ADD_RESULT, state=WOD)
 async def request_result_for_add(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -282,7 +283,7 @@ async def request_result_for_add(message: types.Message):
     await bot.send_message(chat_id, 'Пожалуйста введите ваш результат:', reply_markup=reply_markup)
 
 
-@dp.message_handler(state=WOD, lambda message: message.text == EDIT_RESULT)
+@dp.message_handler(lambda message: message.text == EDIT_RESULT, state=WOD)
 async def request_result_for_edit(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -333,7 +334,7 @@ async def update_wod_result(message: types.Message):
     await state.update_data(wod_result_id=None)
 
 
-@dp.message_handler(state=WOD, lambda message: message.text == SHOW_RESULTS)
+@dp.message_handler(lambda message: message.text == SHOW_RESULTS, state=WOD)
 async def show_wod_results(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -514,7 +515,7 @@ async def find(message: types.Message):
     await bot.send_message(chat_id, msg, parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
 
 
-@dp.callback_query_handler(state=FIND_WOD, lambda callback_query: callback_query.data[0:10] == CB_CHOOSE_DAY)
+@dp.callback_query_handler(lambda callback_query: callback_query.data[0:10] == CB_CHOOSE_DAY, state=FIND_WOD)
 async def find_wod_by_btn(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     chat_id = callback_query.message.chat.id
@@ -616,7 +617,7 @@ async def set_timezone(message: types.Message):
                                             "чтобы установить правильный часовой пояс"), reply_markup=reply_markup)
 
 
-@dp.message_handler(state=SET_TIMEZONE, content_types=types.ContentType.LOCATION)
+@dp.message_handler(content_types=types.ContentType.LOCATION, state=SET_TIMEZONE)
 async def set_location(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -772,7 +773,7 @@ async def sys_add_wod(message: types.Message):
     await bot.send_message(chat_id, msg, parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
 
 
-@dp.callback_query_handler(state=ADD_WOD, lambda callback_query: callback_query.data[0:10] == CB_CHOOSE_DAY)
+@dp.callback_query_handler(lambda callback_query: callback_query.data[0:10] == CB_CHOOSE_DAY, state=ADD_WOD)
 async def add_wod_by_btn(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     chat_id = callback_query.message.chat.id
