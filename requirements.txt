@@ -12,9 +12,9 @@ emoji==0.6.0
 idna==2.7
 idna-ssl==1.0.1
 multidict==4.2.0
-pytz==2018.4
+pytz==2020.1
 requests==2.24.0
 six==1.11.0
-tzlocal==1.5.1
+tzlocal==2.1
 urllib3==1.25.10
 yarl==1.1.1
