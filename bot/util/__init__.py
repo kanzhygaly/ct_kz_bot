@@ -6,7 +6,7 @@ from aiogram import types
 
 from bot.constants import CB_CHOOSE_DAY, CB_IGNORE, CB_SEARCH_RESULT
 from bot.constants.date_format import D_M_Y, A_D_B, D_B, WEEKDAY, sD_sB_Y
-from bot.db.wod_db import WOD
+from bot.db import wod_db
 from bot.exception import TimezoneRequestError
 
 
@@ -92,7 +92,7 @@ async def get_find_wod_kb() -> list:
     return keyboard
 
 
-async def get_search_wod_kb(wod_list: Iterable[WOD]) -> list:
+async def get_search_wod_kb(wod_list: Iterable[wod_db.WOD]) -> list:
     keyboard = []
     row = []
 
