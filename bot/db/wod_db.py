@@ -18,7 +18,7 @@ class WOD(Entity):
     warmup = Column()
 
 
-async def get_wods(wod_day: date) -> Iterable[WOD]:
+async def get_wod_list(wod_day: date) -> Iterable[WOD]:
     try:
         return await WOD.get(records=False, wod_day=wod_day)
     except TypeError:

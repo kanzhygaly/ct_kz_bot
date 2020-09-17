@@ -18,7 +18,7 @@ from bot.constants import CB_SEARCH_RESULT, CB_CHOOSE_DAY, CB_ADD_RESULT, CMD_SH
     CMD_ADD_WOD
 from bot.constants.config_vars import API_TOKEN
 from bot.constants.data_keys import WOD_RESULT_TXT, WOD_RESULT_ID, WOD_ID, REFRESH_WOD_ID, VIEW_WOD_ID
-from bot.constants.date_format import D_M_Y, sD_B_Y, WEEKDAY, D_B, A_M_D_Y, sD_sB_Y
+from bot.constants.date_format import D_M_Y, sD_B_Y, A_M_D_Y
 from bot.db import user_db, wod_db, location_db, async_db, subscriber_db, wod_result_db
 from bot.exception import UserNotFoundError, LocationNotFoundError, WodResultNotFoundError, WodNotFoundError, \
     ValueIsEmptyError, NoWodResultsError, TimezoneRequestError
@@ -27,7 +27,7 @@ from bot.service.info_service import reply_with_info_msg, get_info_msg
 from bot.service.notification_service import send_wod_to_all_subscribers, notify_all_subscribers_to_add_result
 from bot.service.user_service import add_user_if_not_exist
 from bot.service.wod_result_service import persist_wod_result_and_get_message
-from bot.util import get_add_wod_kb, get_timezone_id
+from bot.util import get_add_wod_kb, get_timezone_id, get_find_wod_kb, get_search_wod_kb
 
 bot = Bot(token=os.environ[API_TOKEN])
 
@@ -383,22 +383,10 @@ async def search_wod_by_text(message: types.Message):
     state = dp.current_state(chat=chat_id, user=user_id)
     await state.reset_state()
 
-    result = await wod_service.search_wod(message.text)
-    if result:
-        # Configure InlineKeyboardMarkup
-        reply_markup = types.InlineKeyboardMarkup()
-        row = []
-
-        for wod in result:
-            if len(row) < 3:
-                btn_name = wod.wod_day.strftime(sD_sB_Y)
-
-                row.append(types.InlineKeyboardButton(btn_name, callback_data=CB_SEARCH_RESULT + '_' + wod.id.hex))
-            else:
-                reply_markup.row(*row)
-                row = []
-
-        reply_markup.row(*row)
+    wod_list = await wod_service.search_wod(message.text)
+    if wod_list:
+        keyboard = await get_search_wod_kb(wod_list)
+        reply_markup = types.InlineKeyboardMarkup(inline_keyboard=keyboard)
 
         await bot.send_message(chat_id, 'Результат поиска:', reply_markup=reply_markup)
     else:
@@ -454,26 +442,8 @@ async def find(message: types.Message):
     state = dp.current_state(chat=chat_id, user=user_id)
     await state.set_state(FIND_WOD)
 
-    # Configure InlineKeyboardMarkup
-    reply_markup = types.InlineKeyboardMarkup()
-    now = datetime.now()
-
-    row = []
-    count = 5
-
-    while count > 0:
-        if len(row) < 3:
-            d = now - timedelta(days=count)
-            btn_name = d.strftime(WEEKDAY) if d.weekday() in (3, 6) else d.strftime(D_B)
-
-            row.append(types.InlineKeyboardButton(btn_name, callback_data=CB_CHOOSE_DAY + '_' + d.strftime(D_M_Y)))
-            count -= 1
-        else:
-            reply_markup.row(*row)
-            row = []
-
-    row.append(types.InlineKeyboardButton("Сегодня", callback_data=CB_IGNORE))
-    reply_markup.row(*row)
+    keyboard = await get_find_wod_kb()
+    reply_markup = types.InlineKeyboardMarkup(inline_keyboard=keyboard)
 
     msg = 'Выберите день из списка либо введите дату в формате *ДеньМесяцГод* (_Пример: 170518_)'
     await bot.send_message(chat_id, msg, parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
@@ -720,7 +690,6 @@ async def sys_add_wod(message: types.Message):
     state = dp.current_state(chat=chat_id, user=user_id)
     await state.set_state(ADD_WOD)
 
-    # Configure InlineKeyboardMarkup
     keyboard = await get_add_wod_kb()
     reply_markup = types.InlineKeyboardMarkup(inline_keyboard=keyboard)
 
