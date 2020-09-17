@@ -24,7 +24,8 @@ from bot.exception import UserNotFoundError, LocationNotFoundError, WodResultNot
     ValueIsEmptyError, NoWodResultsError, TimezoneRequestError
 from bot.service import wod_result_service, wod_service
 from bot.service.info_service import reply_with_info_msg, get_info_msg
-from bot.service.notification_service import send_wod_to_all_subscribers, notify_all_subscribers_to_add_result
+from bot.service.notification_service import send_wod_to_all_subscribers, notify_all_subscribers_to_add_result, \
+    send_help_msg
 from bot.service.user_service import add_user_if_not_exist
 from bot.service.wod_result_service import persist_wod_result_and_get_message
 from bot.util import get_timezone_id
@@ -166,9 +167,7 @@ async def help_cbq(callback_query: types.CallbackQuery):
 
 @dp.message_handler(commands=CMD_HELP)
 async def help_msg(message: types.Message):
-    info_msg = await get_info_msg(message.from_user.id)
-
-    await bot.send_message(message.chat.id, info_msg)
+    await send_help_msg(message)
 
 
 @dp.message_handler(commands=CMD_SUBSCRIBE)
