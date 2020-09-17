@@ -1,4 +1,3 @@
-import logging
 import os
 import re
 from datetime import datetime, timedelta, date
@@ -34,7 +33,6 @@ bot = Bot(token=os.environ[API_TOKEN])
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 scheduler = AsyncIOScheduler()
-logging.basicConfig(level=logging.INFO)
 
 greetings = ['здравствуй', 'привет', 'ку', 'здорово', 'hi', 'hello', 'дд', 'добрый день',
              'доброе утро', 'добрый вечер', 'салем']
@@ -943,8 +941,8 @@ async def notify_to_add_result():
     await notify_all_subscribers_to_add_result(bot)
 
 
-async def startup(dispatcher: Dispatcher):
-    logging.info('Startup CompTrainKZ Bot...')
+async def startup():
+    print('Startup CompTrainKZ Bot...')
     async with async_db.Entity.connection() as connection:
         await async_db.create_all_tables(connection)
 
