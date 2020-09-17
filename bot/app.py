@@ -23,10 +23,11 @@ from bot.db import user_db, wod_db, location_db, async_db, subscriber_db, wod_re
 from bot.exception import UserNotFoundError, LocationNotFoundError, WodResultNotFoundError, WodNotFoundError, \
     ValueIsEmptyError, NoWodResultsError, TimezoneRequestError
 from bot.service import wod_result_service, wod_service
+from bot.service.info_service import reply_with_info_msg, get_info_msg
 from bot.service.notification_service import send_wod_to_all_subscribers, notify_all_subscribers_to_add_result
 from bot.service.user_service import add_user_if_not_exist
 from bot.service.wod_result_service import persist_wod_result_and_get_message
-from bot.util import get_add_rest_wod_kb, get_timezone_id
+from bot.util import get_add_wod_kb, get_timezone_id
 
 bot = Bot(token=os.environ[API_TOKEN])
 
@@ -42,15 +43,6 @@ wod_requests = ['чтс', 'что там сегодня', 'тренировка'
 warmup_requests = ['разминка', 'warmup']
 result_requests = ['результаты', 'results']
 add_requests = ['добавить', 'add']
-
-info_msg = 'CompTrainKZ BOT:\n\n' \
-           '/help - справочник\n\n' \
-           '/wod - тренировка на сегодня\n\n' \
-           '/results - результаты за сегодня\n\n' \
-           '/add - записать результат тренировки за сегодня\n\n' \
-           '/find - найти тренировку по дате\n\n' \
-           '/timezone - установить часовой пояс\n\n' \
-           '/search - поиск результатов по тексту комплекса\n\n'
 
 # States
 WOD = 'wod'
@@ -95,13 +87,7 @@ async def notify_users_about_new_wod_result(user_id, wod) -> None:
 @dp.message_handler(commands=CMD_SHOW_ALL_USERS)
 async def sys_all_users(message: types.Message):
     if not await user_db.is_admin(message.from_user.id):
-        print(message.from_user.id)
-        # send info
-        sub = "/subscribe - подписаться на ежедневную рассылку WOD"
-        if await subscriber_db.is_subscriber(message.from_user.id):
-            sub = "/unsubscribe - отписаться от ежедневной рассылки WOD"
-
-        return await message.reply(info_msg + sub)
+        return await reply_with_info_msg(message)
 
     users = await user_db.get_all_users()
     str_list = [f'{i}. {u.name} {u.surname} [{u.user_id}]' for i, u in enumerate(users, 1)]
@@ -113,12 +99,7 @@ async def sys_all_users(message: types.Message):
 @dp.message_handler(commands=CMD_SHOW_ALL_SUBS)
 async def sys_all_subs(message: types.Message):
     if not await user_db.is_admin(message.from_user.id):
-        # send info
-        sub = "/subscribe - подписаться на ежедневную рассылку WOD"
-        if await subscriber_db.is_subscriber(message.from_user.id):
-            sub = "/unsubscribe - отписаться от ежедневной рассылки WOD"
-
-        return await message.reply(info_msg + sub)
+        return await reply_with_info_msg(message)
 
     subscribers = await subscriber_db.get_all_subscribers()
     str_list = []
@@ -137,12 +118,7 @@ async def sys_all_subs(message: types.Message):
 @dp.message_handler(commands=CMD_RESET_WOD)
 async def sys_reset_wod(message: types.Message):
     if not await user_db.is_admin(message.from_user.id):
-        # send info
-        sub = "/subscribe - подписаться на ежедневную рассылку WOD"
-        if await subscriber_db.is_subscriber(message.from_user.id):
-            sub = "/unsubscribe - отписаться от ежедневной рассылки WOD"
-
-        return await message.reply(info_msg + sub)
+        return await reply_with_info_msg(message)
 
     today = datetime.now().date()
 
@@ -158,27 +134,18 @@ async def sys_reset_wod(message: types.Message):
 @dp.message_handler(commands=CMD_DISPATCH_WOD)
 async def sys_dispatch_wod(message: types.Message):
     if not await user_db.is_admin(message.from_user.id):
-        # send info
-        sub = "/subscribe - подписаться на ежедневную рассылку WOD"
-        if await subscriber_db.is_subscriber(message.from_user.id):
-            sub = "/unsubscribe - отписаться от ежедневной рассылки WOD"
-
-        return await message.reply(info_msg + sub)
+        return await reply_with_info_msg(message)
 
     await send_wod_to_all_subscribers(bot)
 
 
 @dp.message_handler(commands=CMD_START)
 async def start(message: types.Message):
-    user_id = message.from_user.id
-
     await add_user_if_not_exist(message)
 
-    sub = "/subscribe - подписаться на ежедневную рассылку WOD"
-    if await subscriber_db.is_subscriber(user_id):
-        sub = "/unsubscribe - отписаться от ежедневной рассылки WOD"
+    info_msg = await get_info_msg(message.from_user.id)
 
-    await bot.send_message(message.chat.id, info_msg + sub)
+    await bot.send_message(message.chat.id, info_msg)
 
 
 @dp.callback_query_handler(lambda callback_query: callback_query.data == CMD_HELP)
@@ -186,11 +153,9 @@ async def help_cbq(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     chat_id = callback_query.message.chat.id
 
-    sub = "/subscribe - подписаться на ежедневную рассылку WOD"
-    if await subscriber_db.is_subscriber(user_id):
-        sub = "/unsubscribe - отписаться от ежедневной рассылки WOD"
+    info_msg = await get_info_msg(user_id)
 
-    await bot.edit_message_text(text=info_msg + sub, chat_id=chat_id, message_id=callback_query.message.message_id,
+    await bot.edit_message_text(text=info_msg, chat_id=chat_id, message_id=callback_query.message.message_id,
                                 parse_mode=ParseMode.MARKDOWN)
 
     # Destroy all resource in storage for current user
@@ -200,11 +165,9 @@ async def help_cbq(callback_query: types.CallbackQuery):
 
 @dp.message_handler(commands=CMD_HELP)
 async def help_msg(message: types.Message):
-    sub = "/subscribe - подписаться на ежедневную рассылку WOD"
-    if await subscriber_db.is_subscriber(message.from_user.id):
-        sub = "/unsubscribe - отписаться от ежедневной рассылки WOD"
+    info_msg = await get_info_msg(message.from_user.id)
 
-    await bot.send_message(message.chat.id, info_msg + sub)
+    await bot.send_message(message.chat.id, info_msg)
 
 
 @dp.message_handler(commands=CMD_SUBSCRIBE)
@@ -509,7 +472,7 @@ async def find(message: types.Message):
             reply_markup.row(*row)
             row = []
 
-    row.append(types.InlineKeyboardButton("Сегодня", callback_data="ignore"))
+    row.append(types.InlineKeyboardButton("Сегодня", callback_data=CB_IGNORE))
     reply_markup.row(*row)
 
     msg = 'Выберите день из списка либо введите дату в формате *ДеньМесяцГод* (_Пример: 170518_)'
@@ -657,12 +620,7 @@ async def view_warm_up(message: types.Message):
 @dp.message_handler(commands=CMD_ADD_WARM_UP)
 async def add_warm_up_request(message: types.Message):
     if not await user_db.is_admin(message.from_user.id):
-        # send info
-        sub = "/subscribe - подписаться на ежедневную рассылку WOD"
-        if await subscriber_db.is_subscriber(message.from_user.id):
-            sub = "/unsubscribe - отписаться от ежедневной рассылки WOD"
-
-        return await message.reply(info_msg + sub)
+        return await reply_with_info_msg(message)
 
     chat_id = message.chat.id
 
@@ -752,22 +710,18 @@ async def add_result(message: types.Message):
 
 @dp.message_handler(commands=CMD_ADD_WOD)
 async def sys_add_wod(message: types.Message):
-    if not await user_db.is_admin(message.from_user.id):
-        # send info
-        sub = "/subscribe - подписаться на ежедневную рассылку WOD"
-        if await subscriber_db.is_subscriber(message.from_user.id):
-            sub = "/unsubscribe - отписаться от ежедневной рассылки WOD"
-
-        return await message.reply(info_msg + sub)
-
     user_id = message.from_user.id
+
+    if not await user_db.is_admin(user_id):
+        return await reply_with_info_msg(message)
+
     chat_id = message.chat.id
 
     state = dp.current_state(chat=chat_id, user=user_id)
     await state.set_state(ADD_WOD)
 
     # Configure InlineKeyboardMarkup
-    keyboard = await get_add_rest_wod_kb()
+    keyboard = await get_add_wod_kb()
     reply_markup = types.InlineKeyboardMarkup(inline_keyboard=keyboard)
 
     msg = 'Выберите день из списка либо введите дату в формате *ДеньМесяцГод* (_Пример: 170518_)'

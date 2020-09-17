@@ -35,7 +35,7 @@ async def get_timezone_id(latitude: float, longitude: float) -> str:
     raise TimezoneRequestError
 
 
-async def get_add_rest_wod_kb() -> list:
+async def get_add_wod_kb() -> list:
     keyboard = []
     row = []
     count = 9
@@ -56,7 +56,6 @@ async def get_add_rest_wod_kb() -> list:
                 delta = date.weekday() - 3
                 date = date - datetime.timedelta(days=delta)
 
-            # Thu 18 Apr
             btn_name = date.strftime(A_D_B)
             row.append(types.InlineKeyboardButton(
                 btn_name, callback_data=CB_CHOOSE_DAY + '_' + date.strftime(D_M_Y)))
