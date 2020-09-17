@@ -15,7 +15,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from bot.constants import CB_SEARCH_RESULT, CB_CHOOSE_DAY, CB_ADD_RESULT, CMD_SHOW_ALL_USERS, CMD_SHOW_ALL_SUBS, \
     CMD_RESET_WOD, CMD_DISPATCH_WOD, CMD_START, CMD_HELP, CMD_SUBSCRIBE, CMD_UNSUBSCRIBE, CMD_VIEW_WOD, CMD_SEARCH, \
     CMD_FIND_WOD, CB_IGNORE, CMD_SET_TIMEZONE, CMD_VIEW_WARM_UP, CMD_ADD_WARM_UP, CMD_VIEW_RESULTS, CMD_ADD_RESULT, \
-    CMD_ADD_WOD
+    CMD_ADD_WOD, BTN_SHOW_RESULTS, BTN_CANCEL, BTN_ADD_RESULT, BTN_EDIT_RESULT, BTN_REFRESH, BTN_VIEW_RESULT
 from bot.constants.config_vars import API_TOKEN
 from bot.constants.data_keys import WOD_RESULT_TXT, WOD_RESULT_ID, WOD_ID, REFRESH_WOD_ID, VIEW_WOD_ID
 from bot.constants.date_format import D_M_Y, sD_B_Y, A_M_D_Y
@@ -24,8 +24,7 @@ from bot.exception import UserNotFoundError, LocationNotFoundError, WodResultNot
     ValueIsEmptyError, NoWodResultsError, TimezoneRequestError
 from bot.service import wod_result_service, wod_service
 from bot.service.info_service import reply_with_info_msg, get_info_msg
-from bot.service.notification_service import send_wod_to_all_subscribers, notify_all_subscribers_to_add_result, \
-    send_help_msg
+from bot.service.notification_service import send_wod_to_all_subscribers, notify_all_subscribers_to_add_result
 from bot.service.user_service import add_user_if_not_exist
 from bot.service.wod_result_service import persist_wod_result_and_get_message
 from bot.util import get_timezone_id
@@ -55,35 +54,6 @@ SET_TIMEZONE = 'set_timezone'
 WARM_UP = 'warm_up'
 ADD_WOD = 'add_wod'
 ADD_WOD_REQ = 'add_wod_req'
-# Buttons
-ADD_RESULT = 'Добавить'
-EDIT_RESULT = 'Изменить'
-SHOW_RESULTS = 'Результаты'
-CANCEL = 'Отмена'
-REFRESH = 'Обновить'
-VIEW_RESULT = 'Посмотреть результаты'
-
-
-async def notify_users_about_new_wod_result(user_id, wod) -> None:
-    diff = datetime.now().date() - wod.wod_day
-
-    if diff.days < 2:
-        author = await user_db.get_user(user_id)
-        name = f'{author.name} {author.surname}' if author.surname else author.name
-        msg = f'{name} записал результат за {wod.title}'
-
-        wod_results = await wod_result_db.get_wod_results(wod.id)
-        for wr in wod_results:
-            if wr.user_id == user_id:
-                continue
-
-            st = dp.current_state(chat=wr.user_id, user=wr.user_id)
-            await st.update_data(view_wod_id=wod.id)
-
-            reply_markup = types.InlineKeyboardMarkup()
-            reply_markup.add(types.InlineKeyboardButton(VIEW_RESULT, callback_data=VIEW_RESULT))
-
-            await bot.send_message(wr.user_id, msg, reply_markup=reply_markup)
 
 
 @dp.message_handler(commands=CMD_SHOW_ALL_USERS)
@@ -128,7 +98,7 @@ async def sys_reset_wod(message: types.Message):
 
     if done:
         msg = f'WOD from {today.strftime(sD_B_Y)} successfully updated!'
-        await send_wod_to_all_subscribers(bot)
+        await send_wod_to_all_subscribers()
 
     await bot.send_message(message.chat.id, msg)
 
@@ -138,7 +108,7 @@ async def sys_dispatch_wod(message: types.Message):
     if not await user_db.is_admin(message.from_user.id):
         return await reply_with_info_msg(message)
 
-    await send_wod_to_all_subscribers(bot)
+    await send_wod_to_all_subscribers()
 
 
 @dp.message_handler(commands=CMD_START)
@@ -167,7 +137,9 @@ async def help_cbq(callback_query: types.CallbackQuery):
 
 @dp.message_handler(commands=CMD_HELP)
 async def help_msg(message: types.Message):
-    await send_help_msg(message)
+    info_msg = await get_info_msg(message.from_user.id)
+
+    await bot.send_message(message.chat.id, info_msg)
 
 
 @dp.message_handler(commands=CMD_SUBSCRIBE)
@@ -208,16 +180,16 @@ async def send_wod(message: types.Message):
 
         # Configure ReplyKeyboardMarkup
         reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
-        reply_markup.add(result_button, SHOW_RESULTS)
-        reply_markup.add(CANCEL)
+        reply_markup.add(result_button, BTN_SHOW_RESULTS)
+        reply_markup.add(BTN_CANCEL)
 
         await bot.send_message(chat_id, msg, reply_markup=reply_markup)
     else:
         await bot.send_message(chat_id, msg)
 
 
-@dp.message_handler(Text(equals=CANCEL, ignore_case=True), state='*')
-@dp.message_handler(lambda message: message.text not in [ADD_RESULT, EDIT_RESULT, SHOW_RESULTS], state=WOD)
+@dp.message_handler(Text(equals=BTN_CANCEL, ignore_case=True), state='*')
+@dp.message_handler(lambda message: message.text not in [BTN_ADD_RESULT, BTN_EDIT_RESULT, BTN_SHOW_RESULTS], state=WOD)
 async def hide_keyboard(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -233,7 +205,7 @@ async def hide_keyboard(message: types.Message):
                            reply_markup=types.ReplyKeyboardRemove())
 
 
-@dp.message_handler(Text(equals=ADD_RESULT), state=WOD)
+@dp.message_handler(Text(equals=BTN_ADD_RESULT), state=WOD)
 async def request_result_for_add(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -242,12 +214,12 @@ async def request_result_for_add(message: types.Message):
     await state.set_state(WOD_RESULT)
 
     reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
-    reply_markup.add(CANCEL)
+    reply_markup.add(BTN_CANCEL)
 
     await bot.send_message(chat_id, 'Пожалуйста введите ваш результат:', reply_markup=reply_markup)
 
 
-@dp.message_handler(Text(equals=EDIT_RESULT), state=WOD)
+@dp.message_handler(Text(equals=BTN_EDIT_RESULT), state=WOD)
 async def request_result_for_edit(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -264,9 +236,31 @@ async def request_result_for_edit(message: types.Message):
         msg = 'Пожалуйста введите ваш результат:'
 
     reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
-    reply_markup.add(CANCEL)
+    reply_markup.add(BTN_CANCEL)
 
     await bot.send_message(chat_id, msg, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+
+
+async def notify_users_about_new_wod_result(user_id, wod) -> None:
+    diff = datetime.now().date() - wod.wod_day
+
+    if diff.days < 2:
+        author = await user_db.get_user(user_id)
+        name = f'{author.name} {author.surname}' if author.surname else author.name
+        msg = f'{name} записал результат за {wod.title}'
+
+        wod_results = await wod_result_db.get_wod_results(wod.id)
+        for wr in wod_results:
+            if wr.user_id == user_id:
+                continue
+
+            st = dp.current_state(chat=wr.user_id, user=wr.user_id)
+            await st.update_data(view_wod_id=wod.id)
+
+            reply_markup = types.InlineKeyboardMarkup()
+            reply_markup.add(types.InlineKeyboardButton(BTN_VIEW_RESULT, callback_data=BTN_VIEW_RESULT))
+
+            await bot.send_message(wr.user_id, msg, reply_markup=reply_markup)
 
 
 @dp.message_handler(state=WOD_RESULT)
@@ -298,7 +292,7 @@ async def update_wod_result(message: types.Message):
     await state.update_data(wod_result_id=None)
 
 
-@dp.message_handler(Text(equals=SHOW_RESULTS), state=WOD)
+@dp.message_handler(Text(equals=BTN_SHOW_RESULTS), state=WOD)
 async def show_wod_results(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -323,7 +317,7 @@ async def show_wod_results(message: types.Message):
                                parse_mode=ParseMode.MARKDOWN)
 
         reply_markup = types.InlineKeyboardMarkup()
-        reply_markup.add(types.InlineKeyboardButton(REFRESH, callback_data=REFRESH))
+        reply_markup.add(types.InlineKeyboardButton(BTN_REFRESH, callback_data=BTN_REFRESH))
 
         await bot.send_message(chat_id, msg, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
     except NoWodResultsError:
@@ -332,7 +326,7 @@ async def show_wod_results(message: types.Message):
                                                        "\n/add"))
 
 
-@dp.callback_query_handler(lambda callback_query: callback_query.data == REFRESH)
+@dp.callback_query_handler(lambda callback_query: callback_query.data == BTN_REFRESH)
 async def refresh_wod_results_callback(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     chat_id = callback_query.message.chat.id
@@ -351,7 +345,7 @@ async def refresh_wod_results_callback(callback_query: types.CallbackQuery):
         await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=msg_id, parse_mode=ParseMode.MARKDOWN)
 
         reply_markup = types.InlineKeyboardMarkup()
-        reply_markup.add(types.InlineKeyboardButton(REFRESH, callback_data=REFRESH))
+        reply_markup.add(types.InlineKeyboardButton(BTN_REFRESH, callback_data=BTN_REFRESH))
 
         await bot.edit_message_reply_markup(chat_id=chat_id, message_id=msg_id, reply_markup=reply_markup)
     except NoWodResultsError:
@@ -404,12 +398,12 @@ async def show_search_result(callback_query: types.CallbackQuery):
     await st.update_data(view_wod_id=wod_id)
 
     reply_markup = types.InlineKeyboardMarkup()
-    reply_markup.add(types.InlineKeyboardButton(VIEW_RESULT, callback_data=VIEW_RESULT))
+    reply_markup.add(types.InlineKeyboardButton(BTN_VIEW_RESULT, callback_data=BTN_VIEW_RESULT))
 
     await bot.send_message(chat_id, msg, reply_markup=reply_markup)
 
 
-@dp.callback_query_handler(lambda callback_query: callback_query.data == VIEW_RESULT)
+@dp.callback_query_handler(lambda callback_query: callback_query.data == BTN_VIEW_RESULT)
 async def view_wod_results_callback(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     chat_id = callback_query.message.chat.id
@@ -499,10 +493,10 @@ async def get_result_button(chat_id, user_id, wod_id) -> str:
 
     try:
         wod_result = await wod_result_db.get_user_wod_result(wod_id=wod_id, user_id=user_id)
-        button = EDIT_RESULT
+        button = BTN_EDIT_RESULT
         await state.update_data(wod_result_id=wod_result.id)
     except WodResultNotFoundError:
-        button = ADD_RESULT
+        button = BTN_ADD_RESULT
 
     return button
 
@@ -517,13 +511,13 @@ async def find_and_get_wod(chat_id, user_id, search_date: date):
         reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
 
         time_between = datetime.now().date() - search_date
-        if time_between.days > 30 and result_button == EDIT_RESULT:
+        if time_between.days > 30 and result_button == BTN_EDIT_RESULT:
             # if wod result older than month, then disable edit
-            reply_markup.add(SHOW_RESULTS)
+            reply_markup.add(BTN_SHOW_RESULTS)
         else:
-            reply_markup.add(result_button, SHOW_RESULTS)
+            reply_markup.add(result_button, BTN_SHOW_RESULTS)
 
-        reply_markup.add(CANCEL)
+        reply_markup.add(BTN_CANCEL)
 
         return f'{result.title}\n\n{result.description}', reply_markup
     except WodNotFoundError:
@@ -545,7 +539,7 @@ async def set_timezone(message: types.Message):
     loc_btn = types.KeyboardButton(text="Локация", request_location=True)
     reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
     reply_markup.insert(loc_btn)
-    reply_markup.add(CANCEL)
+    reply_markup.add(BTN_CANCEL)
 
     await bot.send_message(chat_id, emojize(":earth_asia: Мне нужна ваша геолокация для того,"
                                             "чтобы установить правильный часовой пояс"), reply_markup=reply_markup)
@@ -663,7 +657,7 @@ async def add_result(message: types.Message):
         await state.update_data(wod_id=wod.id)
 
         reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
-        reply_markup.add(CANCEL)
+        reply_markup.add(BTN_CANCEL)
 
         try:
             wod_result = await wod_result_db.get_user_wod_result(wod_id=wod.id, user_id=user_id)
@@ -855,13 +849,13 @@ async def wod_dispatch():
         await wod_service.get_today_wod_id()
     except WodNotFoundError:
         # save WOD in DB and send it to all subscribers
-        await send_wod_to_all_subscribers(bot)
+        await send_wod_to_all_subscribers()
 
 
 # Notify to add results for Today's WOD at 23:00 GMT+6
 @scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=17, id='notify_to_add_result')
 async def notify_to_add_result():
-    await notify_all_subscribers_to_add_result(bot)
+    await notify_all_subscribers_to_add_result()
 
 
 async def startup(dispatcher: Dispatcher):

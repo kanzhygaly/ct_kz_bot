@@ -4,12 +4,13 @@ from aiogram.utils.exceptions import UserDeactivated
 
 from bot.db import subscriber_db
 from bot.exception import WodNotFoundError
-from bot.service.info_service import get_info_msg
 from bot.service.wod_result_service import has_wod_result
 from bot.service.wod_service import get_today_wod, get_today_wod_id
 
 
-async def send_wod_to_all_subscribers(bot: Bot) -> None:
+async def send_wod_to_all_subscribers() -> None:
+    bot = Bot.get_current()
+
     subscribers = await subscriber_db.get_all_subscribers()
 
     msg, wod_id = await get_today_wod()
@@ -30,8 +31,10 @@ async def send_wod_to_all_subscribers(bot: Bot) -> None:
     print(f'WOD has been sent to {count} subscribers')
 
 
-async def notify_all_subscribers_to_add_result(bot: Bot) -> None:
+async def notify_all_subscribers_to_add_result() -> None:
     try:
+        bot = Bot.get_current()
+
         wod_id = await get_today_wod_id()
 
         subscribers = await subscriber_db.get_all_subscribers()
@@ -50,11 +53,3 @@ async def notify_all_subscribers_to_add_result(bot: Bot) -> None:
                 await subscriber_db.unsubscribe(sub.user_id)
     except WodNotFoundError:
         print('notify_all_subscribers_to_add_result: WOD for today was not found')
-
-
-async def send_help_msg(message: types.Message):
-    bot = Bot.get_current()
-
-    info_msg = await get_info_msg(message.from_user.id)
-
-    await bot.send_message(message.chat.id, info_msg)

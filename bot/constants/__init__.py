@@ -23,3 +23,11 @@ CMD_VIEW_WARM_UP = 'warmup'
 CMD_VIEW_RESULTS = 'results'
 CMD_ADD_RESULT = 'add'
 
+# buttons
+BTN_ADD_RESULT = 'Добавить'
+BTN_EDIT_RESULT = 'Изменить'
+BTN_SHOW_RESULTS = 'Результаты'
+BTN_CANCEL = 'Отмена'
+BTN_REFRESH = 'Обновить'
+BTN_VIEW_RESULT = 'Посмотреть результаты'
+
