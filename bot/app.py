@@ -27,7 +27,8 @@ from bot.service.info_service import reply_with_info_msg, get_info_msg
 from bot.service.notification_service import send_wod_to_all_subscribers, notify_all_subscribers_to_add_result
 from bot.service.user_service import add_user_if_not_exist
 from bot.service.wod_result_service import persist_wod_result_and_get_message
-from bot.util import get_add_wod_kb, get_timezone_id, get_find_wod_kb, get_search_wod_kb
+from bot.util import get_timezone_id
+from bot.util.keyboard_util import get_add_wod_kb, get_find_wod_kb, get_search_wod_kb
 
 bot = Bot(token=os.environ[API_TOKEN])
 
