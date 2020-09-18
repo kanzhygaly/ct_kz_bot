@@ -2,6 +2,7 @@ from aiogram import types, Bot
 from aiogram.utils.emoji import emojize
 from aiogram.utils.exceptions import UserDeactivated
 
+from bot.constants import CMD_ADD_RESULT, CMD_VIEW_RESULTS
 from bot.db import subscriber_db
 from bot.exception import WodNotFoundError
 from bot.service.wod_result_service import has_wod_result
@@ -14,8 +15,8 @@ async def send_wod_to_all_subscribers(bot: Bot) -> None:
     msg, wod_id = await get_today_wod()
 
     if wod_id:
-        msg += "\n\n/add - записать/изменить результат за СЕГОДНЯ\n" \
-               "/results - посмотреть результаты за СЕГОДНЯ"
+        msg += (f'/{CMD_ADD_RESULT} - записать/изменить результат за СЕГОДНЯ\n'
+                f'/{CMD_VIEW_RESULTS} - посмотреть результаты за СЕГОДНЯ')
 
     count = 0
     for sub in subscribers:
@@ -35,8 +36,8 @@ async def notify_all_subscribers_to_add_result(bot: Bot) -> None:
 
         subscribers = await subscriber_db.get_all_subscribers()
 
-        msg = "Не забудьте записать результат сегодняшней тренировки :grimacing:\n" \
-              "Для того чтобы записать результат за СЕГОДНЯ наберите команду /add"
+        msg = ('Не забудьте записать результат сегодняшней тренировки :grimacing:\n'
+               f'Для того чтобы записать результат за СЕГОДНЯ наберите команду /{CMD_ADD_RESULT}')
 
         for sub in subscribers:
             if await has_wod_result(user_id=sub.user_id, wod_id=wod_id):

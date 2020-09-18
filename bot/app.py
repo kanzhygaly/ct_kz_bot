@@ -201,7 +201,7 @@ async def hide_keyboard(message: types.Message):
     await state.update_data(wod_result_id=None)
     await state.update_data(refresh_wod_id=None)
 
-    await bot.send_message(chat_id, emojize("Список команд :point_right: /help"),
+    await bot.send_message(chat_id, emojize(f'Список команд :point_right: /{CMD_HELP}'),
                            reply_markup=types.ReplyKeyboardRemove())
 
 
@@ -541,8 +541,8 @@ async def set_timezone(message: types.Message):
     reply_markup.insert(loc_btn)
     reply_markup.add(BTN_CANCEL)
 
-    await bot.send_message(chat_id, emojize(":earth_asia: Мне нужна ваша геолокация для того,"
-                                            "чтобы установить правильный часовой пояс"), reply_markup=reply_markup)
+    msg = emojize(':earth_asia: Мне нужна ваша геолокация для того, чтобы установить правильный часовой пояс')
+    await bot.send_message(chat_id, msg, reply_markup=reply_markup)
 
 
 @dp.message_handler(content_types=types.ContentType.LOCATION, state=SET_TIMEZONE)

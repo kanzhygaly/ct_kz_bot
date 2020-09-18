@@ -17,11 +17,17 @@ class BSoupParser:
 
         self.content = post.find(class_='container wod-info').find_all(class_='col-md-6')
 
+        self.open_part = parse_wod_content(self.content[0])
+        self.games_part = parse_wod_content(self.content[1])
+
     def get_wod_date(self) -> str:
         return self.wod_date
 
-    def get_regional_wod(self) -> str:
-        return parse_wod_content(self.content[1])
+    def get_games_part(self) -> str:
+        return self.games_part
 
-    def get_open_wod(self) -> str:
-        return parse_wod_content(self.content[0])
+    def get_open_part(self) -> str:
+        return self.open_part
+
+    def get_wod_text(self) -> str:
+        return self.games_part + self.open_part

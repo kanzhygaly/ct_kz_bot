@@ -1,22 +1,31 @@
 from aiogram import types
 
+from bot.constants import CMD_UNSUBSCRIBE, CMD_SUBSCRIBE, CMD_SHOW_ALL_USERS, CMD_SHOW_ALL_SUBS, CMD_RESET_WOD, \
+    CMD_DISPATCH_WOD, CMD_ADD_WARM_UP, CMD_ADD_WOD, CMD_VIEW_WARM_UP, CMD_SEARCH, CMD_SET_TIMEZONE, CMD_FIND_WOD, \
+    CMD_ADD_RESULT, CMD_VIEW_RESULTS, CMD_VIEW_WOD, CMD_HELP
 from bot.db.subscriber_db import is_subscriber
 from bot.db.user_db import is_admin
 
-info_msg = 'CompTrainKZ BOT:\n\n' \
-           '/help - справочник\n\n' \
-           '/wod - тренировка на сегодня\n\n' \
-           '/results - результаты на сегодня\n\n' \
-           '/add - записать результат тренировки на сегодня\n\n' \
-           '/find - найти тренировку по дате\n\n' \
-           '/timezone - установить часовой пояс\n\n' \
-           '/search - поиск результатов по тексту комплекса\n\n'
+info_msg = (
+    'CompTrainKZ BOT:\n\n'
+    f'/{CMD_HELP} - справочник\n\n'
+    f'/{CMD_VIEW_WOD} - тренировка на сегодня\n\n'
+    f'/{CMD_VIEW_RESULTS} - результаты на сегодня\n\n'
+    f'/{CMD_ADD_RESULT} - записать результат тренировки на сегодня\n\n'
+    f'/{CMD_FIND_WOD} - найти тренировку по дате\n\n'
+    f'/{CMD_SET_TIMEZONE} - установить часовой пояс\n\n'
+    f'/{CMD_SEARCH} - поиск результатов по тексту комплекса\n\n'
+)
 
-admin_msg = '/sys_all_users - list all users\n\n' \
-            '/sys_all_subs - list all subscribers\n\n' \
-            '/sys_reset_wod - reset WOD and send it to all subscribers\n\n' \
-            '/sys_dispatch_wod - send WOD to all subscribers\n\n' \
-            '/sys_add_wod - add custom WOD\n\n'
+admin_msg = (
+    f'/{CMD_SHOW_ALL_USERS} - list all users\n\n'
+    f'/{CMD_SHOW_ALL_SUBS} - list all subscribers\n\n'
+    f'/{CMD_RESET_WOD} - reset WOD and send it to all subscribers\n\n'
+    f'/{CMD_DISPATCH_WOD} - send WOD to all subscribers\n\n'
+    f'/{CMD_ADD_WOD} - add custom WOD\n\n'
+    f'/{CMD_ADD_WARM_UP} - add custom Warm up for today\n\n'
+    f'/{CMD_VIEW_WARM_UP} - view Warm up for today\n\n'
+)
 
 
 async def reply_with_info_msg(message: types.Message):
@@ -36,6 +45,6 @@ async def get_info_msg(user_id):
 
 async def get_subscriber_msg(user_id):
     if await is_subscriber(user_id):
-        return "/unsubscribe - отписаться от ежедневной рассылки WOD"
+        return f'/{CMD_UNSUBSCRIBE} - отписаться от ежедневной рассылки WOD'
 
-    return "/subscribe - подписаться на ежедневную рассылку WOD"
+    return f'/{CMD_SUBSCRIBE} - подписаться на ежедневную рассылку WOD'
