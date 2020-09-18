@@ -56,7 +56,7 @@ async def get_today_wod_id():
         raise e
 
 
-async def reset_today_wod():
+async def reset_today_wod() -> (bool, str):
     today = datetime.now().date()
 
     try:
@@ -73,7 +73,7 @@ async def reset_today_wod():
         if today_is_not_a_rest_day(parser):
             description = parser.get_regional_wod() + '\n' + parser.get_open_wod()
             await wod_db.edit_wod(id=wod_id, title=parser.get_wod_date(), description=description)
-            return True
+            return True, ''
 
         return False, 'Today is a rest day!'
     else:
