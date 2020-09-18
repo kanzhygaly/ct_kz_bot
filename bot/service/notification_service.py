@@ -8,9 +8,7 @@ from bot.service.wod_result_service import has_wod_result
 from bot.service.wod_service import get_today_wod, get_today_wod_id
 
 
-async def send_wod_to_all_subscribers() -> None:
-    bot = Bot.get_current()
-
+async def send_wod_to_all_subscribers(bot: Bot) -> None:
     subscribers = await subscriber_db.get_all_subscribers()
 
     msg, wod_id = await get_today_wod()
@@ -31,10 +29,8 @@ async def send_wod_to_all_subscribers() -> None:
     print(f'WOD has been sent to {count} subscribers')
 
 
-async def notify_all_subscribers_to_add_result() -> None:
+async def notify_all_subscribers_to_add_result(bot: Bot) -> None:
     try:
-        bot = Bot.get_current()
-
         wod_id = await get_today_wod_id()
 
         subscribers = await subscriber_db.get_all_subscribers()

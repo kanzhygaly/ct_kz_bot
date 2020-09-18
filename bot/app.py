@@ -98,7 +98,7 @@ async def sys_reset_wod(message: types.Message):
 
     if done:
         msg = f'WOD from {today.strftime(sD_B_Y)} successfully updated!'
-        await send_wod_to_all_subscribers()
+        await send_wod_to_all_subscribers(bot)
 
     await bot.send_message(message.chat.id, msg)
 
@@ -108,7 +108,7 @@ async def sys_dispatch_wod(message: types.Message):
     if not await user_db.is_admin(message.from_user.id):
         return await reply_with_info_msg(message)
 
-    await send_wod_to_all_subscribers()
+    await send_wod_to_all_subscribers(bot)
 
 
 @dp.message_handler(commands=CMD_START)
@@ -849,13 +849,13 @@ async def wod_dispatch():
         await wod_service.get_today_wod_id()
     except WodNotFoundError:
         # save WOD in DB and send it to all subscribers
-        await send_wod_to_all_subscribers()
+        await send_wod_to_all_subscribers(bot)
 
 
 # Notify to add results for Today's WOD at 23:00 GMT+6
 @scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=17, id='notify_to_add_result')
 async def notify_to_add_result():
-    await notify_all_subscribers_to_add_result()
+    await notify_all_subscribers_to_add_result(bot)
 
 
 async def startup(dispatcher: Dispatcher):
