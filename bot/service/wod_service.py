@@ -56,7 +56,7 @@ async def get_today_wod_id():
         raise e
 
 
-async def reset_today_wod() -> (bool, str):
+async def reset_today_wod():
     today = datetime.now().date()
 
     try:
