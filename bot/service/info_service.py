@@ -48,3 +48,11 @@ async def get_subscriber_msg(user_id):
         return f'/{CMD_UNSUBSCRIBE} - отписаться от ежедневной рассылки WOD'
 
     return f'/{CMD_SUBSCRIBE} - подписаться на ежедневную рассылку WOD'
+
+
+def get_full_text(header: str, body: str) -> str:
+    return header + '\n\n' + body
+
+
+def get_add_result_msg(wod_result: str) -> str:
+    return f'Ваш текущий результат:\n\n_{wod_result}_\n\nПожалуйста введите ваш новый результат'

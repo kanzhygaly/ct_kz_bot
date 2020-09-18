@@ -4,15 +4,12 @@ from datetime import datetime, date
 from typing import Iterable
 
 from bot.constants import CMD_VIEW_WOD, CMD_DISPATCH_WOD
+from bot.service.info_service import get_full_text
 from bot.util.bsoup_spider import BSoupParser
 from bot.constants.config_vars import WEB_URL
 from bot.db import wod_db
 from bot.exception import WodNotFoundError
 from bot.util.parser_util import parse_wod_date
-
-
-def get_full_wod_text(title: str, desc: str) -> str:
-    return title + '\n\n' + desc
 
 
 def the_wod_is_for_today(wod_date: date, today: date) -> bool:
@@ -29,7 +26,7 @@ async def get_today_wod():
 
     try:
         result = await wod_db.get_wod_by_date(today)
-        return get_full_wod_text(title=result.title, desc=result.description), result.id
+        return get_full_text(header=result.title, body=result.description), result.id
     except WodNotFoundError:
         parser = BSoupParser(url=os.environ[WEB_URL])
 
@@ -43,7 +40,7 @@ async def get_today_wod():
             if today_is_not_a_rest_day(parser):
                 wod_id = await wod_db.add_wod(wod_day=today, title=title, description=description)
 
-            return get_full_wod_text(title=title, desc=description), wod_id
+            return get_full_text(header=title, body=description), wod_id
         else:
             return 'Комплекс еще не вышел.\nСорян :(', None
 

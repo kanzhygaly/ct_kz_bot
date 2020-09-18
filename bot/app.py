@@ -23,7 +23,7 @@ from bot.db import user_db, wod_db, location_db, async_db, subscriber_db, wod_re
 from bot.exception import UserNotFoundError, LocationNotFoundError, WodResultNotFoundError, WodNotFoundError, \
     ValueIsEmptyError, NoWodResultsError, TimezoneRequestError
 from bot.service import wod_result_service, wod_service
-from bot.service.info_service import reply_with_info_msg, get_info_msg
+from bot.service.info_service import reply_with_info_msg, get_info_msg, get_add_result_msg, get_full_text
 from bot.service.notification_service import send_wod_to_all_subscribers, notify_all_subscribers_to_add_result
 from bot.service.user_service import add_user_if_not_exist
 from bot.service.wod_result_service import persist_wod_result_and_get_message
@@ -150,21 +150,21 @@ async def subscribe(message: types.Message):
     await add_user_if_not_exist(message)
 
     if await subscriber_db.is_subscriber(user_id):
-        return await bot.send_message(chat_id, emojize("Вы уже подписаны на ежедневную рассылку WOD :alien:"))
+        return await bot.send_message(chat_id, emojize('Вы уже подписаны на ежедневную рассылку WOD :alien:'))
 
     await subscriber_db.add_subscriber(user_id)
 
-    await bot.send_message(chat_id, emojize("Вы подписались на ежедневную рассылку WOD :+1:"))
+    await bot.send_message(chat_id, emojize('Вы подписались на ежедневную рассылку WOD :+1:'))
 
 
 @dp.message_handler(commands=CMD_UNSUBSCRIBE)
 async def unsubscribe(message: types.Message):
     if not (await subscriber_db.is_subscriber(message.from_user.id)):
-        return await bot.send_message(message.chat.id, emojize("Вы уже отписаны от ежедневной рассылки WOD :alien:"))
+        return await bot.send_message(message.chat.id, emojize('Вы уже отписаны от ежедневной рассылки WOD :alien:'))
 
     await subscriber_db.unsubscribe(message.from_user.id)
 
-    await bot.send_message(message.chat.id, emojize("Вы отписались от ежедневной рассылки WOD :-1:"))
+    await bot.send_message(message.chat.id, emojize('Вы отписались от ежедневной рассылки WOD :-1:'))
 
 
 @dp.message_handler(commands=CMD_VIEW_WOD)
@@ -231,7 +231,7 @@ async def request_result_for_edit(message: types.Message):
     wod_result_id = data[WOD_RESULT_ID]
     try:
         wod_result = await wod_result_db.get_wod_result(wod_result_id)
-        msg = f'Ваш текущий результат:\n\n_{wod_result.result}_\n\nПожалуйста введите ваш новый результат:'
+        msg = get_add_result_msg(wod_result.result)
     except WodResultNotFoundError:
         msg = 'Пожалуйста введите ваш результат:'
 
@@ -321,9 +321,9 @@ async def show_wod_results(message: types.Message):
 
         await bot.send_message(chat_id, msg, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
     except NoWodResultsError:
-        return await bot.send_message(chat_id, emojize("На сегодня результатов пока что нет :crying_cat_face:"
-                                                       "\nСтаньте первым кто внесет свой результат :smiley_cat:"
-                                                       "\n/add"))
+        return await bot.send_message(chat_id, emojize('На сегодня результатов пока что нет :crying_cat_face:\n'
+                                                       'Станьте первым кто внесет свой результат :smiley_cat:\n'
+                                                       '/' + CMD_ADD_RESULT))
 
 
 @dp.callback_query_handler(lambda callback_query: callback_query.data == BTN_REFRESH)
@@ -452,7 +452,7 @@ async def find_wod_by_btn(callback_query: types.CallbackQuery):
     msg, reply_markup = await find_and_get_wod(chat_id=chat_id, user_id=user_id, search_date=search_date)
 
     if reply_markup:
-        await bot.edit_message_text(text=emojize("Результат поиска :calendar:"), chat_id=chat_id,
+        await bot.edit_message_text(text=emojize('Результат поиска :calendar:'), chat_id=chat_id,
                                     message_id=callback_query.message.message_id, parse_mode=ParseMode.MARKDOWN)
 
         await bot.send_message(chat_id, msg, reply_markup=reply_markup)
@@ -463,7 +463,7 @@ async def find_wod_by_btn(callback_query: types.CallbackQuery):
 
 @dp.callback_query_handler(lambda callback_query: callback_query.data == CB_IGNORE)
 async def ignore(callback_query):
-    await bot.answer_callback_query(callback_query.id, text="")
+    await bot.answer_callback_query(callback_query.id, text='')
 
 
 @dp.message_handler(state=FIND_WOD)
@@ -525,7 +525,7 @@ async def find_and_get_wod(chat_id, user_id, search_date: date):
         # Finish conversation, destroy all resource in storage for current user
         await state.reset_state()
 
-        return emojize(":squirrel: На указанную дату тренировка не найдена!"), None
+        return emojize(':squirrel: На указанную дату тренировка не найдена!'), None
 
 
 @dp.message_handler(commands=CMD_SET_TIMEZONE)
@@ -536,7 +536,7 @@ async def set_timezone(message: types.Message):
     state = dp.current_state(chat=chat_id, user=user_id)
     await state.set_state(SET_TIMEZONE)
 
-    loc_btn = types.KeyboardButton(text="Локация", request_location=True)
+    loc_btn = types.KeyboardButton(text='Локация', request_location=True)
     reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
     reply_markup.insert(loc_btn)
     reply_markup.add(BTN_CANCEL)
@@ -576,7 +576,7 @@ async def view_warm_up(message: types.Message):
     try:
         result = await wod_db.get_warmup(today)
     except (WodNotFoundError, ValueIsEmptyError):
-        result = emojize("На сегодня разминки пока что нет :disappointed:")
+        result = emojize('На сегодня разминки пока что нет :disappointed:')
 
     await bot.send_message(chat_id, result, parse_mode=ParseMode.MARKDOWN)
 
@@ -613,9 +613,9 @@ async def update_warm_up(message: types.Message):
 
     try:
         await wod_db.add_warmup(wod_id, message.text)
-        msg = emojize(":white_check_mark: Ваши изменения успешно выполнены!")
+        msg = emojize(':white_check_mark: Ваши изменения успешно выполнены!')
     except WodNotFoundError:
-        msg = emojize(":heavy_exclamation_mark: Ошибка при внесении данных!")
+        msg = emojize(':heavy_exclamation_mark: Ошибка при внесении данных!')
 
     await bot.send_message(chat_id, msg)
 
@@ -634,11 +634,11 @@ async def view_results(message: types.Message):
         try:
             wod = await wod_db.get_wod_by_date(datetime.now().date())
             wod_res_msg = await wod_result_service.get_wod_results(user_id=user_id, wod_id=wod.id)
-            msg = f'{wod.title}\n\n{wod_res_msg}'
+            msg = get_full_text(header=wod.title, body=wod_res_msg)
         except (WodNotFoundError, NoWodResultsError):
-            msg = emojize("На сегодня результатов пока что нет :disappointed:")
+            msg = emojize('На сегодня результатов пока что нет :disappointed:')
     else:
-        msg = emojize("На сегодня результатов нет :disappointed:")
+        msg = emojize('На сегодня результатов нет :disappointed:')
 
     await bot.send_message(chat_id, msg, parse_mode=ParseMode.MARKDOWN)
 
@@ -663,13 +663,13 @@ async def add_result(message: types.Message):
             wod_result = await wod_result_db.get_user_wod_result(wod_id=wod.id, user_id=user_id)
             await state.update_data(wod_result_id=wod_result.id)
 
-            msg = f'Ваш текущий результат:\n\n_{wod_result.result}_\n\nПожалуйста введите ваш новый результат'
+            msg = get_add_result_msg(wod_result.result)
         except WodResultNotFoundError:
             msg = 'Пожалуйста введите ваш результат:'
 
         await bot.send_message(chat_id, msg, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
     except WodNotFoundError:
-        await bot.send_message(chat_id, emojize("На сегодня тренировки пока что нет :disappointed:"))
+        await bot.send_message(chat_id, emojize('На сегодня тренировки пока что нет :disappointed:'))
 
 
 @dp.message_handler(commands=CMD_ADD_WOD)
@@ -743,7 +743,7 @@ async def update_wod(message: types.Message):
         wod = await wod_db.edit_wod(id=wod_id, description=message.text)
         msg = emojize(f':white_check_mark: WOD за {wod.wod_day.strftime(sD_B_Y)} успешно добавлен')
     except WodNotFoundError:
-        msg = emojize(":heavy_exclamation_mark: Ошибка при внесении данных!")
+        msg = emojize(':heavy_exclamation_mark: Ошибка при внесении данных!')
 
     await bot.send_message(chat_id, msg)
 
@@ -754,7 +754,7 @@ async def update_wod(message: types.Message):
 
 @dp.message_handler()
 async def echo(message: types.Message):
-    msg = "".join(re.findall("[a-zA-Zа-яА-Я]+", message.text.lower()))
+    msg = ''.join(re.findall('[a-zA-Zа-яА-Я]+', message.text.lower()))
 
     if msg in greetings:
         # send hi
@@ -780,7 +780,7 @@ async def echo(message: types.Message):
         await message.reply('Уа-Алейкум Ас-Салям, {}!'.format(message.from_user.first_name))
 
     elif msg == 'арау':
-        await message.reply(emojize("Урай! :punch:"))
+        await message.reply(emojize('Урай! :punch:'))
 
     else:
         now = datetime.now()
@@ -791,16 +791,16 @@ async def echo(message: types.Message):
         if yesterday.weekday() not in (3, 6):
             msg = 'За какой день вы хотите добавить результат?'
             reply_markup.add(
-                types.InlineKeyboardButton("Вчера", callback_data=CB_ADD_RESULT + '_' + yesterday.strftime(D_M_Y)),
-                types.InlineKeyboardButton("Сегодня", callback_data=CB_ADD_RESULT + '_' + now.strftime(D_M_Y))
+                types.InlineKeyboardButton('Вчера', callback_data=CB_ADD_RESULT + '_' + yesterday.strftime(D_M_Y)),
+                types.InlineKeyboardButton('Сегодня', callback_data=CB_ADD_RESULT + '_' + now.strftime(D_M_Y))
             )
         else:
             msg = 'Вы хотите добавить результат за СЕГОДНЯ?'
             reply_markup.add(
-                types.InlineKeyboardButton("Да", callback_data=CB_ADD_RESULT + '_' + now.strftime(D_M_Y))
+                types.InlineKeyboardButton('Да', callback_data=CB_ADD_RESULT + '_' + now.strftime(D_M_Y))
             )
 
-        reply_markup.add(types.InlineKeyboardButton("Отмена!", callback_data=CMD_HELP))
+        reply_markup.add(types.InlineKeyboardButton('Отмена!', callback_data=CMD_HELP))
 
         state = dp.current_state(chat=message.chat.id, user=message.from_user.id)
         await state.update_data(wod_result_txt=message.text)
@@ -832,10 +832,10 @@ async def add_result_by_date(callback_query: types.CallbackQuery):
 
         await notify_users_about_new_wod_result(user_id, wod)
     except KeyError:
-        msg = emojize("Не удалось добавить ваш результат :disappointed:\n Попробуйте снова :smiley:")
+        msg = emojize('Не удалось добавить ваш результат :disappointed:\n Попробуйте снова :smiley:')
         await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=msg_id, parse_mode=ParseMode.MARKDOWN)
     except WodNotFoundError:
-        msg = emojize("На сегодня тренировки пока что нет :disappointed:")
+        msg = emojize('На сегодня тренировки пока что нет :disappointed:')
         await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=msg_id, parse_mode=ParseMode.MARKDOWN)
 
 
