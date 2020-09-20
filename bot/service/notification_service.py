@@ -49,4 +49,4 @@ async def notify_all_subscribers_to_add_result(bot: Bot) -> None:
                 print(f'User {sub.user_id} is deactivated, deleting him from subscribers')
                 await subscriber_db.unsubscribe(sub.user_id)
     except WodNotFoundError:
-        print('notify_all_subscribers_to_add_result: WOD for today was not found')
+        print('notify_all_subscribers_to_add_result: WOD was not found. Today is a rest day.')
