@@ -871,7 +871,7 @@ async def shutdown(dispatcher: Dispatcher):
 
 def run():
     scheduler.start()
-    executor.start_polling(dp, on_startup=startup, on_shutdown=shutdown)
+    executor.start_polling(dispatcher=dp, on_startup=startup, on_shutdown=shutdown, skip_updates=True)
 
 
 if __name__ == '__main__':
