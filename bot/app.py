@@ -24,7 +24,7 @@ from bot.exception import UserNotFoundError, LocationNotFoundError, WodResultNot
     ValueIsEmptyError, NoWodResultsError, TimezoneRequestError
 from bot.service import wod_result_service, wod_service
 from bot.service.info_service import reply_with_info_msg, get_info_msg, get_add_result_msg, get_wod_full_text, \
-    get_full_text
+    get_full_text, get_commands_list_msg
 from bot.service.notification_service import send_wod_to_all_subscribers, notify_all_subscribers_to_add_result
 from bot.service.user_service import add_user_if_not_exist
 from bot.service.wod_result_service import persist_wod_result_and_get_message
@@ -127,7 +127,7 @@ async def help_cbq(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     chat_id = callback_query.message.chat.id
 
-    info_msg = await get_info_msg(user_id)
+    info_msg = get_commands_list_msg()
 
     await bot.edit_message_text(text=info_msg, chat_id=chat_id, message_id=callback_query.message.message_id)
 
@@ -201,8 +201,7 @@ async def hide_keyboard(message: types.Message):
     await state.update_data(wod_id=None)
     await state.update_data(wod_result_id=None)
 
-    await bot.send_message(chat_id, emojize(f'Список команд :point_right: /{CMD_HELP}'),
-                           reply_markup=types.ReplyKeyboardRemove())
+    await bot.send_message(chat_id, get_commands_list_msg(), reply_markup=types.ReplyKeyboardRemove())
 
 
 @dp.message_handler(Text(equals=BTN_ADD_RESULT), state=WOD)

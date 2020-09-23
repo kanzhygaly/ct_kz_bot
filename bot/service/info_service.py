@@ -1,4 +1,5 @@
 from aiogram import types
+from aiogram.utils.emoji import emojize
 
 from bot.constants import CMD_UNSUBSCRIBE, CMD_SUBSCRIBE, CMD_SHOW_ALL_USERS, CMD_SHOW_ALL_SUBS, CMD_RESET_WOD, \
     CMD_DISPATCH_WOD, CMD_ADD_WARM_UP, CMD_ADD_WOD, CMD_VIEW_WARM_UP, CMD_SEARCH, CMD_SET_TIMEZONE, CMD_FIND_WOD, \
@@ -60,3 +61,7 @@ def get_full_text(header: str, body: str) -> str:
 
 def get_add_result_msg(wod_result: str) -> str:
     return f'Ваш текущий результат:\n\n_{wod_result}_\n\nПожалуйста введите ваш новый результат'
+
+
+def get_commands_list_msg():
+    return emojize(f'Список команд :point_right: /{CMD_HELP}')
