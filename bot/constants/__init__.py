@@ -30,3 +30,5 @@ BTN_SHOW_RESULTS = 'Результаты'
 BTN_CANCEL = 'Отмена'
 BTN_VIEW_RESULT = 'Посмотреть результаты'
 
+WOD_STR = 'WOD'
+

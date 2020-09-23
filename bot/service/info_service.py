@@ -2,7 +2,7 @@ from aiogram import types
 
 from bot.constants import CMD_UNSUBSCRIBE, CMD_SUBSCRIBE, CMD_SHOW_ALL_USERS, CMD_SHOW_ALL_SUBS, CMD_RESET_WOD, \
     CMD_DISPATCH_WOD, CMD_ADD_WARM_UP, CMD_ADD_WOD, CMD_VIEW_WARM_UP, CMD_SEARCH, CMD_SET_TIMEZONE, CMD_FIND_WOD, \
-    CMD_ADD_RESULT, CMD_VIEW_RESULTS, CMD_VIEW_WOD, CMD_HELP
+    CMD_ADD_RESULT, CMD_VIEW_RESULTS, CMD_VIEW_WOD, CMD_HELP, WOD_STR
 from bot.db.subscriber_db import is_subscriber
 from bot.db.user_db import is_admin
 
@@ -50,8 +50,12 @@ async def get_subscriber_msg(user_id):
     return f'/{CMD_SUBSCRIBE} - подписаться на ежедневную рассылку WOD'
 
 
+def get_wod_full_text(header: str, body: str) -> str:
+    return WOD_STR + ' // ' + header + '\n\n' + body
+
+
 def get_full_text(header: str, body: str) -> str:
-    return 'WOD // ' + header + '\n\n' + body
+    return header + '\n\n' + body
 
 
 def get_add_result_msg(wod_result: str) -> str:

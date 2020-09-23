@@ -23,12 +23,14 @@ from bot.db import user_db, wod_db, location_db, async_db, subscriber_db, wod_re
 from bot.exception import UserNotFoundError, LocationNotFoundError, WodResultNotFoundError, WodNotFoundError, \
     ValueIsEmptyError, NoWodResultsError, TimezoneRequestError
 from bot.service import wod_result_service, wod_service
-from bot.service.info_service import reply_with_info_msg, get_info_msg, get_add_result_msg, get_full_text
+from bot.service.info_service import reply_with_info_msg, get_info_msg, get_add_result_msg, get_wod_full_text, \
+    get_full_text
 from bot.service.notification_service import send_wod_to_all_subscribers, notify_all_subscribers_to_add_result
 from bot.service.user_service import add_user_if_not_exist
 from bot.service.wod_result_service import persist_wod_result_and_get_message
 from bot.util import get_timezone_id
 from bot.util.keyboard_util import get_add_wod_kb, get_find_wod_kb, get_search_wod_kb
+from bot.util.parser_util import parse_wod_date
 
 bot = Bot(token=os.environ[API_TOKEN])
 
@@ -481,7 +483,7 @@ async def find_and_get_wod(chat_id, user_id, search_date: date):
 
         reply_markup.add(BTN_CANCEL)
 
-        return f'{result.title}\n\n{result.description}', reply_markup
+        return get_wod_full_text(header=result.title, body=result.description), reply_markup
     except WodNotFoundError:
         state = dp.current_state(chat=chat_id, user=user_id)
         # Finish conversation, destroy all resource in storage for current user
@@ -747,8 +749,8 @@ async def echo(message: types.Message):
     else:
         reply_to_msg = message.reply_to_message
         if reply_to_msg and reply_to_msg.from_user.is_bot and reply_to_msg.from_user.username == 'CompTrainKZBot':
-            print(reply_to_msg.date)
-            print(reply_to_msg.text)
+            first_line = str(reply_to_msg.text).split('\n', 1)[0]
+            print(parse_wod_date(first_line))
 
         now = datetime.now()
         yesterday = (now - timedelta(1)).date()
