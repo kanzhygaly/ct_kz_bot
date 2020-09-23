@@ -828,9 +828,9 @@ async def startup(dispatcher: Dispatcher):
 
 
 async def shutdown(dispatcher: Dispatcher):
+    print('Shutdown CompTrainKZ Bot...')
     await dispatcher.storage.close()
     await dispatcher.storage.wait_closed()
-    print('Shutdown CompTrainKZ Bot')
 
 
 def run():
