@@ -1,3 +1,4 @@
+import hashlib
 import os
 import re
 from datetime import datetime, timedelta, date
@@ -7,7 +8,7 @@ from aiogram import Bot, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import Dispatcher
 from aiogram.dispatcher.filters import Text
-from aiogram.types import ParseMode
+from aiogram.types import ParseMode, InlineQuery, InlineQueryResultArticle, InputTextMessageContent
 from aiogram.utils import executor
 from aiogram.utils.emoji import emojize
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -715,6 +716,20 @@ async def update_wod(message: types.Message):
     await state.update_data(wod_id=None)
 
 
+@dp.inline_handler()
+async def inline_echo(inline_query: InlineQuery):
+    text = inline_query.query or 'echo'
+    print(text)
+    input_content = InputTextMessageContent(text)
+    result_id: str = hashlib.md5(text.encode()).hexdigest()
+    item = InlineQueryResultArticle(
+        id=result_id,
+        title=f'Result {text!r}',
+        input_message_content=input_content,
+    )
+    await bot.answer_inline_query(inline_query.id, results=[item], cache_time=1)
+
+
 @dp.message_handler()
 async def echo(message: types.Message):
     msg = ''.join(re.findall('[a-zA-Zа-яА-Я]+', message.text.lower()))
@@ -828,7 +843,6 @@ async def startup(dispatcher: Dispatcher):
 
 
 async def shutdown(dispatcher: Dispatcher):
-    print('Shutdown CompTrainKZ Bot...')
     await dispatcher.storage.close()
     await dispatcher.storage.wait_closed()
 
