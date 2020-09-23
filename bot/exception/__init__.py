@@ -36,3 +36,8 @@ class NoWodResultsError(Error):
 class TimezoneRequestError(Error):
     """Raised when value is empty"""
     pass
+
+
+class ReplyToWodMsgError(Error):
+    """Raised when value is empty"""
+    pass

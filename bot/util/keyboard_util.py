@@ -6,6 +6,7 @@ from aiogram import types
 from bot.constants import CB_CHOOSE_DAY, CB_IGNORE, CB_SEARCH_RESULT
 from bot.constants.date_format import D_M_Y, A_D_B, D_B, WEEKDAY, sD_sB_Y
 from bot.db import wod_db
+from bot.util.bot_util import rest_day
 
 
 async def get_add_wod_kb() -> list:
@@ -49,7 +50,7 @@ async def get_find_wod_kb() -> list:
     while count > 0:
         if len(row) < 3:
             d = today - timedelta(days=count)
-            btn_name = d.strftime(WEEKDAY) if d.weekday() in (3, 6) else d.strftime(D_B)
+            btn_name = d.strftime(WEEKDAY) if rest_day(d) else d.strftime(D_B)
 
             row.append(types.InlineKeyboardButton(btn_name, callback_data=CB_CHOOSE_DAY + '_' + d.strftime(D_M_Y)))
             count -= 1

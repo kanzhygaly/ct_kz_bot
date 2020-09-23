@@ -16,21 +16,22 @@ from bot.constants import CB_SEARCH_RESULT, CB_CHOOSE_DAY, CB_ADD_RESULT, CMD_SH
     CMD_RESET_WOD, CMD_DISPATCH_WOD, CMD_START, CMD_HELP, CMD_SUBSCRIBE, CMD_UNSUBSCRIBE, CMD_VIEW_WOD, CMD_SEARCH, \
     CMD_FIND_WOD, CB_IGNORE, CMD_SET_TIMEZONE, CMD_VIEW_WARM_UP, CMD_ADD_WARM_UP, CMD_VIEW_RESULTS, CMD_ADD_RESULT, \
     CMD_ADD_WOD, BTN_SHOW_RESULTS, BTN_CANCEL, BTN_ADD_RESULT, BTN_EDIT_RESULT, BTN_VIEW_RESULT
-from bot.constants.config_vars import API_TOKEN
+from bot.constants.config_vars import API_TOKEN, BOT_NAME
 from bot.constants.data_keys import WOD_RESULT_TXT, WOD_RESULT_ID, WOD_ID, VIEW_WOD_ID
 from bot.constants.date_format import D_M_Y, sD_B_Y, A_M_D_Y
 from bot.db import user_db, wod_db, location_db, async_db, subscriber_db, wod_result_db
 from bot.exception import UserNotFoundError, LocationNotFoundError, WodResultNotFoundError, WodNotFoundError, \
-    ValueIsEmptyError, NoWodResultsError, TimezoneRequestError
+    ValueIsEmptyError, NoWodResultsError, TimezoneRequestError, ReplyToWodMsgError
 from bot.service import wod_result_service, wod_service
 from bot.service.info_service import reply_with_info_msg, get_info_msg, get_add_result_msg, get_wod_full_text, \
     get_full_text, get_commands_list_msg
 from bot.service.notification_service import send_wod_to_all_subscribers, notify_all_subscribers_to_add_result
 from bot.service.user_service import add_user_if_not_exist
 from bot.service.wod_result_service import persist_wod_result_and_get_message
+from bot.service.wod_service import dates_are_equal
 from bot.util import get_timezone_id
 from bot.util.keyboard_util import get_add_wod_kb, get_find_wod_kb, get_search_wod_kb
-from bot.util.parser_util import parse_wod_date
+from bot.util.bot_util import handle_reply_to_wod_msg, rest_day
 
 bot = Bot(token=os.environ[API_TOKEN])
 
@@ -746,27 +747,31 @@ async def echo(message: types.Message):
         await message.reply(emojize('Урай! :punch:'))
 
     else:
-        reply_to_msg = message.reply_to_message
-        if reply_to_msg and reply_to_msg.from_user.is_bot and reply_to_msg.from_user.username == 'CompTrainKZBot':
-            first_line = str(reply_to_msg.text).split('\n', 1)[0]
-            print(parse_wod_date(first_line))
-
         now = datetime.now()
-        yesterday = (now - timedelta(1)).date()
-
         reply_markup = types.InlineKeyboardMarkup()
 
-        if yesterday.weekday() not in (3, 6):
-            msg = 'За какой день вы хотите добавить результат?'
+        try:
+            reply_to_wod_date = handle_reply_to_wod_msg(message)
+            date_str = ('СЕГОДНЯ' if dates_are_equal(reply_to_wod_date, now.date())
+                        else reply_to_wod_date.strftime(sD_B_Y))
+
+            msg = f'Вы хотите добавить результат за {date_str}?'
             reply_markup.add(
-                types.InlineKeyboardButton('Вчера', callback_data=CB_ADD_RESULT + '_' + yesterday.strftime(D_M_Y)),
-                types.InlineKeyboardButton('Сегодня', callback_data=CB_ADD_RESULT + '_' + now.strftime(D_M_Y))
+                types.InlineKeyboardButton('Да', callback_data=CB_ADD_RESULT + '_' + reply_to_wod_date.strftime(D_M_Y))
             )
-        else:
-            msg = 'Вы хотите добавить результат за СЕГОДНЯ?'
-            reply_markup.add(
-                types.InlineKeyboardButton('Да', callback_data=CB_ADD_RESULT + '_' + now.strftime(D_M_Y))
-            )
+        except ReplyToWodMsgError:
+            yesterday = (now - timedelta(1)).date()
+            if not rest_day(yesterday):
+                msg = 'За какой день вы хотите добавить результат?'
+                reply_markup.add(
+                    types.InlineKeyboardButton('Вчера', callback_data=CB_ADD_RESULT + '_' + yesterday.strftime(D_M_Y)),
+                    types.InlineKeyboardButton('Сегодня', callback_data=CB_ADD_RESULT + '_' + now.strftime(D_M_Y))
+                )
+            else:
+                msg = 'Вы хотите добавить результат за СЕГОДНЯ?'
+                reply_markup.add(
+                    types.InlineKeyboardButton('Да', callback_data=CB_ADD_RESULT + '_' + now.strftime(D_M_Y))
+                )
 
         reply_markup.add(types.InlineKeyboardButton('Отмена!', callback_data=CMD_HELP))
 
@@ -827,7 +832,7 @@ async def notify_to_add_result():
 
 
 async def startup(dispatcher: Dispatcher):
-    print('Startup CompTrainKZ Bot...')
+    print(f'Startup {BOT_NAME}...')
     async with async_db.Entity.connection() as connection:
         await async_db.create_all_tables(connection)
 

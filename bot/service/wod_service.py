@@ -12,8 +12,8 @@ from bot.exception import WodNotFoundError
 from bot.util.parser_util import parse_wod_date
 
 
-def the_wod_is_for_today(wod_date: date, today: date) -> bool:
-    return wod_date.day == today.day and wod_date.month == today.month and wod_date.year == today.year
+def dates_are_equal(date1: date, date2: date) -> bool:
+    return date1.day == date2.day and date1.month == date2.month and date1.year == date2.year
 
 
 def today_is_not_a_rest_day(parser: BSoupParser) -> bool:
@@ -33,7 +33,7 @@ async def get_today_wod():
         title = parser.get_wod_date()
         wod_date = parse_wod_date(title)
 
-        if the_wod_is_for_today(wod_date=wod_date, today=today):
+        if dates_are_equal(wod_date, today):
             description = parser.get_wod_text()
 
             wod_id = None
@@ -68,7 +68,7 @@ async def reset_today_wod() -> (bool, str):
     title = parser.get_wod_date()
     wod_date = parse_wod_date(title)
 
-    if the_wod_is_for_today(wod_date=wod_date, today=today):
+    if dates_are_equal(wod_date, today):
         if today_is_not_a_rest_day(parser):
             await wod_db.edit_wod(id=wod_id, title=title, description=parser.get_wod_text())
             return True, ''
