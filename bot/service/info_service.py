@@ -51,7 +51,7 @@ async def get_subscriber_msg(user_id):
 
 
 def get_full_text(header: str, body: str) -> str:
-    return header + '\n\n' + body
+    return 'WOD // ' + header + '\n\n' + body
 
 
 def get_add_result_msg(wod_result: str) -> str:

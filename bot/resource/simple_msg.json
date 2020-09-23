@@ -1,0 +1,20 @@
+{
+  "message_id": 54082,
+  "from": {
+    "id": 586216727,
+    "is_bot": false,
+    "first_name": "Yerlan",
+    "last_name": "Akhmetov",
+    "username": "yerlan_akhmetov",
+    "language_code": "ru"
+  },
+  "chat": {
+    "id": 586216727,
+    "first_name": "Yerlan",
+    "last_name": "Akhmetov",
+    "username": "yerlan_akhmetov",
+    "type": "private"
+  },
+  "date": 1600888500,
+  "text": "Hey"
+}

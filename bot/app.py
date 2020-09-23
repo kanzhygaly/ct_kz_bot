@@ -745,7 +745,10 @@ async def echo(message: types.Message):
         await message.reply(emojize('Урай! :punch:'))
 
     else:
-        print(message.as_json())
+        reply_to_msg = message.reply_to_message
+        if reply_to_msg and reply_to_msg.from_user.is_bot and reply_to_msg.from_user.username == 'CompTrainKZBot':
+            print(reply_to_msg.date)
+            print(reply_to_msg.text)
 
         now = datetime.now()
         yesterday = (now - timedelta(1)).date()

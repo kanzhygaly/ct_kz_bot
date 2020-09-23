@@ -1,0 +1,60 @@
+{
+	"message_id": 54080,
+	"from": {
+		"id": 586216727,
+		"is_bot": false,
+		"first_name": "Yerlan",
+		"last_name": "Akhmetov",
+		"username": "yerlan_akhmetov",
+		"language_code": "ru"
+	},
+	"chat": {
+		"id": 586216727,
+		"first_name": "Yerlan",
+		"last_name": "Akhmetov",
+		"username": "yerlan_akhmetov",
+		"type": "private"
+	},
+	"date": 1600888206,
+	"reply_to_message": {
+		"message_id": 54048,
+		"from": {
+			"id": 552105148,
+			"is_bot": true,
+			"first_name": "CompTrainKZ Bot",
+			"username": "CompTrainKZBot"
+		},
+		"chat": {
+			"id": 586216727,
+			"first_name": "Yerlan",
+			"last_name": "Akhmetov",
+			"username": "yerlan_akhmetov",
+			"type": "private"
+		},
+		"date": 1600819800,
+		"text": "WOD // Wednesday // 09.23.2020\n\nGAMES PREP\n\n1. Field Conditioning\n1 Mile Warm-Up Jog\n\n5 Rounds:\n25m Shuttle Sprint\n25m Shuttle Sprint\n50m Sprint\nRest 2:00 between rounds.\n\n3 Rounds:\n100m Shuttle Sprint\nRest 2:00 between rounds.\n\n800m Cool-Down Jog\n\n2. Conditioning\n“UFO”\nAMRAP 5, Rest 5:\n200′ Walking Lunge\n200m Wreckbag Run (70/50)\nTime Remaining: Max Calorie Row\n\nAMRAP 5, Rest 5:\n100′ Single Front Rack DB Walking Lunge (80/55)\n200m Wreckbag Run (70/50)\nTime Remaining: Max Calorie Row\n\nAMRAP 5, Rest 5:\n50′ Double DB Front Rack Walking Lunge (80’s/55’s)\n200m Wreckbag Run (70/50)\nTime Remaining: Max Calorie Row\n\n3. Gymnastic Stamina\n10-9-8-7-6-5-4-3-2-1:\nBurpee Box Jump Overs (30″/24″)\nKipping Deficit HSPU (7″/4.5″)\n\n4. Strength Conditioning\n5 Rounds for Quality:\n5 Bench Press\n5 Deadlifts\n\n5. Body Armor\n3 Giant Sets:\n8 Tempo Barbell Good Mornings (5s eccentric)\n12 Supinated Grip Ring Row\n16 Scapular Y Raises\nRest as needed between sets.\n\nOPEN PREP\n\n1. Gymnastic Stamina\nOn the 2:00 x 5 Rounds:\n9 Bar-Facing Burpees\n30 Double-Unders\nMax Kipping Handstand Pushups in Time Remaining\n\n2. Conditioning\n“UFO”\nAMRAP 5, Rest 5:\n200′ Walking Lunge\n200m Wreckbag Run (50/35)\nTime Remaining: Max Calorie Row\n\nAMRAP 5, Rest 5:\n100′ Single Front Rack DB Walking Lunge (50/35)\n200m Wreckbag Run (50/35)\nTime Remaining: Max Calorie Row\n\nAMRAP 5, Rest 5:\n50′ Double DB Front Rack Walking Lunge (50’s/35’s)\n200m Wreckbag Run (50/35)\nTime Remaining: Max Calorie Row\n\n3. Body Armor\n3 Giant Sets:\n8 Tempo Barbell Good Mornings (5s eccentric)\n12 Supinated Grip Ring Row\n16 Scapular Y Raises\nRest as needed between sets.\n\n\n/add - записать/изменить результат за СЕГОДНЯ\n/results - посмотреть результаты за СЕГОДНЯ",
+		"entities": [
+			{
+				"offset": 679,
+				"length": 3,
+				"type": "bot_command"
+			},
+			{
+				"offset": 709,
+				"length": 2,
+				"type": "bot_command"
+			},
+			{
+				"offset": 1605,
+				"length": 4,
+				"type": "bot_command"
+			},
+			{
+				"offset": 1651,
+				"length": 8,
+				"type": "bot_command"
+			}
+		]
+	},
+	"text": "Hey"
+}
