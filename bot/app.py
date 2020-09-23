@@ -15,9 +15,9 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from bot.constants import CB_SEARCH_RESULT, CB_CHOOSE_DAY, CB_ADD_RESULT, CMD_SHOW_ALL_USERS, CMD_SHOW_ALL_SUBS, \
     CMD_RESET_WOD, CMD_DISPATCH_WOD, CMD_START, CMD_HELP, CMD_SUBSCRIBE, CMD_UNSUBSCRIBE, CMD_VIEW_WOD, CMD_SEARCH, \
     CMD_FIND_WOD, CB_IGNORE, CMD_SET_TIMEZONE, CMD_VIEW_WARM_UP, CMD_ADD_WARM_UP, CMD_VIEW_RESULTS, CMD_ADD_RESULT, \
-    CMD_ADD_WOD, BTN_SHOW_RESULTS, BTN_CANCEL, BTN_ADD_RESULT, BTN_EDIT_RESULT, BTN_REFRESH, BTN_VIEW_RESULT
+    CMD_ADD_WOD, BTN_SHOW_RESULTS, BTN_CANCEL, BTN_ADD_RESULT, BTN_EDIT_RESULT, BTN_VIEW_RESULT
 from bot.constants.config_vars import API_TOKEN
-from bot.constants.data_keys import WOD_RESULT_TXT, WOD_RESULT_ID, WOD_ID, REFRESH_WOD_ID, VIEW_WOD_ID
+from bot.constants.data_keys import WOD_RESULT_TXT, WOD_RESULT_ID, WOD_ID, VIEW_WOD_ID
 from bot.constants.date_format import D_M_Y, sD_B_Y, A_M_D_Y
 from bot.db import user_db, wod_db, location_db, async_db, subscriber_db, wod_result_db
 from bot.exception import UserNotFoundError, LocationNotFoundError, WodResultNotFoundError, WodNotFoundError, \
@@ -199,7 +199,6 @@ async def hide_keyboard(message: types.Message):
     await state.reset_state()
     await state.update_data(wod_id=None)
     await state.update_data(wod_result_id=None)
-    await state.update_data(refresh_wod_id=None)
 
     await bot.send_message(chat_id, emojize(f'Список команд :point_right: /{CMD_HELP}'),
                            reply_markup=types.ReplyKeyboardRemove())
@@ -309,51 +308,15 @@ async def show_wod_results(message: types.Message):
         await state.reset_state()
         await state.update_data(wod_id=None)
         await state.update_data(wod_result_id=None)
-        await state.update_data(refresh_wod_id=wod_id)
 
         wod = await wod_db.get_wod(wod_id)
 
         await bot.send_message(chat_id, wod.title, reply_markup=types.ReplyKeyboardRemove(),
                                parse_mode=ParseMode.MARKDOWN)
-
-        reply_markup = types.InlineKeyboardMarkup()
-        reply_markup.add(types.InlineKeyboardButton(BTN_REFRESH, callback_data=BTN_REFRESH))
-
-        await bot.send_message(chat_id, msg, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
     except NoWodResultsError:
         return await bot.send_message(chat_id, emojize('На сегодня результатов пока что нет :crying_cat_face:\n'
                                                        'Станьте первым кто внесет свой результат :smiley_cat:\n'
                                                        '/' + CMD_ADD_RESULT))
-
-
-@dp.callback_query_handler(lambda callback_query: callback_query.data == BTN_REFRESH)
-async def refresh_wod_results_callback(callback_query: types.CallbackQuery):
-    user_id = callback_query.from_user.id
-    chat_id = callback_query.message.chat.id
-    msg_id = callback_query.message.message_id
-
-    state = dp.current_state(chat=chat_id, user=user_id)
-    data = await state.get_data()
-
-    try:
-        # KeyError
-        wod_id = data[REFRESH_WOD_ID]
-
-        # NoWodResultsError
-        msg = await wod_result_service.get_wod_results(user_id=user_id, wod_id=wod_id)
-
-        await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=msg_id, parse_mode=ParseMode.MARKDOWN)
-
-        reply_markup = types.InlineKeyboardMarkup()
-        reply_markup.add(types.InlineKeyboardButton(BTN_REFRESH, callback_data=BTN_REFRESH))
-
-        await bot.edit_message_reply_markup(chat_id=chat_id, message_id=msg_id, reply_markup=reply_markup)
-    except NoWodResultsError:
-        await bot.edit_message_text(text='На этот день нет результатов', chat_id=chat_id, message_id=msg_id,
-                                    parse_mode=ParseMode.MARKDOWN)
-    except KeyError:
-        await bot.edit_message_text(text='Данные устарели', chat_id=chat_id, message_id=msg_id,
-                                    parse_mode=ParseMode.MARKDOWN)
 
 
 @dp.message_handler(commands=CMD_SEARCH)
