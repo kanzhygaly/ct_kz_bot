@@ -14,7 +14,7 @@ salem = ['салам', 'слм', 'саламалейкум', 'ассаламуа
          'ассаламуалейкум', 'мирвам', 'миртебе']
 
 
-def handle_chat_message(message: types.Message):
+async def handle_chat_message(message: types.Message):
     msg = ''.join(re.findall('[a-zA-Zа-яА-Я]+', message.text.lower()))
 
     if msg in greetings:

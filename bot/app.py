@@ -712,7 +712,7 @@ async def update_wod(message: types.Message):
 @dp.message_handler()
 async def echo(message: types.Message):
     try:
-        msg = handle_chat_message(message)
+        msg = await handle_chat_message(message)
         await message.reply(msg)
 
     except MsgNotRecognizedError:
