@@ -4,7 +4,7 @@ from aiogram import types
 
 from bot.constants import WOD_STR
 from bot.constants.config_vars import BOT_NAME
-from bot.exception import ReplyToWodMsgError
+from bot.exception import WodDateNotFoundError
 from bot.util.parser_util import parse_wod_date
 
 
@@ -15,7 +15,7 @@ def handle_reply_to_wod_msg(message: types.Message) -> date:
         if first_line.startswith(WOD_STR):
             return parse_wod_date(first_line)
 
-    raise ReplyToWodMsgError
+    raise WodDateNotFoundError
 
 
 def rest_day(date_to_check: date) -> bool:

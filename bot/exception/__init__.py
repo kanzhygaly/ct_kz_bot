@@ -38,6 +38,11 @@ class TimezoneRequestError(Error):
     pass
 
 
-class ReplyToWodMsgError(Error):
+class WodDateNotFoundError(Error):
+    """Raised when value is empty"""
+    pass
+
+
+class MsgNotRecognizedError(Error):
     """Raised when value is empty"""
     pass

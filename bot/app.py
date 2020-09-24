@@ -1,8 +1,6 @@
 import os
-import re
 from datetime import datetime, timedelta, date
 
-import pytz
 from aiogram import Bot, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import Dispatcher
@@ -20,8 +18,8 @@ from bot.constants.config_vars import API_TOKEN, BOT_NAME
 from bot.constants.data_keys import WOD_RESULT_TXT, WOD_RESULT_ID, WOD_ID, VIEW_WOD_ID
 from bot.constants.date_format import D_M_Y, sD_B_Y, A_M_D_Y
 from bot.db import user_db, wod_db, location_db, async_db, subscriber_db, wod_result_db
-from bot.exception import UserNotFoundError, LocationNotFoundError, WodResultNotFoundError, WodNotFoundError, \
-    ValueIsEmptyError, NoWodResultsError, TimezoneRequestError, ReplyToWodMsgError
+from bot.exception import UserNotFoundError, WodResultNotFoundError, WodNotFoundError, \
+    ValueIsEmptyError, NoWodResultsError, TimezoneRequestError, WodDateNotFoundError, MsgNotRecognizedError
 from bot.service import wod_result_service, wod_service
 from bot.service.info_service import reply_with_info_msg, get_info_msg, get_add_result_msg, get_wod_full_text, \
     get_full_text, get_commands_list_msg
@@ -30,8 +28,9 @@ from bot.service.user_service import add_user_if_not_exist
 from bot.service.wod_result_service import persist_wod_result_and_get_message
 from bot.service.wod_service import dates_are_equal
 from bot.util import get_timezone_id
-from bot.util.keyboard_util import get_add_wod_kb, get_find_wod_kb, get_search_wod_kb
 from bot.util.bot_util import handle_reply_to_wod_msg, rest_day
+from bot.util.chat_util import handle_chat_message
+from bot.util.keyboard_util import get_add_wod_kb, get_find_wod_kb, get_search_wod_kb
 
 bot = Bot(token=os.environ[API_TOKEN])
 
@@ -39,10 +38,6 @@ storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 scheduler = AsyncIOScheduler()
 
-greetings = ['здравствуй', 'привет', 'ку', 'здорово', 'hi', 'hello', 'дд', 'добрый день',
-             'доброе утро', 'добрый вечер', 'салем']
-salem = ['салам', 'слм', 'саламалейкум', 'ассаламуагалейкум', 'ассалямуагалейкум',
-         'ассаламуалейкум', 'мирвам', 'миртебе']
 wod_requests = ['чтс', 'что там сегодня', 'тренировка', 'треня', 'wod', 'workout']
 warmup_requests = ['разминка', 'warmup']
 result_requests = ['результаты', 'results']
@@ -301,23 +296,21 @@ async def show_wod_results(message: types.Message):
     data = await state.get_data()
 
     wod_id = data[WOD_ID]
-
     try:
-        msg = await wod_result_service.get_wod_results(user_id=user_id, wod_id=wod_id)
-
-        # Finish conversation, destroy all resource in storage for current user
-        await state.reset_state()
-        await state.update_data(wod_id=None)
-        await state.update_data(wod_result_id=None)
-
+        wod_res_msg = await wod_result_service.get_wod_results(user_id=user_id, wod_id=wod_id)
         wod = await wod_db.get_wod(wod_id)
-
-        await bot.send_message(chat_id, wod.title, reply_markup=types.ReplyKeyboardRemove(),
-                               parse_mode=ParseMode.MARKDOWN)
+        msg = get_full_text(header=wod.title, body=wod_res_msg)
     except NoWodResultsError:
-        return await bot.send_message(chat_id, emojize('На сегодня результатов пока что нет :crying_cat_face:\n'
-                                                       'Станьте первым кто внесет свой результат :smiley_cat:\n'
-                                                       '/' + CMD_ADD_RESULT))
+        msg = emojize('На сегодня результатов пока что нет :crying_cat_face:\n'
+                      'Станьте первым кто внесет свой результат :smiley_cat:\n'
+                      '/' + CMD_ADD_RESULT)
+
+    await bot.send_message(chat_id, msg, reply_markup=types.ReplyKeyboardRemove(), parse_mode=ParseMode.MARKDOWN)
+
+    # Finish conversation, destroy all resource in storage for current user
+    await state.reset_state()
+    await state.update_data(wod_id=None)
+    await state.update_data(wod_result_id=None)
 
 
 @dp.message_handler(commands=CMD_SEARCH)
@@ -380,10 +373,10 @@ async def view_wod_results_callback(callback_query: types.CallbackQuery):
         wod_id = data[VIEW_WOD_ID]
         await state.update_data(view_wod_id=None)
 
-        msg = await wod_result_service.get_wod_results(user_id=user_id, wod_id=wod_id)
-
+        wod_res_msg = await wod_result_service.get_wod_results(user_id=user_id, wod_id=wod_id)
         wod_day = await wod_db.get_wod_day(wod_id)
-        msg = f'{wod_day.strftime(sD_B_Y)}\n\n{msg}'
+
+        msg = get_full_text(header=wod_day.strftime(sD_B_Y), body=wod_res_msg)
     except NoWodResultsError:
         msg = 'На этот день нет результатов'
     except KeyError:
@@ -718,35 +711,11 @@ async def update_wod(message: types.Message):
 
 @dp.message_handler()
 async def echo(message: types.Message):
-    msg = ''.join(re.findall('[a-zA-Zа-яА-Я]+', message.text.lower()))
+    try:
+        msg = handle_chat_message(message)
+        await message.reply(msg)
 
-    if msg in greetings:
-        # send hi
-        try:
-            location = await location_db.get_location(message.from_user.id)
-            now = datetime.now(pytz.timezone(location.tz))
-        except LocationNotFoundError:
-            now = datetime.now()
-
-        if 4 <= now.hour < 12:
-            await message.reply('Доброе утро, {}!'.format(message.from_user.first_name))
-
-        elif 12 <= now.hour < 17:
-            await message.reply('Добрый день, {}!'.format(message.from_user.first_name))
-
-        elif 17 <= now.hour < 23:
-            await message.reply('Добрый вечер, {}!'.format(message.from_user.first_name))
-
-        else:
-            await message.reply('Привет, {}!'.format(message.from_user.first_name))
-
-    elif msg in salem:
-        await message.reply('Уа-Алейкум Ас-Салям, {}!'.format(message.from_user.first_name))
-
-    elif msg == 'арау':
-        await message.reply(emojize('Урай! :punch:'))
-
-    else:
+    except MsgNotRecognizedError:
         now = datetime.now()
         reply_markup = types.InlineKeyboardMarkup()
 
@@ -759,7 +728,7 @@ async def echo(message: types.Message):
             reply_markup.add(
                 types.InlineKeyboardButton('Да', callback_data=CB_ADD_RESULT + '_' + reply_to_wod_date.strftime(D_M_Y))
             )
-        except ReplyToWodMsgError:
+        except WodDateNotFoundError:
             yesterday = (now - timedelta(1)).date()
             if not rest_day(yesterday):
                 msg = 'За какой день вы хотите добавить результат?'
