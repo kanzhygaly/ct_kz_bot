@@ -1,6 +1,7 @@
 from datetime import date
 
 from aiogram import types
+from aiogram.dispatcher import FSMContext
 
 from bot.constants import WOD_STR
 from bot.constants.config_vars import BOT_NAME
@@ -20,3 +21,11 @@ def handle_reply_to_wod_msg(message: types.Message) -> date:
 
 def rest_day(date_to_check: date) -> bool:
     return date_to_check.weekday() in (3, 6) or False
+
+
+async def reset_state(state: FSMContext) -> None:
+    await state.reset_state()
+    await state.update_data(wod_id=None)
+    await state.update_data(wod_result_id=None)
+    await state.update_data(wod_result_txt=None)
+    await state.update_data(view_wod_id=None)

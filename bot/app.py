@@ -28,7 +28,7 @@ from bot.service.user_service import add_user_if_not_exist
 from bot.service.wod_result_service import persist_wod_result_and_get_message
 from bot.service.wod_service import dates_are_equal
 from bot.util import get_timezone_id
-from bot.util.bot_util import handle_reply_to_wod_msg, rest_day
+from bot.util.bot_util import handle_reply_to_wod_msg, rest_day, reset_state
 from bot.util.chat_util import handle_chat_message
 from bot.util.keyboard_util import get_add_wod_kb, get_find_wod_kb, get_search_wod_kb
 
@@ -52,14 +52,6 @@ SET_TIMEZONE = 'set_timezone'
 WARM_UP = 'warm_up'
 ADD_WOD = 'add_wod'
 ADD_WOD_REQ = 'add_wod_req'
-
-
-async def reset_state(chat_id, user_id) -> None:
-    state = dp.current_state(chat=chat_id, user=user_id)
-    await state.reset_state()
-    await state.update_data(wod_id=None)
-    await state.update_data(wod_result_id=None)
-    await state.update_data(wod_result_txt=None)
 
 
 @dp.message_handler(commands=CMD_SHOW_ALL_USERS)
@@ -135,7 +127,8 @@ async def help_cbq(callback_query: types.CallbackQuery):
 
     await bot.edit_message_text(text=info_msg, chat_id=chat_id, message_id=callback_query.message.message_id)
 
-    await reset_state(chat_id=chat_id, user_id=user_id)
+    state = dp.current_state(chat=chat_id, user=user_id)
+    await reset_state(state)
 
 
 @dp.message_handler(commands=CMD_HELP)
@@ -196,7 +189,8 @@ async def send_wod(message: types.Message):
 async def hide_keyboard(message: types.Message):
     chat_id = message.chat.id
 
-    await reset_state(chat_id=chat_id, user_id=message.from_user.id)
+    state = dp.current_state(chat=chat_id, user=message.from_user.id)
+    await reset_state(state)
 
     await bot.send_message(chat_id, get_commands_list_msg(), reply_markup=types.ReplyKeyboardRemove())
 
@@ -222,9 +216,10 @@ async def request_result_for_edit(message: types.Message):
 
     state = dp.current_state(chat=chat_id, user=user_id)
     await state.set_state(WOD_RESULT)
-    data = await state.get_data()
 
+    data = await state.get_data()
     wod_result_id = data[WOD_RESULT_ID]
+
     try:
         wod_result = await wod_result_db.get_wod_result(wod_result_id)
         msg = get_add_result_msg(wod_result.result)
@@ -282,10 +277,7 @@ async def update_wod_result(message: types.Message):
     wod = await wod_db.get_wod(wod_id)
     await notify_users_about_new_wod_result(user_id, wod)
 
-    # Finish conversation, destroy all resource in storage for current user
-    await state.reset_state()
-    await state.update_data(wod_id=None)
-    await state.update_data(wod_result_id=None)
+    await reset_state(state)
 
 
 @dp.message_handler(Text(equals=BTN_SHOW_RESULTS), state=WOD)
@@ -308,10 +300,7 @@ async def show_wod_results(message: types.Message):
 
     await bot.send_message(chat_id, msg, reply_markup=types.ReplyKeyboardRemove(), parse_mode=ParseMode.MARKDOWN)
 
-    # Finish conversation, destroy all resource in storage for current user
-    await state.reset_state()
-    await state.update_data(wod_id=None)
-    await state.update_data(wod_result_id=None)
+    await reset_state(state)
 
 
 @dp.message_handler(commands=CMD_SEARCH)
@@ -372,7 +361,6 @@ async def view_wod_results_callback(callback_query: types.CallbackQuery):
 
     try:
         wod_id = data[VIEW_WOD_ID]
-        await state.update_data(view_wod_id=None)
 
         wod_res_msg = await wod_result_service.get_wod_results(user_id=user_id, wod_id=wod_id)
         wod_day = await wod_db.get_wod_day(wod_id)
@@ -384,6 +372,8 @@ async def view_wod_results_callback(callback_query: types.CallbackQuery):
         msg = 'Данные устарели'
 
     await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=msg_id, parse_mode=ParseMode.MARKDOWN)
+
+    await reset_state(state)
 
 
 @dp.message_handler(commands=CMD_FIND_WOD)
@@ -577,9 +567,7 @@ async def update_warm_up(message: types.Message):
 
     await bot.send_message(chat_id, msg)
 
-    # Finish conversation, destroy all resource in storage for current user
-    await state.reset_state()
-    await state.update_data(wod_id=None)
+    await reset_state(state)
 
 
 @dp.message_handler(commands=CMD_VIEW_RESULTS)
@@ -705,9 +693,7 @@ async def update_wod(message: types.Message):
 
     await bot.send_message(chat_id, msg)
 
-    # Finish conversation, destroy all resource in storage for current user
-    await state.reset_state()
-    await state.update_data(wod_id=None)
+    await reset_state(state)
 
 
 @dp.message_handler()
@@ -767,8 +753,6 @@ async def add_result_by_date(callback_query: types.CallbackQuery):
         data = await state.get_data()
         # KeyError
         wod_result_txt = data[WOD_RESULT_TXT]
-        # Destroy all resource in storage for current user
-        await state.update_data(wod_result_txt=None)
 
         msg = await persist_wod_result_and_get_message(user_id=user_id, wod_id=wod.id, wod_result_txt=wod_result_txt)
         await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=msg_id, parse_mode=ParseMode.MARKDOWN)
@@ -780,6 +764,8 @@ async def add_result_by_date(callback_query: types.CallbackQuery):
     except WodNotFoundError:
         msg = emojize('На сегодня тренировки пока что нет :disappointed:')
         await bot.edit_message_text(text=msg, chat_id=chat_id, message_id=msg_id, parse_mode=ParseMode.MARKDOWN)
+
+    await reset_state(state)
 
 
 # https://apscheduler.readthedocs.io/en/latest/modules/triggers/cron.html#module-apscheduler.triggers.cron
