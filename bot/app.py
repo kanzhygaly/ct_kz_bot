@@ -54,6 +54,14 @@ ADD_WOD = 'add_wod'
 ADD_WOD_REQ = 'add_wod_req'
 
 
+async def reset_state(chat_id, user_id) -> None:
+    state = dp.current_state(chat=chat_id, user=user_id)
+    await state.reset_state()
+    await state.update_data(wod_id=None)
+    await state.update_data(wod_result_id=None)
+    await state.update_data(wod_result_txt=None)
+
+
 @dp.message_handler(commands=CMD_SHOW_ALL_USERS)
 async def sys_all_users(message: types.Message):
     if not await user_db.is_admin(message.from_user.id):
@@ -127,9 +135,7 @@ async def help_cbq(callback_query: types.CallbackQuery):
 
     await bot.edit_message_text(text=info_msg, chat_id=chat_id, message_id=callback_query.message.message_id)
 
-    # Destroy all resource in storage for current user
-    state = dp.current_state(chat=chat_id, user=user_id)
-    await state.update_data(wod_result_txt=None)
+    await reset_state(chat_id=chat_id, user_id=user_id)
 
 
 @dp.message_handler(commands=CMD_HELP)
@@ -188,14 +194,9 @@ async def send_wod(message: types.Message):
 @dp.message_handler(Text(equals=BTN_CANCEL, ignore_case=True), state='*')
 @dp.message_handler(lambda message: message.text not in [BTN_ADD_RESULT, BTN_EDIT_RESULT, BTN_SHOW_RESULTS], state=WOD)
 async def hide_keyboard(message: types.Message):
-    user_id = message.from_user.id
     chat_id = message.chat.id
 
-    # reset
-    state = dp.current_state(chat=chat_id, user=user_id)
-    await state.reset_state()
-    await state.update_data(wod_id=None)
-    await state.update_data(wod_result_id=None)
+    await reset_state(chat_id=chat_id, user_id=message.from_user.id)
 
     await bot.send_message(chat_id, get_commands_list_msg(), reply_markup=types.ReplyKeyboardRemove())
 

@@ -29,13 +29,13 @@ admin_msg = (
 )
 
 
-async def reply_with_info_msg(message: types.Message):
+async def reply_with_info_msg(message: types.Message) -> None:
     subscriber_msg = await get_subscriber_msg(message.from_user.id)
 
     await message.reply(info_msg + subscriber_msg)
 
 
-async def get_info_msg(user_id):
+async def get_info_msg(user_id) -> str:
     subscriber_msg = await get_subscriber_msg(user_id)
 
     if await is_admin(user_id):
@@ -44,7 +44,7 @@ async def get_info_msg(user_id):
     return info_msg + subscriber_msg
 
 
-async def get_subscriber_msg(user_id):
+async def get_subscriber_msg(user_id) -> str:
     if await is_subscriber(user_id):
         return f'/{CMD_UNSUBSCRIBE} - отписаться от ежедневной рассылки WOD'
 
