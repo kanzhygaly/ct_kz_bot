@@ -791,6 +791,7 @@ async def startup(dispatcher: Dispatcher):
     print(f'Startup {BOT_NAME}...')
     async with async_db.Entity.connection() as connection:
         await async_db.create_all_tables(connection)
+        await async_db.drop_redundant_tables(connection)
 
 
 async def shutdown(dispatcher: Dispatcher):

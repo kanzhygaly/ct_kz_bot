@@ -25,10 +25,8 @@ class Entity(AsyncModel, connection=manager):
 async def drop_all_tables(connection) -> None:
     await connection.execute('''
             DROP TABLE IF EXISTS benchmark_result;
-            DROP TABLE IF EXISTS benchmark_ru;
             DROP TABLE IF EXISTS benchmark;
             DROP TABLE IF EXISTS wod_result;            
-            DROP TABLE IF EXISTS wod_ru;
             DROP TABLE IF EXISTS wod;
             DROP TABLE IF EXISTS subscribers;
             DROP TABLE IF EXISTS location;
@@ -52,9 +50,6 @@ async def create_all_tables(connection) -> None:
             CREATE TABLE IF NOT EXISTS benchmark (id uuid PRIMARY KEY, title VARCHAR(150),
             description TEXT, result_type VARCHAR(50));
 
-            CREATE TABLE IF NOT EXISTS benchmark_ru (benchmark_id uuid  PRIMARY KEY,
-            title VARCHAR(150), description TEXT);
-
             CREATE TABLE IF NOT EXISTS benchmark_result (id uuid PRIMARY KEY, benchmark_id uuid not null,
             wod_day date, user_id BIGINT, result VARCHAR(200), sys_date TIMESTAMP, link VARCHAR(100));
             
@@ -63,10 +58,10 @@ async def create_all_tables(connection) -> None:
         ''')
 
 
-async def create_extra_tables(connection) -> None:
+async def drop_redundant_tables(connection) -> None:
     await connection.execute('''
-            CREATE TABLE IF NOT EXISTS wod_ru (wod_id uuid PRIMARY KEY, title VARCHAR(150),
-            description TEXT);            
+            DROP TABLE IF EXISTS wod_ru;
+            DROP TABLE IF EXISTS benchmark_ru;       
         ''')
 
 
