@@ -320,7 +320,7 @@ async def search_wod_by_text(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
 
-    # Finish conversation, destroy all resource in storage for current user
+    # Finish conversation, destroy all resources in storage for current user
     state = dp.current_state(chat=chat_id, user=user_id)
     await state.reset_state()
 
@@ -470,7 +470,7 @@ async def find_and_get_wod(chat_id, user_id, search_date: date):
         return get_wod_full_text(header=result.title, body=result.description), reply_markup
     except WodNotFoundError:
         state = dp.current_state(chat=chat_id, user=user_id)
-        # Finish conversation, destroy all resource in storage for current user
+        # Finish conversation, destroy all resources in storage for current user
         await state.reset_state()
 
         return emojize(':squirrel: На указанную дату тренировка не найдена!'), None
@@ -791,7 +791,6 @@ async def startup(dispatcher: Dispatcher):
     print(f'Startup {BOT_NAME}...')
     async with async_db.Entity.connection() as connection:
         await async_db.create_all_tables(connection)
-        await async_db.drop_redundant_tables(connection)
 
 
 async def shutdown(dispatcher: Dispatcher):

@@ -1,0 +1,7 @@
+DROP TABLE IF EXISTS benchmark_result;
+DROP TABLE IF EXISTS benchmark;
+DROP TABLE IF EXISTS wod_result;
+DROP TABLE IF EXISTS wod;
+DROP TABLE IF EXISTS subscribers;
+DROP TABLE IF EXISTS location;
+DROP TABLE IF EXISTS users;

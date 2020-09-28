@@ -22,19 +22,11 @@ class Entity(AsyncModel, connection=manager):
     """
 
 
-async def drop_all_tables(connection) -> None:
-    await connection.execute('''
-            DROP TABLE IF EXISTS benchmark_result;
-            DROP TABLE IF EXISTS benchmark;
-            DROP TABLE IF EXISTS wod_result;            
-            DROP TABLE IF EXISTS wod;
-            DROP TABLE IF EXISTS subscribers;
-            DROP TABLE IF EXISTS location;
-            DROP TABLE IF EXISTS users;
-        ''')
-
-
 async def create_all_tables(connection) -> None:
+    file1 = open("bot.resources.db.create_all_tables.sql", "r")
+    print(file1.read())
+    file1.close()
+
     await connection.execute('''
             CREATE TABLE IF NOT EXISTS users (id uuid PRIMARY KEY, user_id BIGINT,
             name VARCHAR(100), surname VARCHAR(100), lang VARCHAR(10), admin BOOL DEFAULT false);
@@ -56,20 +48,3 @@ async def create_all_tables(connection) -> None:
             CREATE TABLE IF NOT EXISTS location (user_id BIGINT PRIMARY KEY, longitude FLOAT,
             latitude FLOAT, locale VARCHAR(10), tz VARCHAR(200));
         ''')
-
-
-async def drop_redundant_tables(connection) -> None:
-    await connection.execute('''
-            DROP TABLE IF EXISTS wod_ru;
-            DROP TABLE IF EXISTS benchmark_ru;       
-        ''')
-
-
-async def set_admin(connection, user_id) -> None:
-    await connection.execute('''UPDATE users SET admin=true WHERE user_id = $1''', user_id)
-
-
-async def delete_duplicates(connection) -> None:
-    await connection.execute('''
-            DELETE FROM subscribers a USING subscribers b WHERE a.id < b.id AND a.user_id = b.user_id;
-    ''')
