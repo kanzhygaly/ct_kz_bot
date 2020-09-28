@@ -23,10 +23,6 @@ class Entity(AsyncModel, connection=manager):
 
 
 async def create_all_tables(connection) -> None:
-    file1 = open("bot.resources.db.create_all_tables.sql", "r")
-    print(file1.read())
-    file1.close()
-
     await connection.execute('''
             CREATE TABLE IF NOT EXISTS users (id uuid PRIMARY KEY, user_id BIGINT,
             name VARCHAR(100), surname VARCHAR(100), lang VARCHAR(10), admin BOOL DEFAULT false);
