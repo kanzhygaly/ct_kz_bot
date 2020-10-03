@@ -26,8 +26,6 @@ class Entity(AsyncModel, connection=manager):
 async def create_all_tables(connection) -> None:
     p = Path('./bot/resources/db/create_all_tables.sql')
     if p.exists() and p.is_file():
-        print(p.read_text())
         switch = os.environ[DB_SCRIPT]
-        print(switch)
         if switch and switch == 'enabled':
             await connection.execute(p.read_text())
