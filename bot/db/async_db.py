@@ -24,8 +24,8 @@ class Entity(AsyncModel, connection=manager):
 
 
 async def create_all_tables(connection) -> None:
-    p = Path('./bot')
-    print([x for x in p.iterdir() if x.is_dir()])
+    p = Path('./bot/resources/db/create_all_tables.sql')
+    print([x for x in p.iterdir()])
     if p.exists() and p.is_file():
         print(p.read_text())
         switch = os.environ[DB_SCRIPT]
