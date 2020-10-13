@@ -341,7 +341,7 @@ async def show_search_result(callback_query: types.CallbackQuery):
 
     msg, wod_id = await wod_service.get_wod_by_str_id(callback_query.data[11:])
 
-    st = dp.current_state(chat=chat_id, user=user_id)
+    st = dp.current_state(chat=user_id, user=user_id)
     await st.update_data(view_wod_id=wod_id)
 
     reply_markup = types.InlineKeyboardMarkup()
@@ -356,7 +356,7 @@ async def view_wod_results_callback(callback_query: types.CallbackQuery):
     chat_id = callback_query.message.chat.id
     msg_id = callback_query.message.message_id
 
-    state = dp.current_state(chat=chat_id, user=user_id)
+    state = dp.current_state(chat=user_id, user=user_id)
     data = await state.get_data()
 
     try:
