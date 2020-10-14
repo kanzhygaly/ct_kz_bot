@@ -41,8 +41,8 @@ async def is_allowed_to_see_wod_results(user_id) -> bool:
         wod_result = await wod_result_db.get_last_wod_result(user_id)
 
         delta = datetime.now() - wod_result.sys_date
-        if delta.days > 3:
-            # if user hasn't logged any results within 3 days
+        if delta.days > 2:
+            # if user hasn't logged any results within 2 days
             # then he is not allowed to see the results
             return False
 
@@ -54,6 +54,9 @@ async def is_allowed_to_see_wod_results(user_id) -> bool:
 
 
 async def persist_wod_result_and_get_message(user_id, wod_id, wod_result_txt: str):
+    if not valid_wod_result(wod_result_txt):
+        return emojize(":white_check_mark: Ваш результат успешно добавлен!")
+
     try:
         wod_result = await wod_result_db.get_user_wod_result(wod_id, user_id)
 
@@ -75,3 +78,7 @@ async def has_wod_result(user_id, wod_id) -> bool:
         return True
     except WodResultNotFoundError:
         return False
+
+
+async def valid_wod_result(wod_result_txt: str) -> bool:
+    return sum(c.isdigit() for c in wod_result_txt) > 3
