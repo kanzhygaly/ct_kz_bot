@@ -56,3 +56,7 @@ def database_url_parse(url: str) -> Dict[str, str]:
         database_url[credential] = url[part]
 
     return database_url
+
+
+def valid_wod_result(wod_result_txt: str) -> bool:
+    return sum(c.isdigit() for c in wod_result_txt) > 3

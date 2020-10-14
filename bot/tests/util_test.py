@@ -3,7 +3,7 @@ import datetime
 from aiogram.utils.emoji import emojize
 
 from bot.constants.date_format import D_M_Y, A_D_B, D_B, H_M_S_D_B_Y, M_D_Y, sD_B_Y, WEEKDAY
-from bot.util.parser_util import database_url_parse
+from bot.util.parser_util import database_url_parse, valid_wod_result
 
 now = datetime.datetime.now()
 
@@ -87,3 +87,5 @@ print(credentials)
 print('list tests')
 result = [1, 2, 3, 4, 5]
 print(result[-1])
+
+print(valid_wod_result('test'))

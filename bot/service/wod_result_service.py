@@ -6,6 +6,7 @@ from aiogram.utils.emoji import emojize
 from bot.constants.date_format import H_M_S_D_B_Y
 from bot.db import user_db, location_db, wod_result_db
 from bot.exception import LocationNotFoundError, WodResultNotFoundError, NoWodResultsError
+from bot.util.parser_util import valid_wod_result
 
 
 async def get_wod_results(user_id, wod_id) -> str:
@@ -78,7 +79,3 @@ async def has_wod_result(user_id, wod_id) -> bool:
         return True
     except WodResultNotFoundError:
         return False
-
-
-async def valid_wod_result(wod_result_txt: str) -> bool:
-    return sum(c.isdigit() for c in wod_result_txt) > 3
