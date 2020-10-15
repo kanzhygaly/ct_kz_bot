@@ -42,8 +42,8 @@ async def is_allowed_to_see_wod_results(user_id) -> bool:
         wod_result = await wod_result_db.get_last_wod_result(user_id)
 
         delta = datetime.now() - wod_result.sys_date
-        if delta.days > 2:
-            # if user hasn't logged any results within 2 days
+        if delta.days > 3:
+            # if user hasn't logged any results within 3 days
             # then he is not allowed to see the results
             return False
 
