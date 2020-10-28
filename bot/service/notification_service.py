@@ -15,8 +15,8 @@ async def send_wod_to_all_subscribers(bot: Bot) -> None:
     msg, wod_id = await get_today_wod()
 
     if wod_id:
-        msg += (f'/{CMD_ADD_RESULT} - записать/изменить результат за СЕГОДНЯ\n'
-                f'/{CMD_VIEW_RESULTS} - посмотреть результаты за СЕГОДНЯ')
+        msg += (f'/{CMD_ADD_RESULT} - записать/изменить результат\n'
+                f'/{CMD_VIEW_RESULTS} - посмотреть результаты')
 
     count = 0
     for sub in subscribers:
@@ -36,8 +36,8 @@ async def notify_all_subscribers_to_add_result(bot: Bot) -> None:
 
         subscribers = await subscriber_db.get_all_subscribers()
 
-        msg = ('Не забудьте записать результат сегодняшней тренировки :grimacing:\n'
-               f'Для того чтобы записать результат за СЕГОДНЯ наберите команду /{CMD_ADD_RESULT}')
+        msg = (':bell: Не забудьте записать результат сегодняшней тренировки\n'
+               f'Наберите команду /{CMD_ADD_RESULT} или просто отправьте сообщением')
 
         for sub in subscribers:
             if await has_wod_result(user_id=sub.user_id, wod_id=wod_id):
