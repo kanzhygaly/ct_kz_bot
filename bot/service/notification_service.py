@@ -36,7 +36,7 @@ async def notify_all_subscribers_to_add_result(bot: Bot) -> None:
 
         subscribers = await subscriber_db.get_all_subscribers()
 
-        msg = (':bell: Не забудьте записать результат сегодняшней тренировки\n'
+        msg = (':bell: Не забудьте записать результат сегодняшней тренировки\n\n'
                f'Наберите команду /{CMD_ADD_RESULT} или просто отправьте сообщением')
 
         for sub in subscribers:
