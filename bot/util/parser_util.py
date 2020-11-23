@@ -16,15 +16,10 @@ def parse_wod_content(content) -> str:
                 continue
             result += text + '\n\n'
         else:
-            for inner in tag.find_all('em'):
-                # remove <strong> in <em>
-                inner.string = inner.get_text()
-
-            for inner in tag.find_all('strong'):
-                if not inner.get_text().split():
-                    continue
-                # Add numbers for sections
-                inner.string = f'{counter}. {inner.get_text()}'
+            # Enumerate section
+            section_header = next(iter(tag.find_all('strong')), None)
+            if section_header:
+                section_header.string = f'{counter}. {section_header.get_text()}'
                 counter += 1
 
             for link in tag.find_all('a'):
