@@ -17,8 +17,7 @@ def dates_are_equal(date1: date, date2: date) -> bool:
 
 
 def today_is_not_a_rest_day(parser: BSoupParser) -> bool:
-    return (parser.get_games_part().lower().find('rest day') == -1
-            and parser.get_open_part().lower().find('rest day') == -1)
+    return parser.get_wod_text().lower().find('rest day') == -1
 
 
 async def get_today_wod():

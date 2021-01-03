@@ -12,22 +12,15 @@ class BSoupParser:
         soup = BeautifulSoup(page.text, 'html.parser')
         post = soup.find('div', class_='wod-wrap')
 
-        header = post.find(class_='orange wod-date').find('h5').get_text()
+        header = post.find('h5').get_text()
         self.wod_date = " ".join(header.split())
 
-        self.content = post.find(class_='container wod-info').find_all(class_='col-md-6')
+        self.content = post.find(id='wod')
 
-        self.open_part = parse_wod_content(self.content[0])
-        self.games_part = parse_wod_content(self.content[1])
+        self.wod_text = parse_wod_content(self.content)
 
     def get_wod_date(self) -> str:
         return self.wod_date
 
-    def get_games_part(self) -> str:
-        return self.games_part
-
-    def get_open_part(self) -> str:
-        return self.open_part
-
     def get_wod_text(self) -> str:
-        return self.games_part + self.open_part
+        return self.wod_text

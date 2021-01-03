@@ -12,20 +12,18 @@ parser = BSoupParser(url=url)
 title = parser.get_wod_date()
 print(parse_wod_date(title))
 
-open_part = parser.get_open_part()
-reg_part = parser.get_games_part()
+wod_text = parser.get_wod_text()
 
-if reg_part.lower().find('rest day') != -1 and open_part.lower().find('rest day') != -1:
+if wod_text.lower().find('rest day') != -1:
     print('Rest Day 1')
 else:
     print('WOD 1')
 
-if reg_part.lower().find('rest day') == -1 or open_part.lower().find('rest day') == -1:
+if wod_text.lower().find('rest day') == -1:
     print('WOD 2')
 else:
     print('Rest Day 2')
 
-description = open_part + reg_part
 msg = (f'/{CMD_ADD_RESULT} - записать/изменить результат за СЕГОДНЯ\n'
        f'/{CMD_VIEW_RESULTS} - посмотреть результаты за СЕГОДНЯ')
-print(f'{title}\n\n{description}{msg}')
+print(f'{title}\n\n{wod_text}{msg}')
