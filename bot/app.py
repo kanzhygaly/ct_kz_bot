@@ -14,7 +14,7 @@ from bot.constants import CB_SEARCH_RESULT, CB_CHOOSE_DAY, CB_ADD_RESULT, CMD_SH
     CMD_RESET_WOD, CMD_DISPATCH_WOD, CMD_START, CMD_HELP, CMD_SUBSCRIBE, CMD_UNSUBSCRIBE, CMD_VIEW_WOD, CMD_SEARCH, \
     CMD_FIND_WOD, CB_IGNORE, CMD_SET_TIMEZONE, CMD_VIEW_WARM_UP, CMD_ADD_WARM_UP, CMD_VIEW_RESULTS, CMD_ADD_RESULT, \
     CMD_ADD_WOD, BTN_SHOW_RESULTS, BTN_CANCEL, BTN_ADD_RESULT, BTN_EDIT_RESULT, BTN_VIEW_RESULT
-from bot.constants.config_vars import API_TOKEN, BOT_NAME
+from bot.constants.config_vars import ENV_API_TOKEN, BOT_NAME, ENV_NOTIFY_TO_ADD_RESULT
 from bot.constants.data_keys import WOD_RESULT_TXT, WOD_RESULT_ID, WOD_ID, VIEW_WOD_ID
 from bot.constants.date_format import D_M_Y, sD_B_Y, A_M_D_Y
 from bot.db import user_db, wod_db, location_db, async_db, subscriber_db, wod_result_db
@@ -32,12 +32,13 @@ from bot.util.bot_util import handle_reply_to_wod_msg, rest_day, reset_state
 from bot.util.chat_util import handle_chat_message
 from bot.util.keyboard_util import get_add_wod_kb, get_find_wod_kb, get_search_wod_kb
 
-bot = Bot(token=os.environ[API_TOKEN])
+bot = Bot(token=os.environ[ENV_API_TOKEN])
 
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 scheduler = AsyncIOScheduler()
 
+env_notify_to_add_result = os.environ[ENV_NOTIFY_TO_ADD_RESULT]
 wod_requests = ['чтс', 'что там сегодня', 'тренировка', 'треня', 'wod', 'workout']
 warmup_requests = ['разминка', 'warmup']
 result_requests = ['результаты', 'results']
@@ -784,7 +785,8 @@ async def wod_dispatch():
 # Notify to add results for Today's WOD at 23:00 GMT+6
 @scheduler.scheduled_job('cron', day_of_week='mon-sun', hour=17, id='notify_to_add_result')
 async def notify_to_add_result():
-    await notify_all_subscribers_to_add_result(bot)
+    if env_notify_to_add_result and env_notify_to_add_result == 'enabled':
+        await notify_all_subscribers_to_add_result(bot)
 
 
 async def startup(dispatcher: Dispatcher):

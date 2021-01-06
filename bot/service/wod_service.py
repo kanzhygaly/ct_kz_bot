@@ -6,7 +6,7 @@ from typing import Iterable
 from bot.constants import CMD_VIEW_WOD, CMD_DISPATCH_WOD
 from bot.service.info_service import get_wod_full_text
 from bot.util.bsoup_spider import BSoupParser
-from bot.constants.config_vars import WEB_URL
+from bot.constants.config_vars import ENV_WEB_URL
 from bot.db import wod_db
 from bot.exception import WodNotFoundError
 from bot.util.parser_util import parse_wod_date
@@ -27,7 +27,7 @@ async def get_today_wod():
         result = await wod_db.get_wod_by_date(today)
         return get_wod_full_text(header=result.title, body=result.description), result.id
     except WodNotFoundError:
-        parser = BSoupParser(url=os.environ[WEB_URL])
+        parser = BSoupParser(url=os.environ[ENV_WEB_URL])
 
         title = parser.get_wod_date()
         wod_date = parse_wod_date(title)
@@ -62,7 +62,7 @@ async def reset_today_wod() -> (bool, str):
     except WodNotFoundError:
         return False, f'No resource found in DB use instead /{CMD_VIEW_WOD} and then /{CMD_DISPATCH_WOD}'
 
-    parser = BSoupParser(url=os.environ[WEB_URL])
+    parser = BSoupParser(url=os.environ[ENV_WEB_URL])
 
     title = parser.get_wod_date()
     wod_date = parse_wod_date(title)
