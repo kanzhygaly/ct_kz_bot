@@ -17,7 +17,7 @@ def parse_wod_content(content) -> str:
             result += text + '\n\n'
         else:
             # Enumerate section
-            section_header = next(iter(tag.find_all('strong')), None)
+            section_header = next(iter(tag.find_all(['strong', 'b'])), None)
             if section_header:
                 section_header.string = f'{counter}. {section_header.get_text()}'
                 counter += 1

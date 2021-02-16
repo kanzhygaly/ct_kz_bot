@@ -10,14 +10,12 @@ class BSoupParser:
         page = requests.get(url, headers=headers)
 
         soup = BeautifulSoup(page.text, 'html.parser')
-        post = soup.find('div', class_='wod-wrap')
+        post = soup.find('div', id='wod')
 
         header = post.find('h5').get_text()
         self.wod_date = " ".join(header.split())
 
-        self.content = post.find(id='wod')
-
-        self.wod_text = parse_wod_content(self.content)
+        self.wod_text = parse_wod_content(post)
 
     def get_wod_date(self) -> str:
         return self.wod_date
