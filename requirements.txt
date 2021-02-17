@@ -1,6 +1,6 @@
 aiogram==2.11.2
 aiohttp==3.7.3
-APScheduler==3.6.3
+APScheduler==3.7.0
 async-timeout==3.0.1
 asyncpg-simpleorm==0.1.2
 attrs==20.3.0
@@ -8,13 +8,13 @@ Babel==2.9.0
 beautifulsoup4==4.9.3
 certifi==2020.12.5
 chardet==4.0.0
-emoji==0.6.0
+emoji==1.2.0
 idna==3.1
 idna-ssl==1.1.0
 multidict==5.1.0
-pytz==2020.5
+pytz==2021.1
 requests==2.25.1
 six==1.15.0
 tzlocal==2.1
-urllib3==1.26.2
+urllib3==1.26.3
 yarl==1.6.3
