@@ -16,16 +16,16 @@ def parse_wod_content(content) -> str:
                 continue
             result += text + '\n\n'
         else:
-            # Sections Enumeration
-            bold_sections = [x for x in tag.find_all('b') if x.u]
-            for bold in bold_sections:
+            # convert b.u to strong
+            bold = tag.b
+            if bold and bold.u:
                 bold.name = "strong"
 
-            section_header = next(iter(tag.find_all('strong')), None)
+            # Enumerate section header
+            section_header = tag.strong
             if section_header:
                 section_header.string = f'{counter}. {section_header.get_text()}'
                 counter += 1
-            # End of Enumeration
 
             for link in tag.find_all('a'):
                 link.string = link.get('href')
