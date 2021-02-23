@@ -1,7 +1,7 @@
 from datetime import datetime, date
 from typing import Dict
 
-from bot.constants.date_format import M_D_Y
+from bot.constants.date_format import M_D_Y, M_D_sY
 
 
 def parse_wod_content(content) -> str:
@@ -44,7 +44,11 @@ def parse_wod_date(wod_string: str) -> date:
     wod_string = wod_string.replace('//', '').replace('/', '.')
     # Remove anything other than digits
     num = ''.join(c for c in wod_string if c.isdigit() or c == '.')
-    return datetime.strptime(num, M_D_Y).date()
+    try:
+        result = datetime.strptime(num, M_D_sY).date()
+    except ValueError:
+        result = datetime.strptime(num, M_D_Y).date()
+    return result
 
 
 def database_url_parse(url: str) -> Dict[str, str]:
