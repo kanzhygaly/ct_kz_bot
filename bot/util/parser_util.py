@@ -4,22 +4,32 @@ from typing import Dict
 from bot.constants.date_format import M_D_Y, M_D_sY
 
 
+def remove_unnecessary_repeated_spaces(text: str) -> str:
+    return " ".join(text.split())
+
+
+def convert_b_to_strong(tag) -> None:
+    bold = tag.b
+    if bold and bold.u:
+        bold.name = "strong"
+
+    underline = tag.u
+    if underline and underline.b:
+        underline.b.name = "strong"
+
+
 def parse_wod_content(content) -> str:
     result = ''
     counter = 1
 
     for tag in content.find_all(["h3", "h2", "p"]):
         if tag.name in ('h3', 'h2'):
-            # Remove unnecessary repeated spaces
-            text = " ".join(tag.get_text().split())
+            text = remove_unnecessary_repeated_spaces(tag.get_text())
             if not text:
                 continue
             result += text + '\n\n'
         else:
-            # convert b.u to strong
-            bold = tag.b
-            if bold and bold.u:
-                bold.name = "strong"
+            convert_b_to_strong(tag)
 
             # Enumerate section header
             section_header = tag.strong
@@ -31,9 +41,7 @@ def parse_wod_content(content) -> str:
                 link.string = link.get('href')
 
             for inner in tag.stripped_strings:
-                # Remove unnecessary repeated spaces
-                inner = " ".join(inner.split())
-                result += inner + '\n'
+                result += remove_unnecessary_repeated_spaces(inner) + '\n'
 
             result += '\n'
 
