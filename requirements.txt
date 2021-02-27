@@ -1,5 +1,5 @@
 aiogram==2.11.2
-aiohttp==3.7.3
+aiohttp==3.7.4
 APScheduler==3.7.0
 async-timeout==3.0.1
 asyncpg-simpleorm==0.1.2
