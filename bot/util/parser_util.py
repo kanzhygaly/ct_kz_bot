@@ -13,12 +13,10 @@ def remove_everything_but_digits(text: str) -> str:
 
 
 def convert_b_to_strong(tag) -> None:
-    bold = tag.b
-    if bold and bold.u:
+    if (bold := tag.b) and bold.u:
         bold.name = "strong"
 
-    underline = tag.u
-    if underline and underline.b:
+    if (underline := tag.u) and underline.b:
         underline.b.name = "strong"
 
 
