@@ -11,8 +11,8 @@ post = soup.find('div', id='wod')
 
 header = post.find('h5').get_text()
 wod_date = " ".join(header.split())
-# print(parse_wod_date(wod_date))
-# print(wod_date + '\n')
+print(parse_wod_date(wod_date))
+print(wod_date + '\n')
 
 wod_text = parse_wod_content(post)
 print(wod_text)

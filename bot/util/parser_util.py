@@ -5,7 +5,11 @@ from bot.constants.date_format import M_D_Y, M_D_sY
 
 
 def remove_unnecessary_repeated_spaces(text: str) -> str:
-    return " ".join(text.split())
+    return ' '.join(text.split())
+
+
+def remove_everything_but_digits(text: str) -> str:
+    return ''.join(c for c in text if c.isdigit() or c == '.')
 
 
 def convert_b_to_strong(tag) -> None:
@@ -24,16 +28,13 @@ def parse_wod_content(content) -> str:
 
     for tag in content.find_all(["h3", "h2", "p"]):
         if tag.name in ('h3', 'h2'):
-            text = remove_unnecessary_repeated_spaces(tag.get_text())
-            if not text:
-                continue
-            result += text + '\n\n'
+            if text := remove_unnecessary_repeated_spaces(tag.get_text()):
+                result += text + '\n\n'
         else:
             convert_b_to_strong(tag)
 
             # Enumerate section header
-            section_header = tag.strong
-            if section_header:
+            if section_header := tag.strong:
                 section_header.string = f'{counter}. {section_header.get_text()}'
                 counter += 1
 
@@ -48,10 +49,9 @@ def parse_wod_content(content) -> str:
     return result
 
 
-def parse_wod_date(wod_string: str) -> date:
-    wod_string = wod_string.replace('//', '').replace('/', '.')
-    # Remove anything other than digits
-    num = ''.join(c for c in wod_string if c.isdigit() or c == '.')
+def parse_wod_date(wod_date_str: str) -> date:
+    wod_date_str = wod_date_str.replace('//', '').replace('/', '.')
+    num = remove_everything_but_digits(wod_date_str)
     try:
         result = datetime.strptime(num, M_D_sY).date()
     except ValueError:
