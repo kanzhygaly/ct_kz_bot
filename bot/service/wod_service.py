@@ -13,6 +13,9 @@ from bot.util.parser_util import parse_wod_date
 
 
 def dates_are_equal(date1: date, date2: date) -> bool:
+    print(date1.day == date2.day)
+    print(date1.month == date2.month)
+    print(date1.year == date2.year)
     return date1.day == date2.day and date1.month == date2.month and date1.year == date2.year
 
 
@@ -31,6 +34,8 @@ async def get_today_wod():
 
         title = parser.get_wod_date()
         wod_date = parse_wod_date(title)
+        print(wod_date)
+        print(today)
 
         if dates_are_equal(wod_date, today):
             description = parser.get_wod_text()

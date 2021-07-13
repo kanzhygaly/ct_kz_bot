@@ -10,7 +10,6 @@ class BSoupParser:
         headers = {'User-Agent': get_user_agent()}
         try:
             page = requests.get(url, headers=headers)
-            print(page.text)
             soup = BeautifulSoup(page.text, 'html.parser')
         except Exception as e:
             print(f'Error: {str(e)}')
