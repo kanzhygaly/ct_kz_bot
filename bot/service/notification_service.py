@@ -23,8 +23,11 @@ async def send_wod_to_all_subscribers(bot: Bot) -> None:
         try:
             await bot.send_message(sub.user_id, msg)
             count += 1
-        except (UserDeactivated, BotBlocked):
+        except UserDeactivated:
             print(f'User {sub.user_id} is deactivated, deleting him from subscribers')
+            await subscriber_db.unsubscribe(sub.user_id)
+        except BotBlocked:
+            print(f'User {sub.user_id} has blocked the Bot, deleting him from subscribers')
             await subscriber_db.unsubscribe(sub.user_id)
 
     print(f'WOD has been sent to {count} subscribers')
