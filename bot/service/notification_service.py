@@ -1,6 +1,6 @@
 from aiogram import types, Bot
 from aiogram.utils.emoji import emojize
-from aiogram.utils.exceptions import UserDeactivated
+from aiogram.utils.exceptions import UserDeactivated, BotBlocked
 
 from bot.constants import CMD_ADD_RESULT, CMD_VIEW_RESULTS
 from bot.db import subscriber_db
@@ -23,7 +23,7 @@ async def send_wod_to_all_subscribers(bot: Bot) -> None:
         try:
             await bot.send_message(sub.user_id, msg)
             count += 1
-        except UserDeactivated:
+        except (UserDeactivated, BotBlocked):
             print(f'User {sub.user_id} is deactivated, deleting him from subscribers')
             await subscriber_db.unsubscribe(sub.user_id)
 
