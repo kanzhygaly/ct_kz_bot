@@ -15,7 +15,7 @@ async def send_wod_to_all_subscribers(bot: Bot) -> None:
     msg, wod_id = await get_today_wod()
 
     if wod_id:
-        msg += (f'/{CMD_ADD_RESULT} - записать/изменить результат\n'
+        msg += (f'\n/{CMD_ADD_RESULT} - записать/изменить результат\n'
                 f'/{CMD_VIEW_RESULTS} - посмотреть результаты')
 
     count = 0
