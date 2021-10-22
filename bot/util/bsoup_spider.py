@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from bot.util import get_user_agent
-from bot.util.parser_util import parse_wod_content
+from bot.util.parser_util import parse_wod_content, parse_wod_header
 
 
 class BSoupParser:
@@ -15,9 +15,8 @@ class BSoupParser:
             print(f'Error: {str(e)}')
 
         post = soup.find('div', id='wod')
-        header = post.find('h5').get_text()
 
-        self.wod_date = " ".join(header.split())
+        self.wod_date = parse_wod_header(post)
         self.wod_text = parse_wod_content(post)
 
     def get_wod_date(self) -> str:

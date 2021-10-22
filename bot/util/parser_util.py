@@ -20,12 +20,17 @@ def convert_b_to_strong(tag) -> None:
         underline.b.name = "strong"
 
 
+def parse_wod_header(content) -> str:
+    header = content.find('h2').get_text()
+    return " ".join(header.split())
+
+
 def parse_wod_content(content) -> str:
     result = ''
     counter = 1
 
-    for tag in content.find_all(["h3", "h2", "p"]):
-        if tag.name in ('h3', 'h2'):
+    for tag in content.find_all(["h3", "p"]):
+        if tag.name in 'h3':
             if text := remove_unnecessary_repeated_spaces(tag.get_text()):
                 result += text + '\n\n'
         else:
@@ -39,8 +44,15 @@ def parse_wod_content(content) -> str:
             for link in tag.find_all('a'):
                 link.string = link.get('href')
 
+            # replace span with text inside that span
+            for span in tag.find_all('span'):
+                span.unwrap()
+
+            #  clean up the parse tree by consolidating adjacent strings
+            tag.smooth()
+
             for inner in tag.stripped_strings:
-                result += remove_unnecessary_repeated_spaces(inner) + '\n'
+                result += inner + '\n'
 
             result += '\n'
 

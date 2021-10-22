@@ -2,15 +2,14 @@ import codecs
 
 from bs4 import BeautifulSoup
 
-from bot.util.parser_util import parse_wod_content, parse_wod_date
+from bot.util.parser_util import parse_wod_content, parse_wod_date, parse_wod_header
 
-f = codecs.open("../resources/example10072020.html", 'r', 'utf-8')
+f = codecs.open("../resources/example21102021.html", 'r', 'utf-8')
 soup = BeautifulSoup(f.read(), 'html.parser')
 
 post = soup.find('div', id='wod')
 
-header = post.find('h5').get_text()
-wod_date = " ".join(header.split())
+wod_date = parse_wod_header(post)
 print(parse_wod_date(wod_date))
 print(wod_date + '\n')
 
