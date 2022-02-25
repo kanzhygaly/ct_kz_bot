@@ -38,8 +38,10 @@ def parse_wod_content(content) -> str:
 
             # Enumerate section header
             if section_header := tag.strong:
-                section_header.string = f'{counter}. {section_header.get_text()}'
-                counter += 1
+                section_text = section_header.get_text()
+                if not section_text.startswith('*'):
+                    section_header.string = f'{counter}. {section_text}'
+                    counter += 1
 
             for link in tag.find_all('a'):
                 link.string = link.get('href')
