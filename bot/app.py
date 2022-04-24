@@ -172,6 +172,9 @@ async def send_wod(message: types.Message):
 
     msg, wod_id = await wod_service.get_today_wod()
 
+    if not msg:
+        msg = 'Комплекс еще не вышел.\nСорян :('
+
     if wod_id:
         result_button = await get_result_button(chat_id=chat_id, user_id=user_id, wod_id=wod_id)
 

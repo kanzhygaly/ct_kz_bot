@@ -42,7 +42,7 @@ async def get_today_wod():
             return get_wod_full_text(header=title, body=description), wod_id
         else:
             print(f'{today} is not equal to wod_date {wod_date}')
-            return 'Комплекс еще не вышел.\nСорян :(', None
+            return None, None
 
 
 async def get_today_wod_id():
