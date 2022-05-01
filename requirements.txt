@@ -4,7 +4,7 @@ APScheduler==3.9.1
 async-timeout==4.0.2
 asyncpg-simpleorm==0.1.2
 attrs==21.4.0
-Babel==2.10.0
+Babel==2.9.1
 beautifulsoup4==4.11.1
 certifi==2021.10.8
 chardet==4.0.0
